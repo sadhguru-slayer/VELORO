@@ -1,0 +1,8 @@
+         <div
+              className={`text-gray-900 cursor-pointer ${
+                isActive('/freelancer/dashboard/project-status-overview') ? 'bg-gradient-to-br from-primary to-secondary' : ''
+              }`}
+              onClick={() => handleMenuClick('project-status-overview')}
+            >
+              Project Status Overview
+            </div>

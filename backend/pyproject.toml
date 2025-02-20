@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "freelancer-hub"  # Name of your project
+version = "0.1.0"        # Initial version of your project
+description = "A description of your project"
+authors = ["Your Name <youremail@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"  # Change to the version of Python you are using
+django = "^3.2"  # Add Django if it's not already in your dependencies
+
+[tool.poetry.dev-dependencies]
+# Add any development dependencies here

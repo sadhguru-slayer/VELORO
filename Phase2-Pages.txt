@@ -1,0 +1,119 @@
+Phase2-Pages:
+
+---
+
+### **Public Pages**  
+These are accessible to all users without authentication.  
+
+1. **Home Page**  
+   - Overview of the platform (features, benefits).  
+   - Call-to-action for user registration or login. 
+Structure of HomePage:
+
+    Hero Section:
+        A prominent header section that explains the purpose of the platform.
+        A call-to-action (CTA) button to encourage users to sign up or log in.
+
+    Feature Section:
+        A section that highlights the key features of the platform.
+        Typically done with icons and short descriptions.
+
+    About Section:
+        Brief information about the platform or what it offers.
+
+    Testimonials Section:
+        User reviews or testimonials to establish trust.
+
+    Footer Section:
+        Contact details, links to other pages, and social media.
+
+2. **About Page**  
+   - Information about the platform and its mission.  
+
+3. **Contact Page**  
+   - Details for reaching support.  
+   - Contact form for inquiries.  
+
+4. **Authentication Pages**  [👍]
+   - **Login Page**: For existing users to sign in.  
+   - **Sign-Up Page**: Registration forms for `Client` and `Freelancer` roles.  
+
+---
+
+### **Client Pages**  
+Accessible only to authenticated users with the `Client` role.  
+
+1. **Dashboard**  
+   - Overview of the client’s projects (active, completed).  
+   - Notifications (e.g., new bids).  
+
+2. **Post a Project Page**  
+   - Form to create and post a project.  
+
+3. **View Bids Page**  
+   - List of bids on a specific project.  
+   - Option to accept/reject bids.  
+
+4. **Project Collaboration Page**  
+   - Task assignment and tracking.  
+   - File sharing and communication.  
+
+---
+
+### **Freelancer Pages**  
+Accessible only to authenticated users with the `Freelancer` role.  
+
+1. **Dashboard**  
+   - Overview of active bids, assigned projects, and notifications.  
+
+2. **Browse Projects Page**  
+   - List of available projects for bidding.  
+
+3. **Project Details Page**  
+   - Detailed view of a project with bidding options.  
+
+4. **Project Collaboration Page**  
+   - Shared page with clients for ongoing projects.  
+   - File sharing, task updates, and communication.  
+
+---
+
+### **Common Authenticated Pages**  
+Shared between clients and freelancers after login.  
+
+1. **User Profile Page**  
+   - Update profile details (e.g., skills, portfolio for freelancers).  
+
+2. **Notifications Page**  
+   - View all notifications (e.g., bid statuses, project updates).  
+
+3. **Settings Page**  
+   - Manage account settings (password, email preferences).  
+
+---
+
+### **Admin Pages (Optional)**  
+For platform management.  
+
+1. **Admin Dashboard**  
+   - Overview of users, projects, and system activity.  
+
+2. **User Management Page**  
+   - View, edit, or disable user accounts.  
+
+3. **Project Management Page**  
+   - Review and manage projects posted on the platform.  
+
+
+
+
+20-02-2025:
+-Created Collaboration Feature where freelacners and Clients can Collaborate.
+-Has a Team Leader , basically the person who generated the collaboration link
+-Recreate Core
+
+21-02-2025:
+-In the afternoon need to create the feature link wise sharing of collaboration for both Client and Freelancer
+-Worry about Notifications (sending, navigating on click)
+-Add feature ,Hire Freelancer
+
