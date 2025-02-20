@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore Virtual Environments
+venv/
+env/
+
+# Ignore Python Cache
+__pycache__/
+
+# Ignore SQLite Database
+*.sqlite3
+
+# Ignore Logs
+*.log
+
+# Ignore Media and Static Files
+media/
