@@ -26,25 +26,16 @@ import Cookies from 'js-cookie';  // Import js-cookie
 
 const App = () => {
   const [isTokenValid, setIsTokenValid] = useState(true);
-  const [userProfileCompleted, setUserProfileCompleted] = useState(false);
   const token = Cookies.get('accessToken');  // Get token from cookies
 
   useEffect(() => {
     const checkTokenAndProfile = async () => {
       if (token) {
         const isValid = await verifyToken(token);
-        if (isValid) {
-          const role = Cookies.get('role');
-          const profileStatus = Cookies.get('is_profiled');
-        
-          setUserProfileCompleted(profileStatus === 'true' || role === 'client');
-        } else {
+        if (!isValid) {
           const newToken = await refreshToken();
           if (newToken) {
             Cookies.set('accessToken', newToken, { expires: 1, secure: true, sameSite: 'Strict' });
-            const role = Cookies.get('role');
-            const profileStatus = Cookies.get('is_profiled');
-            setUserProfileCompleted(profileStatus === 'true' || role === 'client');
           } else {
             setIsTokenValid(false);
           }
@@ -65,10 +56,7 @@ const App = () => {
         <Route path="/" element=<HomePage /> />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route
-          path="/profiling"
-          element={userProfileCompleted ? <Navigate to="/" /> : <ProfilingPage />}
-        />
+        
 
         {/* Client Routes */}
         <Route path="/client">  

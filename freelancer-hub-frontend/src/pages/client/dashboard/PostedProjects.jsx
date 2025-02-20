@@ -38,6 +38,7 @@ const PostedProjects = () => {
       const mockProjects = response.data;
       setProjects(mockProjects);
       setFilteredProjects(mockProjects);
+      
     } catch (error) {
       console.log(error);
     }
@@ -113,7 +114,8 @@ const PostedProjects = () => {
       render: (text) => {
         const capitalizedStatus = 
         
-        text.charAt(0).toUpperCase() + text.slice(1)
+        text? text.charAt(0).toUpperCase() + text.slice(1) :''
+
         ;
         let statusClass = '';
         if (capitalizedStatus === 'Pending') {

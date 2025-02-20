@@ -96,7 +96,7 @@ class ClientViews(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        connection_Count = user.get_client_connections().count()
+        connection_Count = user.get_client_connections()
         
         client_profile = get_object_or_404(ClientProfile, user=user)
         client_profile_details = {
@@ -157,3 +157,15 @@ def update_profile(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
+
+def accept_connection(request, connection_id):
+    connection = get_object_or_404(Connection, id=connection_id)
+    if connection.to_user == request.user:  # Ensure the logged-in user is the recipient
+        connection.accept()
+    return redirect('connections')
+
+def reject_connection(request, connection_id):
+    connection = get_object_or_404(Connection, id=connection_id)
+    if connection.to_user == request.user:  # Ensure the logged-in user is the recipient
+        connection.reject()
+    return redirect('connections')

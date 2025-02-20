@@ -115,12 +115,13 @@ const ReviewsRatings = () => {
         <h3 className="text-xl font-semibold mb-4 text-teal-600">Reviews & Ratings</h3>
         <div className="space-y-4">
           {paginatedReviews.map((review) => (
-            <div key={review.id} className="flex items-start space-x-4 border-b border-gray-200 pb-4">
+            <div key={review.id} className="flex flex-col w-full items-start space-x-4 border-b border-gray-200 pb-4">
+            <div className="flex items-start space-x-4 w-full border-b border-gray-200 pb-4">
               <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium text-gray-600">{review.from_user_username[0]}</span>
               </div>
               <div className="flex flex-col w-full">
-                <p className="text-sm font-medium">{review.from_user_username}</p>
+                <p className="text-sm font-semibold">{review.from_user_username}</p>
                 <div className="flex items-center space-x-1">
                   {renderStars(review.rating)}
                 </div>
@@ -135,25 +136,26 @@ const ReviewsRatings = () => {
                   Reply
                   </span>
                 </div>
+                </div>
+                </div>
                 {review.replies && review.replies.length > 0 && (
                   <div className="mt-2 pl-6 w-full">
                     {review.replies.map((reply) => (
-                      <div key={reply.id} className="text-sm text-gray-600 w-full">
-                        <p><strong>{reply.from_freelancer_username}</strong>: {reply.feedback}</p>
-                        <span
-                  onClick={() => handleReplyClick(review.id)}
-                  
-                  className='text-sm border-none hover:text-teal-400 flex items-center gap-1 text-gray-400 cursor-pointer'
-                  >
-                  <GoReply/>
-                  Reply
-                  </span>
+                      <div key={reply.id} className="text-sm text-gray-600 w-full flex items-start gap-2">
+                      <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-gray-600">{reply.from_user_username[0]}</span>
+                    </div>
+                    <div className="flex flex-col w-full">
+                      <p className="text-sm font-semibold">{reply.from_user_username}</p>
+                      <p className="text-gray-600 text-sm mt-2">{reply.feedback}</p>
+                      
+                      </div>
+                       
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            </div>
           ))}
         </div>
         <div className="mt-4 flex justify-end">

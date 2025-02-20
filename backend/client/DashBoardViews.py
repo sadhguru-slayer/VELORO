@@ -188,41 +188,64 @@ class DashBoard_Overview(APIView):
     def get(self, request):
         user = request.user
         
+        # Fetch the projects related to the user (client)
         projects = Project.objects.filter(client=user).order_by('-created_at')
+        
+        # Serialize project data
         project_summary = ProjectSerializer(projects[:8], many=True).data 
+        
+        # Initialize counters
         pending_tasks_count = 0
         total_spent = 0
         total_projects_last_month = 0
         completed_ahead_of_deadline = 0
         today = timezone.now()
+        
+        # Get the start of the week and the range for last month
         start_of_week = today - timedelta(days=today.weekday())
         start_of_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
         end_of_last_month = today.replace(day=1) - timedelta(days=1)
+        
         for project in projects:
-            pending_tasks_count += project.get_pending_tasks()
+            # Ensure that you're calling the methods, not passing the method reference
+            pending_tasks_count += project.get_pending_tasks()  # Call the method with ()
             total_spent += project.total_spent        
+            
+            # Get tasks completed last month for each project
             tasks_last_month = Task.objects.filter(
                 project=project, 
                 deadline__gte=start_of_last_month, 
                 deadline__lte=end_of_last_month,
                 status='completed'
             )
+            
             total_projects_last_month += 1
+            
             for task in tasks_last_month:
+                # Check if task was completed ahead of the deadline
                 if task.completed_date and task.completed_date < task.deadline:
                     completed_ahead_of_deadline += 1
+        
         if total_projects_last_month > 0:
             projects_ahead_percentage = (completed_ahead_of_deadline / total_projects_last_month) * 100
         else:
             projects_ahead_percentage = 0
-        active_projects_count = Project.get_active_projects(client=user)       
+        
+        # Call the method correctly to get the count of active projects
+        active_projects_count = Project.objects.filter(status='ongoing', client=user).count()
+
+        
+        # Get other data as needed
         nearest_deadlines = get_nearest_deadlines(user)
-        recent_activities = get_recent_activities(user,5)
+        recent_activities = get_recent_activities(user, 5)
+        
         client_username = {
             'username': user.username,
         }        
+        
+        # Prepare the response data
         data = {
-            'active_projects': active_projects_count,
+            'active_projects': active_projects_count,  # Correct: Method called
             'pending_tasks': pending_tasks_count,
             'total_spent': total_spent,
             'project_summary': project_summary,
@@ -234,9 +257,10 @@ class DashBoard_Overview(APIView):
                 deadline__lte=start_of_week + timedelta(days=7)
             ).count(),
             'projects_completed_ahead_last_month': projects_ahead_percentage,
-            'client_username':client_username,
+            'client_username': client_username,
         }
         
+        # Return the response with the data
         return Response(data)
 
 # Get nearest deadlines function

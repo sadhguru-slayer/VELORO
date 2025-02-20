@@ -280,8 +280,7 @@ const ProjectPost = () => {
 
   const formSubmit = async (e) => {
     e.preventDefault();
-    
-    console.log(formValues)
+  
     try {
       // Make the POST request
       const response = await axios.post(

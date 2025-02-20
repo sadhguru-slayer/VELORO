@@ -13,4 +13,11 @@ urlpatterns = [
     path('profile/', IsprofiledDetails.as_view(), name='profile'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token_verify/', TokenVerifyView.as_view(), name='token_verify'),
+
+    # Projects
+    path('post_project/', CreateProjectView.as_view(), name='post_project'),
+    path('categories/', CategoryListView.as_view(), name='categories-list'),
+    path('skills/<int:category_id>/', SkillsByCategoryView.as_view(), name='skills-by-category'),
+
+
 ]

@@ -29,7 +29,7 @@ const RegistrationForm = () => {
         }
 
         // Step 1: Verify token validity
-        const isTokenValid = await verifyToken(token);
+        const isTokenValid = await verifyToken(refreshToken);
 
         // Step 2: Refresh token if invalid
         if (!isTokenValid) {
@@ -45,9 +45,7 @@ const RegistrationForm = () => {
         });
         const { is_profiled, role } = response.data.user;
         // Step 3: Navigate based on profile status and role
-        if (!is_profiled && role !== 'client') {
-          navigate('/profiling');
-        } else if (role === 'client') {
+        if (role === 'client') {
           navigate('/client/dashboard');
         } else {
           navigate('/freelancer/homepage');
@@ -124,7 +122,7 @@ const RegistrationForm = () => {
         if (role === "Client") {
           navigate("/client/dashboard");
         } else if (role === "Freelancer") {
-          navigate("/profiling");
+          navigate("/freelancer/homepage");
         }
       }
     } catch (error) {

@@ -36,9 +36,7 @@ const HomePage = () => {
 
         const { is_profiled, role } = response.data.user;
 
-        if (!is_profiled && role !== 'client') {
-          navigate('/profiling');
-        } else if (role === 'client') {
+       if (role === 'client') {
           navigate('/client/dashboard');
         } else {
           navigate('/freelancer/homepage');

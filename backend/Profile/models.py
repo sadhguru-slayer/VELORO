@@ -129,6 +129,15 @@ class ClientProfile(models.Model):
             self.successful_projects += 1
         self.save()
 
+    def calculate_average_rating(self):
+        reviews = Feedback.objects.filter(to_user=self.user)
+        avg_rating=0
+        for review in reviews:
+            avg_rating += review.rating
+        avg_rating = avg_rating/reviews.count()
+        self.average_rating = avg_rating
+        self.save()
+
 # Extending User model to create a freelancer profile
 class FreelancerProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="freelancer_profile")

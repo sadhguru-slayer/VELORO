@@ -43,9 +43,7 @@ const LoginPage = () => {
         const { is_profiled, role } = response.data.user;
 
         // Step 3: Navigate based on profile status and role
-        if (!is_profiled && role !== 'client') {
-          navigate('/profiling');
-        } else if (role === 'client') {
+       if (role === 'client') {
           navigate('/client/dashboard');
         } else {
           navigate('/freelancer/homepage');
@@ -94,8 +92,7 @@ const LoginPage = () => {
         "http://127.0.0.1:8000/api/login/",
         payload
       );
-
-      const { access, refresh, is_profiled, role } = response.data;
+      const { access, refresh, role } = response.data;
 
       // Store tokens in cookies
       Cookies.set("accessToken", access, { secure: true, sameSite: 'Strict' });
@@ -106,9 +103,7 @@ const LoginPage = () => {
       if(role === 'client'){
         navigate("/client/dashboard");
       }
-      else if (!is_profiled) {
-        navigate("/profiling");
-      } else if (role === "freelancer") {
+      else {
         navigate("/freelancer/homepage");
       }
     } catch (error) {

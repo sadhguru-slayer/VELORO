@@ -11,9 +11,9 @@ from rest_framework.permissions import AllowAny
 from .models import *
 from django.middleware.csrf import get_token
 from datetime import timedelta
-
+from client.models import Activity
 from Profile.models import *
-from .serializers import UserSerializer, ProjectSerializer, CustomTokenObtainPairSerializer
+from .serializers import *
 
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
@@ -134,21 +134,10 @@ class RegisterView(APIView):
         # Step 4: Transaction Block to ensure atomicity
         with transaction.atomic():
             # Step 5: Category and Skills for Freelancer
-            if role == 'Freelancer':
-                if 'category' not in data or 'skills' not in data:
-                    return Response({"error": "Category and Skills are required for Freelancer."}, status=status.HTTP_400_BAD_REQUEST)
-                
-                category_name = data['category']
-                category, created = Category.objects.get_or_create(name=category_name)
-                
-                # Check if all skills are valid
-                skills = []
-                for skill_name in data['skills']:
-                    skill, created = Skill.objects.get_or_create(name=skill_name, category=category)
-                    skills.append(skill)
+            if role == 'Freelancer':  
                 
                 # Create Freelancer Profile
-                freelancer_profile = FreelancerProfile(user=user, category=category, skills=skills)
+                freelancer_profile = FreelancerProfile(user=user)
                 freelancer_profile.save()
 
                 # Set additional fields if provided
@@ -206,4 +195,144 @@ class LogoutView(APIView):
         request.session.flush()
 
         return Response({"message": "Logout successful!"}, status=status.HTTP_200_OK)
+
+
+
+class CreateProjectView(APIView):
+    permission_classes = [IsAuthenticated]  # Only authenticated users can create projects
+    
+    def post(self, request):
+        # Add the client (user) to the project
+        client = request.user
+        
+        # Extract data from request
+        skills_data = request.data.get('skills_required', [])
+        is_collaborative = request.data.get('is_collaborative', False)
+        tasks = request.data.get('tasks', [])
+        
+        # Validate and get the domain
+        try:
+            domain = Category.objects.get(id=request.data['domain'])
+        except Category.DoesNotExist:
+            return Response({"message": "Domain not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the Project instance but don't save yet
+        temp_project = Project(
+            title=request.data['title'],
+            description=request.data['description'],
+            budget=request.data['budget'],
+            deadline=request.data['deadline'],
+            is_collaborative=is_collaborative,
+            domain=domain,
+            client=client,
+            status='pending',
+        )
+
+        # Save the project instance first to get an ID (necessary for Many-to-Many relationships)
+        temp_project.save()
+
+        # Now handle the skills for the project
+        if skills_data:
+            try:
+                skills_required = Skill.objects.filter(id__in=[skill['value'] for skill in skills_data])
+                temp_project.skills_required.set(skills_required)
+            except Skill.DoesNotExist:
+                return Response({"message": "Some skills not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Handle tasks if it's a collaborative project
+        if is_collaborative and tasks:
+            task_instances = []
+            for task in tasks:
+                task_skill_data = task.get('skills_required_for_task', [])
+                try:
+                    # Create the task instance
+                    temp_task = Task(
+                        title=task['title'],
+                        description=task['description'],
+                        deadline=task['deadline'],
+                        project=temp_project,
+                        budget=task['budget']
+                    )
+                    temp_task.save()
+
+                    # Set skills required for the task
+                    if task_skill_data:
+                        skills_required_task = Skill.objects.filter(id__in=[skill['value'] for skill in task_skill_data])
+                        temp_task.skills_required_for_task.set(skills_required_task)
+
+                    task_instances.append(temp_task)
+                except KeyError as e:
+                    return Response({"message": f"Missing required field: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+                except Skill.DoesNotExist:
+                    return Response({"message": "Some skills not found for the task"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Serialize the tasks and project data
+            task_serializer = TaskSerializer(task_instances, many=True)
+            project_serializer = ProjectSerializer(temp_project)
+
+            # Activity log for project creation
+            Activity.objects.create(
+                user=client,
+                activity_type='project_created',
+                description=f'Created Project: {temp_project.title}',
+                related_model='project',
+                related_object_id=temp_project.id
+            )
+            
+            # Activity log for each task creation
+            for task in task_instances:
+                Activity.objects.create(
+                    user=client,
+                    activity_type='task_created',
+                    description=f'Created Task: {task.title} for Project: {temp_project.title}',
+                    related_model='task',
+                    related_object_id=task.id
+                )
+
+            return Response({
+                "message": "Project and tasks created successfully.",
+                "project": project_serializer.data,
+                "tasks": task_serializer.data
+            }, status=status.HTTP_201_CREATED)
+
+        # Serialize only the project if no tasks were provided
+        project_serializer = ProjectSerializer(temp_project)
+
+        # Activity log for project creation
+        Activity.objects.create(
+            user=client,
+            activity_type='project_created',
+            description=f'Created Project: {temp_project.title}',
+            related_model='project',
+            related_object_id=temp_project.id
+        )
+        
+        return Response({
+            "message": "Project created successfully.",
+            "project": project_serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+
+class CategoryListView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def get(self, request):
+        """
+        Returns a list of all categories (domains).
+        """
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+
+
+class SkillsByCategoryView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def get(self, request, category_id):
+        """
+        Returns a list of skills that belong to the selected category (domain).
+        """
+        skills = Skill.objects.filter(category_id=category_id)
+        serializer = SkillSerializer(skills, many=True)
+        return Response(serializer.data)
 

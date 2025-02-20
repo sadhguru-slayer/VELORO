@@ -135,9 +135,9 @@ const DashboardOverview = () => {
     navigate('/client/dashboard', { state: { component: 'projects', status: 'Ongoing' } });
   };
 
-  const handleButtonClick = (activity) => {
+  const handleButtonClick = (activity,record_id) => {
     if (activity.activity_type === "project_created" || activity.activity_type === "project_updated") {
-      navigate("/client/dashboard/", { state: { component: "projects" } });
+      navigate(`/client/view-bids/posted-project/${record_id}`, { state: { record_id } })
     } else if (activity.activity_type === "profile_updated") {
       navigate("/client/profile/");
     } else if (activity.activity_type === "event_created" || activity.activity_type === "event_updated") {
@@ -343,7 +343,7 @@ const DashboardOverview = () => {
               activity.activity_type === "event_created" ||
               activity.activity_type === "event_updated" ? (
                 <button className="bg-teal-500 text-white px-2 py-2 rounded"
-                onClick={() => handleButtonClick(activity)}
+                onClick={() => handleButtonClick(activity,activity.related_object_id)}
                 >
                   View Details
                 </button>

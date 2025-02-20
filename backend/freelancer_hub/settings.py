@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'Profile',
     'freelancer',
     'client',
-
+    'collaborations',
 
     'channels',
     'rest_framework_simplejwt',

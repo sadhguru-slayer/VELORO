@@ -32,6 +32,9 @@ class FreelancerProfileSerializer(serializers.ModelSerializer):
 
 class ClientFeedbackSerializer(serializers.ModelSerializer):
     from_user_username = serializers.CharField(source='from_user.username', read_only=True)
+    from_user_role = serializers.CharField(source='from_user.role', read_only=True)
+    to_user_username = serializers.CharField(source='to_user.username', read_only=True)
+    to_user_role = serializers.CharField(source='to_user.role', read_only=True)
     project_title = serializers.CharField(source='project.title', read_only=True)
     
     replies = serializers.SerializerMethodField()
@@ -41,7 +44,11 @@ class ClientFeedbackSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'from_user',  # Foreign key relation (if needed)
+            'from_user_role',  # Foreign key relation (if needed)
+            'to_user',  # Foreign key relation (if needed)
+            'to_user_role',  # Foreign key relation (if needed)
             'from_user_username',  # Freelancer's username
+            'to_user_username',  # Freelancer's username
             'rating',  # Rating for the review
             'feedback',  # Review text
             'created_at',  # Date the review was created

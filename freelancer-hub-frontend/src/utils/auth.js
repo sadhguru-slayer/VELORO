@@ -4,14 +4,17 @@ import Cookies from 'js-cookie';
 // Check if the token is valid
 export const verifyToken = async (token) => {
   try {
-    const response = await axios.post('http://127.0.0.1:8000/api/token_verify/', {
-      token: token
+    const response = await axios.post('http://127.0.0.1:8000/api/token_verify/', {token:token}, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     return response.data; // Token is valid
   } catch (error) {
     return null; // Token is invalid or expired
   }
 };
+
 
 
 // Refresh the token if expired

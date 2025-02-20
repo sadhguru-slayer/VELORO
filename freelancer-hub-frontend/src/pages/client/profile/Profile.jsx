@@ -38,7 +38,6 @@ const Profile = () => {
           setReviewsList(data.reviews_and_ratings.reviews);
           setConnectionCount(data.connection_Count);
           setAverageRating(data.reviews_and_ratings.average_rating);
-        console.log(clientInfo)
         } catch (error) {
           console.log(error);
         }
