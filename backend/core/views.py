@@ -14,6 +14,12 @@ from datetime import timedelta
 from client.models import Activity
 from Profile.models import *
 from .serializers import *
+from django.db.models import Q
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from .models import User, Project, Category
+from .serializers import UserSerializer, ProjectSerializer, CategorySerializer
 
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
@@ -336,3 +342,31 @@ class SkillsByCategoryView(APIView):
         serializer = SkillSerializer(skills, many=True)
         return Response(serializer.data)
 
+
+@api_view(['GET'])
+@permission_classes([])  # Open API, modify as needed
+def search(request):
+    query = request.GET.get('query', '').strip()
+    if not query:
+        return Response({"error": "Search query is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Search Users (by username & role)
+    users = User.objects.filter(
+        Q(username__icontains=query) | Q(role__icontains=query)
+    )
+    
+    # Search Projects (by title & description)
+    projects = Project.objects.filter(
+        Q(title__icontains=query) | Q(description__icontains=query)
+    )
+
+    # Search Categories (by name)
+    categories = Category.objects.filter(
+        Q(name__icontains=query)
+    )
+
+    return Response({
+        "users": UserSerializer(users, many=True).data,
+        "projects": ProjectSerializer(projects, many=True).data,
+        "categories": CategorySerializer(categories, many=True).data,
+    }, status=status.HTTP_200_OK)

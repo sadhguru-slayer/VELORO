@@ -22,7 +22,7 @@ class User(AbstractUser):
         ('premium', 'Premium'),
     ]
     
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='freelancer')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='freelancer',db_index=True)
     membership = models.CharField(max_length=10, choices=MEMBERSHIP_CHOICES, default='free')
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     is_profiled = models.BooleanField(default=False)
@@ -85,7 +85,7 @@ class Connection(models.Model):
 
 # Category Model
 class Category(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=True,db_index=True)
     description = models.TextField()
 
     def __str__(self):
@@ -113,7 +113,7 @@ class Project(models.Model):
         ('paid', 'Paid'),
     ]
 
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255,db_index=True)
     description = models.TextField()
     budget = models.DecimalField(max_digits=10, decimal_places=2)
     deadline = models.DateField()
@@ -126,6 +126,12 @@ class Project(models.Model):
     payment_status = models.CharField(max_length=15, choices=PAYMENT_STATUS_CHOICES, default='not_initiated')
     total_spent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     skills_required = models.ManyToManyField(Skill, related_name='projects', blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['title']),
+            models.Index(fields=['description']),
+        ]
 
     def get_pending_tasks(self):
         """

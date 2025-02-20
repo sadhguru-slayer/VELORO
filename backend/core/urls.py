@@ -19,5 +19,6 @@ urlpatterns = [
     path('categories/', CategoryListView.as_view(), name='categories-list'),
     path('skills/<int:category_id>/', SkillsByCategoryView.as_view(), name='skills-by-category'),
 
-
+    #Connections 
+    path('search/', search, name='search'),
 ]
