@@ -1,0 +1,20 @@
+/* Add this to your CSS file */
+.custom-table .ant-table {
+    background-color: #f0fdfa; /* Light teal background for table */
+    border-radius: 8px;
+  }
+  
+  .custom-table .ant-table-thead > tr > th {
+    background-color: #14b8a6; /* Teal header background */
+    color: white; /* White text for header */
+  }
+  
+  .custom-table .ant-table-tbody > tr > td {
+    background-color: #ffffff; /* White background for table rows */
+    color: #333333; /* Dark text for rows */
+  }
+  
+  .custom-table .ant-table-tbody > tr:hover {
+    background-color: #e0f9f2; /* Light teal background on row hover */
+  }
+  

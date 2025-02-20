@@ -16,6 +16,8 @@ from django.db.models import Sum
 from django.db.models.functions import TruncMonth, TruncWeek, TruncYear,ExtractWeekDay
 import calendar
 from datetime import timedelta
+from collaborations.models import *
+from collaborations.serializers import *
 
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
@@ -334,6 +336,40 @@ class SpendingDistributionByProject(generics.ListAPIView):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=200)
+
+class CollaborationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, *args, **kwargs):
+        user = self.request.user
+
+        # Get all collaboration memberships for the user
+        user_collaborations = CollaborationMembership.objects.filter(user=user)
+
+        # Group collaborations by status
+        active_collaborations = [membership.collaboration for membership in user_collaborations if membership.collaboration.STATUS == 'active']
+        inactive_collaborations = [membership.collaboration for membership in user_collaborations if membership.collaboration.STATUS == 'inactive']
+        completed_collaborations = [membership.collaboration for membership in user_collaborations if membership.collaboration.STATUS == 'completed']
+        removed_collaborations = [membership.collaboration for membership in user_collaborations if membership.collaboration.STATUS == 'removed']
+
+        # Get collaborations where the user is an admin
+        admin_collaborations = Collaboration.objects.filter(admin=user)
+
+        serialized_active = CollaborationSerializer(active_collaborations, many=True)
+        serialized_inactive = CollaborationSerializer(inactive_collaborations, many=True)
+        serialized_completed = CollaborationSerializer(completed_collaborations, many=True)
+        serialized_removed = CollaborationSerializer(removed_collaborations, many=True)
+        serialized_admin = CollaborationSerializer(admin_collaborations, many=True)
+
+        # Return a structured response with different collaboration categories
+        return Response({
+            'active_collaborations': serialized_active.data,
+            'inactive_collaborations': serialized_inactive.data,
+            'completed_collaborations': serialized_completed.data,
+            'removed_collaborations': serialized_removed.data,
+            'admin_collaborations': serialized_admin.data,
+        })
+
 
 
 

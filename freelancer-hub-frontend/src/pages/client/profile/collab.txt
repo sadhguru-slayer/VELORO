@@ -1,0 +1,54 @@
+<div className="bg-white p-6 rounded-md lg:ml-22dow-sm mb-6">
+        <h3 className="text-xl font-semibold text-teal-600 mb-4">Collaborations</h3>
+
+        {/* Previous Collaborations */}
+        {collaborations.previous && collaborations.previous.length > 0 && (
+          <span>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">Previous Collaborations</h4>
+            <Table
+              loading={loading}
+              dataSource={collaborations.previous}
+              columns={collaborationColumns}
+              pagination={false}
+              rowKey="id"
+            />
+          </span>
+        )}
+        
+        {/* Pending Collaborations */}
+        {collaborations.pending && collaborations.pending.length > 0 && (
+          <span>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 mt-4">Pending Collaborations</h4>
+            <Table
+              loading={loading}
+              dataSource={collaborations.pending}
+              columns={collaborationColumns}
+              pagination={false}
+              rowKey="id"
+            />
+          </span>
+        )}
+        
+        {/* Received Collaborations */}
+        {collaborations.received && collaborations.received.length > 0 && (
+          <span>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 mt-4">Received Collaborations</h4>
+            <Table
+              loading={loading}
+              dataSource={collaborations.received}
+              columns={collaborationColumns}
+              pagination={false}
+              rowKey="id"
+            />
+          </span>
+        )}
+
+        {/* Pagination for Collaborations */}
+        <Pagination
+          current={currentPage}
+          pageSize={pageSize}
+          total={collaborations.previous.length + collaborations.pending.length + collaborations.received.length}
+          onChange={handlePaginationChange}
+          showSizeChanger={false}
+        />
+      </div>

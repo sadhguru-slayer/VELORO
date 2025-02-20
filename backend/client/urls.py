@@ -1,7 +1,7 @@
 # client/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .DashBoardViews import EventViewSet,RecentActivityView,PostedProjects,DashBoard_Overview,ActivityListView,SpecifiedActivityListView,SpendingDistributionByProject
+from .DashBoardViews import EventViewSet,RecentActivityView,PostedProjects,DashBoard_Overview,ActivityListView,SpecifiedActivityListView,SpendingDistributionByProject,CollaborationView
 from core.views import *
 from .DashBoardViews import SpendingDataView
 from .profileViews import ClientViews,update_profile,ClientReviewsandRatings,post_reply
@@ -32,5 +32,6 @@ urlpatterns = [
      path('update_profile/', update_profile, name='update_profile'),
      path('get_reviews/', ClientReviewsandRatings.as_view(), name='get_reviews'),
      path('post_reply/',post_reply , name='post_reply'),
+     path('get_collaborations/',CollaborationView.as_view() , name='get_collaborations'),
 
 ]

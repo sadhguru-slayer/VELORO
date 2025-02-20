@@ -87,7 +87,6 @@ class RecentActivityView(APIView):
         # Return the data in a Response object
         return Response(activity_data, status=200)
     
-
     
 
 class PostedProjects(APIView):

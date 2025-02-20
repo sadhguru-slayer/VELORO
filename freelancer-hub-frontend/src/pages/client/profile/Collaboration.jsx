@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Button, Table, Pagination } from 'antd';
 import { FaEye } from 'react-icons/fa';
+import './Collaboration.css'
 
 const Collaborations = () => {
   const navigate = useNavigate();
   const [collaborations, setCollaborations] = useState({
+    ongoing: [],
+    inactive: [],
     previous: [],
-    pending: [],
-    received: [],
+    admin: [],
   });
   const [groups, setGroups] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,13 +29,18 @@ const Collaborations = () => {
     setLoading(true);
     const accessToken = Cookies.get('accessToken');
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/collaborations', {
+      const response = await axios.get('http://127.0.0.1:8000/api/client/get_collaborations', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
       const data = response.data;
-      setCollaborations(data.collaborations);
+      setCollaborations({
+        ongoing: data.active_collaborations,
+        inactive: data.inactive_collaborations,
+        previous: data.completed_collaborations,
+        admin: data.admin_collaborations,
+      });
       setGroups(data.groups);
     } catch (error) {
       console.error("Error fetching collaborations data:", error);
@@ -50,13 +57,13 @@ const Collaborations = () => {
   const collaborationColumns = [
     {
       title: 'Collaboration Title',
-      dataIndex: 'title',
-      key: 'title',
+      dataIndex: 'collaboration_name',
+      key: 'collaboration_name',
     },
     {
       title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: 'STATUS',
+      key: 'STATUS',
     },
     {
       title: 'Action',
@@ -103,13 +110,50 @@ const Collaborations = () => {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold text-teal-600 mb-4">Collaboration Overview</h2>
+      {collaborations.admin &&
+        <div className="bg-white p-6 rounded-md mb-6 shadow-lg border-l-4 border-teal-500">
+  <h3 className="text-xl font-semibold text-teal-600 mb-4">Your Collaborations (Admin)</h3>
+  <Table
+    loading={loading}
+    dataSource={collaborations.admin}
+    columns={collaborationColumns}
+    pagination={false}
+    rowKey="id"
+    className="custom-table"  // Apply custom class for the table
+  />
+</div>
 
-      {/* Collaborations */}
+             }
       <div className="bg-white p-6 rounded-md lg:ml-22dow-sm mb-6">
-        <h3 className="text-xl font-semibold text-teal-600 mb-4">Collaborations</h3>
+      {/* Your Collaborations (Admin) */}
+      
+      {/* Ongoing Collaborations */}
+      <div className="bg-white p-6 rounded-md">
+        <h3 className="text-xl font-semibold text-teal-600 mb-4">Ongoing Collaborations</h3>
+        <Table
+          loading={loading}
+          dataSource={collaborations.ongoing}
+          columns={collaborationColumns}
+          pagination={false}
+          rowKey="id"
+        />
+      </div>
 
-        {/* Previous Collaborations */}
-        <h4 className="text-lg font-semibold text-gray-800 mb-2">Previous Collaborations</h4>
+      {/* Inactive Collaborations */}
+      <div className="bg-white p-6 rounded-md">
+        <h3 className="text-xl font-semibold text-teal-600 mb-4">Inactive Collaborations</h3>
+        <Table
+          loading={loading}
+          dataSource={collaborations.inactive}
+          columns={collaborationColumns}
+          pagination={false}
+          rowKey="id"
+        />
+      </div>
+
+      {/* Previous Collaborations */}
+      <div className="bg-white p-6 rounded-md">
+        <h3 className="text-xl font-semibold text-teal-600 mb-4">Previous Collaborations</h3>
         <Table
           loading={loading}
           dataSource={collaborations.previous}
@@ -117,39 +161,12 @@ const Collaborations = () => {
           pagination={false}
           rowKey="id"
         />
-
-        {/* Pending Collaborations */}
-        <h4 className="text-lg font-semibold text-gray-800 mb-2 mt-4">Pending Collaborations</h4>
-        <Table
-          loading={loading}
-          dataSource={collaborations.pending}
-          columns={collaborationColumns}
-          pagination={false}
-          rowKey="id"
-        />
-
-        {/* Received Collaborations */}
-        <h4 className="text-lg font-semibold text-gray-800 mb-2 mt-4">Received Collaborations</h4>
-        <Table
-          loading={loading}
-          dataSource={collaborations.received}
-          columns={collaborationColumns}
-          pagination={false}
-          rowKey="id"
-        />
-
-        {/* Pagination for Collaborations */}
-        <Pagination
-          current={currentPage}
-          pageSize={pageSize}
-          total={collaborations.previous.length + collaborations.pending.length + collaborations.received.length}
-          onChange={handlePaginationChange}
-          showSizeChanger={false}
-        />
       </div>
+</div>
+     
 
       {/* Groups Overview */}
-      <div className="bg-white p-6 rounded-md lg:ml-22dow-md">
+      <div className="bg-white p-6 rounded-md">
         <h3 className="text-xl font-semibold text-teal-600 mb-4">Groups Overview</h3>
         <Table
           dataSource={groups}

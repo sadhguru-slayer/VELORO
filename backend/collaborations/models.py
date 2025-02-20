@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 
 # Create your models here.
 class Collaboration(models.Model):
-    admin = models.ForeignKey(User, related_name='admin_collaborations', on_delete=models.CASCADE)
+    admin = models.ManyToManyField(User, related_name='admin_collaborations')
     collaboration_name = models.CharField(max_length=255,verbose_name="Collaboration Title")
     collaboration_description = models.TextField(help_text="Write a Description for your Collaborations",null=True)
     STATUS_CHOICES = [
@@ -27,7 +27,10 @@ class Collaboration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Collaboration '{self.collaboration_name}' led by {self.admin.username} ({self.get_collaboration_type_display()})"
+        first_admin = self.admin.first()  # Get the first admin user, if available
+        if first_admin:
+            return f"Collaboration '{self.collaboration_name}' led by {first_admin.username} ({self.get_collaboration_type_display()})"
+        return f"Collaboration '{self.collaboration_name}' with no admins ({self.get_collaboration_type_display()})"
 
     def start_collaboration(self):
         """Start the collaboration by changing its status to 'active'."""
