@@ -66,8 +66,8 @@ const CHeader = () => {
       console.error("Search error:", error);
     }
   };
-
   const [notificationsCount, setNotificationsCount] = useState(0);
+
   useEffect(() => {
     const fetchUnmarkedNotifications = async () => {
       try {
@@ -79,12 +79,17 @@ const CHeader = () => {
         setNotificationsCount(response.data.length);
       } catch (err) {
         console.error('Error fetching unmarked notifications:', err);
-        
       }
     };
-
+  
     fetchUnmarkedNotifications();
-  }, []);
+  
+    const intervalId = setInterval(fetchUnmarkedNotifications, 3000);
+  
+    return () => clearInterval(intervalId);
+  
+  }, []); 
+  
 
   return (
     <header className="border-b-gray-300 bg-gray-200 text-black border h-12 flex items-center px-4 justify-between z-10">

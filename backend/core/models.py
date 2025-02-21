@@ -236,16 +236,10 @@ class Payment(models.Model):
             super().save(*args, **kwargs)
 
 class UserFeedback(models.Model):
-    # Define the user giving the feedback (from_user)
     from_user = models.ForeignKey(User, related_name='given_feedback', on_delete=models.CASCADE)
-    
-    # Define the user receiving the feedback (to_user)
     to_user = models.ForeignKey(User, related_name='received_feedback', on_delete=models.CASCADE)
-    
-    # Rating for the feedback (1-5, can be extended to other formats)
+
     rating = models.PositiveIntegerField(choices=[(i, str(i)) for i in range(1, 6)], default=5)
-    
-    # Type of feedback (e.g., communication, work quality, collaboration)
     feedback_type = models.CharField(max_length=50, choices=[
         ('collaboration', 'Collaboration'),
         ('work_quality', 'Work Quality'),

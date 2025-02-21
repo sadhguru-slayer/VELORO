@@ -138,7 +138,12 @@ const CNotifications = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-teal-600">{notification.title}</h3>
-                      <p className="text-sm text-gray-600">{notification.notification_text}</p>
+                      <div
+                      className="text-sm text-gray-600"
+                      dangerouslySetInnerHTML={{
+                        __html: notification.notification_text, // Safely render HTML content
+                      }}
+                    />
                       <p className="text-xs text-gray-500 mt-1">
                         {new Date(notification.created_at).toLocaleString()}
                       </p>
