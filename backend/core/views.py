@@ -15,6 +15,8 @@ from client.models import Activity
 from Profile.models import *
 from .serializers import *
 from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
+from django.core.cache import cache
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -343,30 +345,80 @@ class SkillsByCategoryView(APIView):
         return Response(serializer.data)
 
 
+
+# Custom pagination class
+class CustomPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 @api_view(['GET'])
 @permission_classes([])  # Open API, modify as needed
-def search(request):
+def search_partial(request):
     query = request.GET.get('query', '').strip()
     if not query:
         return Response({"error": "Search query is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Check cache first
+    cached_results = cache.get(query)
+    if cached_results:
+        return Response(cached_results)
+
+    paginator = CustomPagination()
+
     # Search Users (by username & role)
     users = User.objects.filter(
         Q(username__icontains=query) | Q(role__icontains=query)
-    )
-    
-    # Search Projects (by title & description)
+    ).order_by('id')  # Order by 'id' to ensure consistency in pagination
+
+    # Paginate Users
+    paginated_users = paginator.paginate_queryset(users, request)
+    serialized_users = UserSerializer(paginated_users, many=True)
+
     projects = Project.objects.filter(
-        Q(title__icontains=query) | Q(description__icontains=query)
-    )
+    Q(title__icontains=query) | 
+    Q(description__icontains=query) | 
+    Q(domain__name__icontains=query)
+    ).order_by('id')
+ # Order by 'id' for consistency
+
+    # Paginate Projects
+    paginated_projects = paginator.paginate_queryset(projects, request)
+    serialized_projects = ProjectSerializer(paginated_projects, many=True)
 
     # Search Categories (by name)
     categories = Category.objects.filter(
         Q(name__icontains=query)
-    )
+    ).order_by('id')  # Order by 'id' for consistency
 
-    return Response({
-        "users": UserSerializer(users, many=True).data,
-        "projects": ProjectSerializer(projects, many=True).data,
-        "categories": CategorySerializer(categories, many=True).data,
-    }, status=status.HTTP_200_OK)
+    # Paginate Categories
+    paginated_categories = paginator.paginate_queryset(categories, request)
+    serialized_categories = CategorySerializer(paginated_categories, many=True)
+
+    # Prepare the final response data, including pagination info
+    response_data = {
+        "users": {
+            "count": users.count(),
+            "next": paginator.get_next_link(),
+            "previous": paginator.get_previous_link(),
+            "results": serialized_users.data
+        },
+        "projects": {
+            "count": projects.count(),
+            "next": paginator.get_next_link(),
+            "previous": paginator.get_previous_link(),
+            "results": serialized_projects.data
+        },
+        "categories": {
+            "count": categories.count(),
+            "next": paginator.get_next_link(),
+            "previous": paginator.get_previous_link(),
+            "results": serialized_categories.data
+        }
+    }
+
+    # Cache the results for 15 minutes
+    cache.set(query, response_data, timeout=60*15)
+
+    # Return the paginated response
+    return Response(response_data)

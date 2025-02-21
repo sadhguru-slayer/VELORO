@@ -5,7 +5,8 @@ from core.serializers import (
     ProjectSerializer, 
     TaskSerializer, 
     SpendingDistributionByProjectSerializer,
-    UserSerializer
+    UserSerializer,
+    ConnectionSerializer
 )
 from Profile.models import (
     ClientProfile,Project
@@ -39,7 +40,8 @@ from Profile.serializers import (
     ClientProfileSerializer, 
     FreelancerProfileSerializer,
     ClientFeedbackSerializer,
-    ClientProfilePartialUpdateSerializer
+    ClientProfilePartialUpdateSerializer,
+    ConnectionSendinSerializer
 )
 from .models import Activity
 
@@ -169,3 +171,33 @@ def reject_connection(request, connection_id):
     if connection.to_user == request.user:  # Ensure the logged-in user is the recipient
         connection.reject()
     return redirect('connections')
+
+
+class ConnectionView(generics.ListAPIView):
+    serializer_class = ConnectionSendinSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+    
+        # Fetch connections where the user is either 'from_user' or 'to_user' with status 'accepted'
+        connections1 = Connection.objects.filter(to_user=user, status='accepted')
+        connections2 = Connection.objects.filter(from_user=user, status='accepted')
+
+        # Combine both querysets using union (| operator)
+        connections = connections1 | connections2
+        print(conn.id for conn in connections1)
+        return connections
+
+    def list(self, request, *args, **kwargs):
+        # Get the queryset for connections
+        queryset = self.get_queryset()
+
+        # Serialize the connections
+        connection_serializer = self.get_serializer(queryset, many=True)
+
+        # Return the response with the connection data and profiles of both users in each connection
+        return Response(connection_serializer.data, status=200)
+
+
+

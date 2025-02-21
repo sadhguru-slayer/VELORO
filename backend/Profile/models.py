@@ -137,7 +137,6 @@ class ClientProfile(models.Model):
         avg_rating = avg_rating/reviews.count()
         self.average_rating = avg_rating
         self.save()
-
 # Extending User model to create a freelancer profile
 class FreelancerProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="freelancer_profile")

@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .DashBoardViews import EventViewSet,RecentActivityView,PostedProjects,DashBoard_Overview,ActivityListView,SpecifiedActivityListView,SpendingDistributionByProject,CollaborationView
 from core.views import *
 from .DashBoardViews import SpendingDataView
-from .profileViews import ClientViews,update_profile,ClientReviewsandRatings,post_reply
+from .profileViews import ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView
 # from .profileViews import ClientViews,ClientProfileUpdateView,update_profile
 
 router = DefaultRouter()
@@ -33,5 +33,6 @@ urlpatterns = [
      path('get_reviews/', ClientReviewsandRatings.as_view(), name='get_reviews'),
      path('post_reply/',post_reply , name='post_reply'),
      path('get_collaborations/',CollaborationView.as_view() , name='get_collaborations'),
+     path('get_connections/',ConnectionView.as_view() , name='get_connections'),
 
 ]

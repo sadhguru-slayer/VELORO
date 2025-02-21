@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilingPage from './pages/ProfilingPage';
 import { verifyToken, refreshToken } from './utils/auth';
 import CCollaboration from './pages/client/CCollaboration';
+import CConnections from './pages/client/CConnections';
 import CDashboard from './pages/client/CDashboard';
 import ProjectPost from './pages/client/ProjectPost';
 import ViewBids from './pages/client/ViewBids';
@@ -61,6 +62,8 @@ const App = () => {
         {/* Client Routes */}
         <Route path="/client">  
         <Route path="homepage" element={<PrivateRoute element={CHomepage} />} />
+        <Route path="connections" element={<PrivateRoute element={CConnections} />} />
+
         <Route path="notifications" element={<PrivateRoute element={CNotifications} />} />
         
         <Route path="profile" element={<PrivateRoute element={CProfile} />} />

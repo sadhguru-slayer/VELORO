@@ -19,7 +19,6 @@ const UpcomingEvents = () => {
   const [newEvent, setNewEvent] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  // Open/Close Modal Handlers
   const showBaseModal = () => setIsBaseModalOpen(true);
   const handleBaseCancel = () => setIsBaseModalOpen(false);
 
@@ -38,45 +37,39 @@ const UpcomingEvents = () => {
   const getAuthHeaders = () => {
     const accessToken = Cookies.get('accessToken');
     return {
-      Authorization: `Bearer ${accessToken}`, // Return the header object directly
+      Authorization: `Bearer ${accessToken}`,
     };
   };
 
   const handleDeleteEvent = async () => {
     if (selectedEvent) {
       try {
-        // Prepare event data
-        const deleteEventData = {
-          id: selectedEvent.id, // Pass the event ID
-        };
+        const deleteEventData = { id: selectedEvent.id };
         await axios.delete(
           `http://127.0.0.1:8000/api/client/events/delete_event/`,
-          { 
+          {
             headers: getAuthHeaders(),
-            data: deleteEventData, // Pass the ID in the request body (using `data` for DELETE)
+            data: deleteEventData,
           }
         );
         setEvents(events.filter((event) => event.id !== selectedEvent.id));
         message.success('Event deleted successfully!');
         fetchEvents();
-        handleBaseCancel(); // Assuming this cancels a modal or closes a UI element
+        handleBaseCancel();
       } catch (error) {
         message.error('Failed to delete event. Please try again later.');
         console.error(error);
       }
     }
   };
-  
-  
 
-  // Handle Date Click
   const handleDateClick = (e) => {
     if (selectedDate) {
       selectedDate.style.backgroundColor = 'unset';
     }
     e.dayEl.style.backgroundColor = 'red';
     setSelectedDate(e.dayEl);
-    setSelectedEvent(null); // Reset selected event
+    setSelectedEvent(null);
     showBaseModal();
   };
 
@@ -85,27 +78,21 @@ const UpcomingEvents = () => {
       const response = await axios.get('http://127.0.0.1:8000/api/client/events/', {
         headers: getAuthHeaders(),
       });
-      setEvents(response.data); // Set events to state
+      setEvents(response.data);
     } catch (error) {
       console.error('Error fetching events:', error);
     }
   };
 
-  // Fetch events when component mounts
   useEffect(() => {
     fetchEvents();
   }, []);
 
-  // Create Event
   const handleCreateEvent = async () => {
     if (newEvent.trim()) {
       setEvents([...events, { title: newEvent, start: selectedDate.dataset.date }]);
       try {
-        const newEventData = {
-          title: newEvent,
-          start: selectedDate.dataset.date,
-        };
-
+        const newEventData = { title: newEvent, start: selectedDate.dataset.date };
         await axios.post(
           'http://127.0.0.1:8000/api/client/events/create_event/',
           newEventData,
@@ -113,7 +100,7 @@ const UpcomingEvents = () => {
         );
         message.success('Event created successfully!');
         setNewEvent('');
-        fetchEvents(); // Refresh the event list
+        fetchEvents();
         handleCreateCancel();
       } catch (error) {
         message.error('Error creating event');
@@ -123,32 +110,26 @@ const UpcomingEvents = () => {
     }
   };
 
-  // Update Event
   const handleUpdateEvent = async () => {
     if (newEvent.trim()) {
-      const updatedEventData = {
-        id: selectedEvent.id,  // Include the event ID for the update
-        title: newEvent,       // New event title
-      };
-  
+      const updatedEventData = { id: selectedEvent.id, title: newEvent };
+
       try {
         await axios.put(
-          `http://127.0.0.1:8000/api/client/events/update_event/`, // Use PUT with the event ID in the URL
+          `http://127.0.0.1:8000/api/client/events/update_event/`,
           updatedEventData,
-          { headers: getAuthHeaders() } // Fix the header typo, should be "headers"
+          { headers: getAuthHeaders() }
         );
-  
-        // Update event in local state
+
         setEvents(
           events.map((event) =>
             event.id === selectedEvent.id ? { ...event, title: newEvent } : event
           )
         );
-        
         message.success('Event updated successfully!');
         setNewEvent('');
-        fetchEvents(); // Refresh the event list
-        handleUpdateCancel(); // Assuming this cancels the update form/modal
+        fetchEvents();
+        handleUpdateCancel();
       } catch (error) {
         message.error('Failed to update event. Please try again later.');
         console.error(error);
@@ -157,52 +138,50 @@ const UpcomingEvents = () => {
       message.error('Please enter an event title!');
     }
   };
-  
 
   return (
     <div className="mt-6 bg-white p-4 rounded shadow">
       <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
-      
-<FullCalendar
-  plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
-  initialView="dayGridMonth"
-  events={events} // Pass events here
-  height="600px"
-  headerToolbar={{
-    start: 'prev,next today',
-    center: 'title',
-    end: 'dayGridMonth,timeGridWeek,timeGridDay',
-  }}
-  eventClick={(info) => {
-    setSelectedEvent(info.event);
-    showBaseModal();
-  }}
-  dateClick={handleDateClick}
-  eventContent={(eventInfo) => {
-    // You can use `eventInfo.event` to get the event details
-    const { event } = eventInfo;
-    return (
-      <div style={{ padding: '5px', backgroundColor: event.extendedProps.color }}>
-        <strong>{event.title}</strong>
-        {/* You can add more details here */}
-      </div>
-    );
-  }}
-  eventColor="#008080" // Customize event color
-  buttonText={{
-    today: 'Today',
-    month: 'Month',
-    week: 'Week',
-    day: 'Day',
-  }}
-  customButtons={{
-    myCustomButton: {
-      text: 'Custom',
-      click: () => alert('Custom Button Clicked!'),
-    },
-  }}
-/>
 
+      <FullCalendar
+        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
+        initialView="dayGridMonth"
+        events={events}
+        height="auto" // Allow calendar height to adjust based on viewport
+        headerToolbar={{
+          start: 'prev,next today',
+          center: 'title',
+          end: 'dayGridMonth,timeGridWeek,timeGridDay',
+        }}
+        eventClick={(info) => {
+          setSelectedEvent(info.event);
+          showBaseModal();
+        }}
+        dateClick={handleDateClick}
+        eventContent={(eventInfo) => {
+          const { event } = eventInfo;
+          return (
+            <div style={{ padding: '5px', backgroundColor: event.extendedProps.color }}>
+              <strong>{event.title}</strong>
+            </div>
+          );
+        }}
+        eventColor="#008080"
+        buttonText={{
+          today: 'Today',
+          month: 'Month',
+          week: 'Week',
+          day: 'Day',
+        }}
+        customButtons={{
+          myCustomButton: {
+            text: 'Custom',
+            click: () => alert('Custom Button Clicked!'),
+          },
+        }}
+        // Responsiveness
+        windowResize={true} // Automatically adjust when the window is resized
+      />
 
       {/* Base Modal */}
       <Modal
@@ -210,7 +189,8 @@ const UpcomingEvents = () => {
         open={isBaseModalOpen}
         onCancel={handleBaseCancel}
         footer={null}
-        width={300}
+        width="100%" // Make it full width on small screens
+        style={{ maxWidth: '300px' }} // Set maxWidth for larger screens
       >
         <div className="content w-full h-full p-2 flex flex-col gap-2">
           <Button
@@ -248,6 +228,8 @@ const UpcomingEvents = () => {
         open={isCreateEventModalOpen}
         onCancel={handleCreateCancel}
         onOk={handleCreateEvent}
+        width="100%" // Make it responsive
+        style={{ maxWidth: '400px' }}
       >
         <Input
           placeholder="Enter event title"
@@ -262,6 +244,8 @@ const UpcomingEvents = () => {
         open={isUpdateEventModalOpen}
         onCancel={handleUpdateCancel}
         onOk={handleUpdateEvent}
+        width="100%" // Make it responsive
+        style={{ maxWidth: '400px' }}
       >
         <Input
           placeholder="Enter new event title"

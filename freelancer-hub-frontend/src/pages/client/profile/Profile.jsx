@@ -61,7 +61,7 @@ const Profile = () => {
                     
                     <div className="mt-2 text-gray-500">
                       <p>📍 {clientInfo.location}</p>
-                      <p>🔗 {connectionCount} Connections</p>
+                      <p onClick={()=>navigate('/client/connections/')}>🔗 {connectionCount} Connections</p>
                     </div>
                     <div className="mt-4 flex space-x-4">
                       <button onClick={()=>navigate('/client/profile/',{state:{profileComponent:'edit_profile'}})} className="bg-teal-600 text-white py-2 px-6 rounded-md hover:bg-teal-500 transition duration-300">

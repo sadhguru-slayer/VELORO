@@ -22,7 +22,7 @@ class FreelancerProfileAdmin(ModelAdmin):
             'fields': ('portfolio_url', 'portfolio_description')
         }),
         ('Freelancer Records', {
-            'fields': ('honesty_score', 'payment_history', 'reviews')
+            'fields': ('honesty_score', 'payment_history')
         }),
         
     )

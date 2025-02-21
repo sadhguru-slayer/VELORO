@@ -13,6 +13,15 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
+class ConnectionSerializer(serializers.ModelSerializer):
+    from_user = serializers.StringRelatedField()
+
+    to_user = serializers.StringRelatedField()
+
+    class Meta:
+        model = Connection
+        fields = ['from_user', 'to_user', 'status']
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)

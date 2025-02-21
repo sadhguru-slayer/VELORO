@@ -107,14 +107,15 @@ For platform management.
 
 
 
-20-02-2025:
--Created Collaboration Feature where freelacners and Clients can Collaborate.
--Has a Team Leader , basically the person who generated the collaboration link
+20-02-2025:CLIENT
 -Recreated Core(Made me do all again, but with better logic)
 -Created the feature link wise sharing of collaboration for both Client and Freelancer
 -Optimized Private Router
+-Git Pushed
 
-21-02-2025:
+21-02-2025:CLIENT
+-Create Search functions using Qs
+-Create connection features(accept, reject, pending ) and show connections of a user
 -Worry about Notifications (sending, navigating on click)
 -Add feature ,Hire Freelancer
 
