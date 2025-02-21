@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .DashBoardViews import EventViewSet,RecentActivityView,PostedProjects,DashBoard_Overview,ActivityListView,SpecifiedActivityListView,SpendingDistributionByProject,CollaborationView
 from core.views import *
 from .DashBoardViews import SpendingDataView
-from .profileViews import ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView
+from .profileViews import ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView,ConnectionManageViewSet,ConnectionRequestView
 # from .profileViews import ClientViews,ClientProfileUpdateView,update_profile
 
 router = DefaultRouter()
@@ -16,6 +16,7 @@ router = DefaultRouter()
 # router.register(r'recentactivity', views.RecentActivityViewSet, basename='recentactivity')
 # router.register(r'spendingOverview', views.SpendingOverviewViewSet, basename='spendingOverview')
 router.register(r'events', EventViewSet, basename='events')
+router.register(r'connections', ConnectionManageViewSet, basename='connection')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -33,6 +34,9 @@ urlpatterns = [
      path('get_reviews/', ClientReviewsandRatings.as_view(), name='get_reviews'),
      path('post_reply/',post_reply , name='post_reply'),
      path('get_collaborations/',CollaborationView.as_view() , name='get_collaborations'),
-     path('get_connections/',ConnectionView.as_view() , name='get_connections'),
 
+    #  Connections
+     path('get_connections/',ConnectionView.as_view() , name='get_connections'),
+     path('get_connection_requests/',ConnectionRequestView.as_view() , name='get_connection_requests'),
+   
 ]

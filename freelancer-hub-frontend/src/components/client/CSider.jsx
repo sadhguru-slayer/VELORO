@@ -5,7 +5,7 @@ import { MdSpaceDashboard } from "react-icons/md";
 import axios from "axios";
 import Cookies from 'js-cookie';
 
-const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,activeProfileComponent }) => {
+const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,activeProfileComponent,userId, role }) => {
   
   const [isCollapsed, setIsCollapsed] = useState(collapsed); // State for toggling sidebar
   const [isTextVisible, setIsTextVisible] = useState(!collapsed); // State to control text visibility
@@ -71,7 +71,7 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
       className={`h-screen bg-[#2C3E50] text-gray-100 flex flex-col items-center transition-all duration-500 overflow-x-hidden ${isCollapsed ? 'w-14 sm:w-16 md:w-16 lg:w-22' : 'w-44 sm:w-52 md:w-52 lg:w-64'} absolute z-20`}
     >
       {/* Toggle Button */}
-      <div className="flex w-[80%] border border-gray-600 rounded-md mt-6 flex-col justify-center items-center p-3">
+      <div className="flex w-[80%] border border-gray-600 rounded-lg mt-6 flex-col justify-center items-center p-3">
         <button
           className="p-3 focus:outline-none hover:bg-teal-600 transition-all rounded-full"
           onClick={handleSidebarToggle}
@@ -90,7 +90,7 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
         {/* Dashboard Dropdown */}
         <div>
           <div
-            className={`flex items-center justify-center gap-4 p-3 rounded-md transition-all border border-gray-600 ${location.pathname.includes("/client/dashboard") ? "bg-teal-600" : "hover:bg-teal-500"}`}
+            className={`flex items-center justify-center gap-4 p-3 rounded-lg transition-all border border-gray-600 ${location.pathname.includes("/client/dashboard") ? "bg-teal-600" : "hover:bg-teal-500"}`}
             onClick={() => {
               if (!location.pathname.includes("/client/dashboard")) {
                 navigate("/client/dashboard");
@@ -121,7 +121,7 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
                 <div
                   key={link.abcd}
                   onClick={() => handleMenuClick(link.abcd)}
-                  className={`text-md p-2 text-gray-100 border-b border-b-gray-600 hover:rounded-md hover:bg-teal-500 cursor-pointer ${abcds === link.abcd ? "bg-teal-600 text-white rounded-md" : ""}`}
+                  className={`text-md p-2 text-gray-100 border-b border-b-gray-600 hover:rounded-lg hover:bg-teal-500 cursor-pointer ${abcds === link.abcd ? "bg-teal-600 text-white rounded-lg" : ""}`}
                 >
                   {link.text}
                 </div>
@@ -133,9 +133,9 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
         {/* Profile Dropdown */}
         <div>
           <div
-            className={`flex items-center justify-center gap-4 p-3 rounded-md transition-all border border-gray-600 hover:bg-teal-500 ${location.pathname.includes('client/profile')?"bg-teal-500":""}`}
+            className={`flex items-center justify-center gap-4 p-3 rounded-lg transition-all border border-gray-600 hover:bg-teal-500 ${location.pathname.includes('client/profile')?"bg-teal-500":""}`}
             onClick={()=>{if (!location.pathname.includes('/client/profile')) {
-              navigate('/client/profile');
+              navigate(`/client/profile/${userId}`);
             }}}
           >
             <div className="text-m text-gray-100">
@@ -164,7 +164,7 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
               <div
               key={index}
               onClick={()=>handleProfileMenu(profileLink.component)}
-                className={`text-md p-2 text-gray-100 border-b border-b-gray-600 rounded-md hover:bg-teal-500 cursor-pointer 
+                className={`text-md p-2 text-gray-100 border-b border-b-gray-600 rounded-lg hover:bg-teal-500 cursor-pointer 
                   ${profileLink.component === activeProfileComponent?"bg-teal-400":""}
                   `}
               >
@@ -180,7 +180,7 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
           <div
             key={link.abcd}
             onClick={() => navigate(link.to)}
-            className={`flex items-center justify-center gap-4 p-3 rounded-md transition-all border border-gray-600 ${location.pathname.includes(link.to) ? "bg-teal-600" : "hover:bg-teal-500"}`}
+            className={`flex items-center justify-center gap-4 p-3 rounded-lg transition-all border border-gray-600 ${location.pathname.includes(link.to) ? "bg-teal-600" : "hover:bg-teal-500"}`}
           >
             <div className={`text-m ${location.pathname.includes(link.to) ? "text-white" : "text-gray-200"}`}>
               {link.icon}
@@ -196,7 +196,7 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="flex items-center justify-center gap-4 p-3 rounded-md hover:border-red-600 transition-all w-full text-left border border-gray-600"
+          className="flex items-center justify-center gap-4 p-3 rounded-lg hover:border-red-600 transition-all w-full text-left border border-gray-600"
         >
           <div className="text-m text-gray-100">
             <FaSignOutAlt />

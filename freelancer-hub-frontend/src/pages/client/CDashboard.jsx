@@ -10,7 +10,7 @@ import RecentActivity from './dashboard/RecentActivity';
 import Spendings from './dashboard/Spendings';
 import PostedProjects from './dashboard/PostedProjects';
 
-const CDashboard = () => {
+const CDashboard = ({userId, role}) => {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -49,7 +49,7 @@ const CDashboard = () => {
   const handleProfileMenu = (profileComponent) => {
     
     if (location.pathname !== '/client/profile') {
-      navigate('/client/profile', { state: { profileComponent } });
+      navigate(`/client/profile/${userId}`, { state: { profileComponent } });
     }
     else {
       setActiveProfileComponent(profileComponent);
@@ -66,7 +66,8 @@ const CDashboard = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <CSider dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} abcds={activeComponent} handleProfileMenu={handleProfileMenu} activeProfileComponent={activeProfileComponent}/>
+      <CSider  userId={userId} 
+      role={role} dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} abcds={activeComponent} handleProfileMenu={handleProfileMenu} activeProfileComponent={activeProfileComponent}/>
       
       {/* Main Content Area */}
       <div className=" bg-gray-100 flex-1 flex flex-col overflow-x-hidden 

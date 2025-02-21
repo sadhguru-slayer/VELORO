@@ -59,7 +59,7 @@ const projectData = {
   ],
 };
 
-const CHomepage = () => {
+const CHomepage = ({userId, role}) => {
   const navigate = useNavigate();
   // Mock data for skill-based projects
   const location = useLocation();

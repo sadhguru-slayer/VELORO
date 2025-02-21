@@ -188,3 +188,11 @@ class ConnectionSendinSerializer(serializers.ModelSerializer):
             "created_at": representation.get('created_at'),
             "updated_at": representation.get('updated_at')
         }
+    
+
+class ConnectionRequestSerializer(serializers.ModelSerializer):
+    from_user_username = serializers.CharField(source='from_user.username', read_only=True)
+
+    class Meta:
+        model = Connection
+        fields = ['from_user','from_user_username','id', 'status', 'created_at', 'updated_at']

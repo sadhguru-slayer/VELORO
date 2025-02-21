@@ -5,7 +5,7 @@ import FHeader from '../../components/freelancer/FHeader';
 import FSider from '../../components/freelancer/FSider';
 import CSider from '../../components/client/CSider';
 
-const PostedProjectForBidsPage = () => {
+const PostedProjectForBidsPage = ({userId, role}) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState(null);
@@ -34,7 +34,7 @@ const PostedProjectForBidsPage = () => {
   const handleProfileMenu = (profileComponent) => {
 
     if (location.pathname !== '/client/profile') {
-      navigate('/client/profile', { state: { profileComponent } });
+      navigate(`/client/profile/${userId}`, { state: { profileComponent } });
     }
   };
 
@@ -138,7 +138,8 @@ const PostedProjectForBidsPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <CSider dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} abcds={activeComponent} handleProfileMenu={handleProfileMenu} activeProfileComponent={activeProfileComponent}/>
+      <CSider userId={userId} 
+      role={role} dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} abcds={activeComponent} handleProfileMenu={handleProfileMenu} activeProfileComponent={activeProfileComponent}/>
 
       <div className=" bg-gray-100 flex-1 flex flex-col overflow-x-hidden 
   ml-14 sm:ml-16 md:ml-16 lg:ml-22">  <FHeader />

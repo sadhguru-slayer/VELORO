@@ -75,7 +75,7 @@ const dateOptions = {
   },
 };
 
-const ProjectPost = () => {
+const ProjectPost = ({userId, role}) => {
   const [show, setShow] = useState(false);
  
   const [isCollaborative, setIsCollaborative] = useState(false);
@@ -361,6 +361,8 @@ const ProjectPost = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <CSider
+      userId={userId} 
+      role={role}
         dropdown={true}
         collapsed={true}
         handleMenuClick={handleMenuClick}

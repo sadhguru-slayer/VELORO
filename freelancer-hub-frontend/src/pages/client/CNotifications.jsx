@@ -1,69 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CHeader from '../../components/client/CHeader';
 import CSider from '../../components/client/CSider';
-import { Link } from 'react-router-dom';
+import axios from 'axios'; // Import axios to make API requests
+import Cookies from 'js-cookie';
 
 const CNotifications = () => {
-  // Sample notifications data for the client
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'message',
-      title: 'New Message from Freelancer A',
-      description: 'You have a new message regarding your project.',
-      timestamp: '1 hour ago',
-      read: false,
-    },
-    {
-      id: 2,
-      type: 'payment',
-      title: 'Payment Confirmation',
-      description: 'Payment of $1000 has been successfully processed.',
-      timestamp: '2 hours ago',
-      read: true,
-    },
-    {
-      id: 3,
-      type: 'project',
-      title: 'Project Proposal Approved',
-      description: 'Your project proposal for "E-commerce Site" has been approved.',
-      timestamp: '1 day ago',
-      read: false,
-    },
-    {
-      id: 4,
-      type: 'connection',
-      title: 'New Connection Request',
-      description: 'You have received a connection request from Freelancer B.',
-      timestamp: '3 days ago',
-      read: true,
-    },
-    {
-      id: 5,
-      type: 'system',
-      title: 'Scheduled Maintenance',
-      description: 'System maintenance is scheduled for tomorrow, 10 PM to 12 AM.',
-      timestamp: '5 days ago',
-      read: false,
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [filter, setFilter] = useState('all');
+
+  // Fetch notifications from the backend
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/notifications/', {
+          headers: {
+            Authorization: `Bearer ${Cookies.get('accessToken')}`
+          }
+        });
+        console.log(response.data);
+        setNotifications(response.data);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   // Mark a notification as read
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const markAsRead = async (id) => {
+    try {
+      await axios.patch(
+        `http://127.0.0.1:8000/api/notifications/${id}/mark-as-read/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get('accessToken')}`
+          }
+        }
+      );
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === id ? { ...notification, is_read: true } : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   // Delete a notification
-  const deleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+  const deleteNotification = async (id) => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/notifications/${id}/`, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('accessToken')}`
+        }
+      });
+      setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
   };
 
   // Filter notifications by type
-  const [filter, setFilter] = useState('all');
   const filteredNotifications = notifications.filter((notification) => {
     if (filter === 'all') return true;
     return notification.type === filter;
@@ -83,68 +83,50 @@ const CNotifications = () => {
         <div className="flex-1 overflow-auto bg-gray-200 p-4">
           <div className="bg-white p-6 rounded-lg shadow-md">
             {/* Notifications Header */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col justify-between items-center mb-6 overflow-hidden gap-2">
               <h1 className="text-2xl font-bold text-teal-600">Notifications</h1>
-              <div className="flex space-x-4">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setFilter('all')}
-                  className={`px-4 py-2 rounded-lg ${
-                    filter === 'all'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-full ${filter === 'all' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   All
                 </button>
                 <button
-                  onClick={() => setFilter('message')}
-                  className={`px-4 py-2 rounded-lg ${
-                    filter === 'message'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  onClick={() => setFilter('Messages')}
+                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Messages' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   Messages
                 </button>
                 <button
-                  onClick={() => setFilter('payment')}
-                  className={`px-4 py-2 rounded-lg ${
-                    filter === 'payment'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  onClick={() => setFilter('Payments')}
+                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Payments' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   Payments
                 </button>
                 <button
-                  onClick={() => setFilter('project')}
-                  className={`px-4 py-2 rounded-lg ${
-                    filter === 'project'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  onClick={() => setFilter('Projects')}
+                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Projects' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   Projects
                 </button>
                 <button
-                  onClick={() => setFilter('connection')}
-                  className={`px-4 py-2 rounded-lg ${
-                    filter === 'connection'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  onClick={() => setFilter('Connections')}
+                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Connections' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   Connections
                 </button>
                 <button
-                  onClick={() => setFilter('system')}
-                  className={`px-4 py-2 rounded-lg ${
-                    filter === 'system'
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  onClick={() => setFilter('System')}
+                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'System' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   System
+                </button>
+                <button
+                  onClick={() => setFilter('Collaborations')}
+                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Collaborations' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Collaborations
                 </button>
               </div>
             </div>
@@ -152,20 +134,17 @@ const CNotifications = () => {
             {/* Notifications List */}
             <div className="space-y-4">
               {filteredNotifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 rounded-lg ${
-                    notification.read ? 'bg-gray-50' : 'bg-teal-50'
-                  }`}
-                >
+                <div key={notification.id} className={`p-4 rounded-lg ${notification.is_read ? 'bg-gray-50' : 'bg-teal-50'}`}>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-teal-600">{notification.title}</h3>
-                      <p className="text-sm text-gray-600">{notification.description}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
+                      <p className="text-sm text-gray-600">{notification.notification_text}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(notification.created_at).toLocaleString()}
+                      </p>
                     </div>
                     <div className="flex space-x-2">
-                      {!notification.read && (
+                      {!notification.is_read && (
                         <button
                           onClick={() => markAsRead(notification.id)}
                           className="text-sm text-teal-600 hover:text-teal-700"

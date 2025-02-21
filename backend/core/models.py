@@ -126,6 +126,7 @@ class Project(models.Model):
     payment_status = models.CharField(max_length=15, choices=PAYMENT_STATUS_CHOICES, default='not_initiated')
     total_spent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     skills_required = models.ManyToManyField(Skill, related_name='projects', blank=True)
+    assigned_to = models.ManyToManyField(User,related_name='projects_assigned',blank=True)
 
     class Meta:
         indexes = [
@@ -275,4 +276,28 @@ class UserFeedback(models.Model):
         ordering = ['-created_at']  # Order feedback by most recent
     
 
+
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('Messages', 'Messages'),
+        ('Payments', 'Payments'),
+        ('Projects', 'Projects'),
+        ('Connections', 'Connections'),
+        ('System', 'System'),
+        ('Collaborations', 'Collaborations'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    related_model_id = models.PositiveIntegerField()
+    notification_text = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username}: {self.notification_text}"
+
+    def mark_as_read(self):
+        self.is_read = True
+        self.save()
 

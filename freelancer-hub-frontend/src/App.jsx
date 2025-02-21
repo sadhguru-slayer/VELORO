@@ -8,7 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilingPage from './pages/ProfilingPage';
 import { verifyToken, refreshToken } from './utils/auth';
 import CCollaboration from './pages/client/CCollaboration';
-import CConnections from './pages/client/CConnections';
+import CConnectionRequests from './pages/client/CConnectionRequests';
 import CDashboard from './pages/client/CDashboard';
 import ProjectPost from './pages/client/ProjectPost';
 import ViewBids from './pages/client/ViewBids';
@@ -61,12 +61,12 @@ const App = () => {
 
         {/* Client Routes */}
         <Route path="/client">  
+        <Route path="profile/:id" element={<PrivateRoute element={CProfile} />} />
         <Route path="homepage" element={<PrivateRoute element={CHomepage} />} />
-        <Route path="connections" element={<PrivateRoute element={CConnections} />} />
+        <Route path="connections" element={<PrivateRoute element={CConnectionRequests} />} />
 
         <Route path="notifications" element={<PrivateRoute element={CNotifications} />} />
         
-        <Route path="profile" element={<PrivateRoute element={CProfile} />} />
         <Route path="dashboard" element={<PrivateRoute element={CDashboard} />} />
         <Route path="dashboard/projects/:id" element={<PrivateRoute element={PostedProjectForBidsPage} />} />
         <Route path="collaboration" element={<PrivateRoute element={CCollaboration} />} />
@@ -78,7 +78,7 @@ const App = () => {
         
         {/* Freelancer Routes */}
         <Route path="/freelancer">
-        <Route path="profile" element={<PrivateRoute element={FProfile} />} />
+        <Route path="profile/:id" element={<PrivateRoute element={FProfile} />} />
         <Route path="notifications" element={<PrivateRoute element={FNotifications} />} />
   <Route path="dashboard" element={<PrivateRoute element={FDashboard} />} />
   <Route path="dashboard/projects/:id" element={<PrivateRoute element={ProjectDetailPage} />} />

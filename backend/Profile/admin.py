@@ -45,7 +45,7 @@ class ClientProfileAdmin(ModelAdmin):
             'fields': ('successful_projects', 'all_projects_posted', 'average_rating')
         }),
         ('Client Records', {
-            'fields': ('honesty_score', 'payment_history','client_feedbacks')
+            'fields': ('honesty_score', 'payment_history')
         }),
     )
 

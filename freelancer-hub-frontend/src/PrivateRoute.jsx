@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie'; // Import js-cookie
 import { verifyToken, refreshToken as refreshTokenFunction } from './utils/auth'; // Utility functions for token handling
 import LoadingComponent from './components/LoadingComponent';
+import FProfile from './pages/freelancer/FProfile';
+import CProfile from './pages/client/CProfile';
 
 const PrivateRoute = ({ element: Component, ...rest }) => {
   const location = useLocation();
   const navigate = useNavigate();
-
+  const { id: routeId } = useParams(); // Extract the id from the route params
   const [authState, setAuthState] = useState({
     isAuthenticated: false,
     isProfiled: false,
     role: '',
-    loading: true,
+    userId: null,
+    loading: true, // Initially true while we are verifying the authentication
   });
+  const [isEditable, setIsEditable] = useState(false); // Moved here to ensure it's not re-rendered
 
   // Function to check if a token is expiring soon (within 60 seconds)
   const isTokenExpiringSoon = (token) => {
@@ -50,7 +54,7 @@ const PrivateRoute = ({ element: Component, ...rest }) => {
     const refresh = Cookies.get('refreshToken'); // Retrieve refresh token from cookies
 
     if (!token) {
-      navigate('/login');
+      setAuthState((prevState) => ({ ...prevState, loading: false }));
       return;
     }
 
@@ -82,21 +86,13 @@ const PrivateRoute = ({ element: Component, ...rest }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const { is_profiled, role } = response.data.user;
-      // Handle route redirects based on role
-      if (role === 'client' && location.pathname.includes('freelancer')) {
-        navigate('/');
-        return;
-      }
-      if (role === 'freelancer' && location.pathname.includes('client')) {
-        navigate('/');
-        return;
-      }
+      const { is_profiled, role, id } = response.data.user;
 
       setAuthState({
         isAuthenticated: true,
         isProfiled: is_profiled,
         role,
+        userId: id,  // Save user ID here
         loading: false,
       });
 
@@ -104,6 +100,7 @@ const PrivateRoute = ({ element: Component, ...rest }) => {
       console.error('Authentication error:', error);
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
+      setAuthState((prevState) => ({ ...prevState, loading: false }));
       navigate('/login');
     }
   };
@@ -125,22 +122,53 @@ const PrivateRoute = ({ element: Component, ...rest }) => {
       }
     }, 30000); // Check every 30 seconds
     
-
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
   }, [navigate, location.pathname]);
 
-  const { isAuthenticated, role, loading } = authState;
+  const { isAuthenticated, role, loading, userId } = authState;
+
+  // Update isEditable state when userId and routeId match
+  useEffect(() => {
+    if (userId) {
+      setIsEditable(routeId === userId.toString()); // Check if the route's id matches the authenticated userId
+    }
+  }, [userId, routeId]);
 
   if (loading) {
+    // Show loading screen until authentication is completed
     return <LoadingComponent text="Please wait while we verify your session..." />;
   }
 
-  return isAuthenticated ? (
-    <Component {...rest} />
-  ) : (
-    <Navigate to="/login" />
-  );
+  if (!isAuthenticated) {
+    // Show profile for unauthenticated users
+    if (location.pathname.includes('/freelancer/profile/')) {
+      return <FProfile {...rest} userId={routeId} />;
+    }
+    if (location.pathname.includes('/client/profile/')) {
+      return <CProfile  {...rest} userId={routeId} />;
+    }
+
+    return <Navigate to="/login" />;
+  }
+
+  // Render the appropriate profile component based on the user's role and route
+  if (isAuthenticated) {
+    let Id = routeId === undefined ? userId : routeId;
+    if (role === 'client' && location.pathname.includes('/freelancer/profile/')) {
+      // If the user is a client and visiting the freelancer profile route, redirect to client profile
+      return <CProfile {...rest} userId={Id} role={role} editable={isEditable} />;
+    }
+    if (role === 'freelancer' && location.pathname.includes('/client/profile/')) {
+      // If the user is a freelancer and visiting the client profile route, redirect to freelancer profile
+      return <FProfile {...rest} userId={Id} role={role} editable={isEditable} />;
+    }
+
+    // Otherwise render the intended component (CProfile for client or FProfile for freelancer)
+    return <Component {...rest} userId={Id} role={role} editable={isEditable} />;
+  }
+
+  return <Navigate to="/login" />;
 };
 
 export default PrivateRoute;

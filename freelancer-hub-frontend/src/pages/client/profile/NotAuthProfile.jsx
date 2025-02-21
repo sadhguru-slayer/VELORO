@@ -6,7 +6,8 @@ import { Button, Pagination,Table } from "antd";
 import { FaEye } from 'react-icons/fa';
 
 
-const Profile = () => {
+const NotAuthProfile = ({userId, role,editable}) => {
+    console.log(userId)
     const navigate = useNavigate();
     const location = useLocation();
     const [clientInfo, setClientInfo] = useState({});
@@ -26,8 +27,11 @@ const Profile = () => {
     useEffect(() => {
       const fetchProfileDetails = async () => {
         const accessToken = Cookies.get('accessToken');
+
         try {
-          const response = await axios.get('http://127.0.0.1:8000/api/client/get_profile_data', {
+          const response = await axios.get('http://127.0.0.1:8000/api/client/get_profile_data',
+           
+            {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -41,6 +45,7 @@ const Profile = () => {
         } catch (error) {
           console.log(error);
         }
+
       };
       fetchProfileDetails();
     }, []);
@@ -64,7 +69,7 @@ const Profile = () => {
                       <p onClick={()=>navigate('/client/connections/')}>🔗 {connectionCount} Connections</p>
                     </div>
                     <div className="mt-4 flex space-x-4">
-                      <button onClick={()=>navigate('/client/profile/',{state:{profileComponent:'edit_profile'}})} className="bg-teal-600 text-white py-2 px-6 rounded-md hover:bg-teal-500 transition duration-300">
+                      <button onClick={()=>navigate(`/client/profile/${userId}`,{state:{profileComponent:'edit_profile'}})} className="bg-teal-600 text-white py-2 px-6 rounded-md hover:bg-teal-500 transition duration-300">
                         Edit Profile
                       </button>
                     </div>
@@ -181,4 +186,4 @@ const Profile = () => {
   )
 }
 
-export default Profile
+export default NotAuthProfile;

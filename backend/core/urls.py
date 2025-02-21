@@ -21,4 +21,15 @@ urlpatterns = [
 
     #Connections 
     path('search/', search_partial, name='search'),
+
+
+    # Notifications
+    path('notifications/', NotificationListView.as_view(), name='notification-list'),
+
+    # Endpoint to mark a specific notification as read
+    path('notifications/<int:notification_id>/mark-as-read/', MarkNotificationAsRead.as_view(), name='mark-notification-as-read'),
+
+    # Endpoint to delete a specific notification
+    path('notifications/<int:notification_id>/', DeleteNotification.as_view(), name='delete-notification'),
+     path('notifications/unmarked/', UnmarkedNotificationListView.as_view(), name='unmarked-notification-list'),
 ]

@@ -39,6 +39,7 @@ class IsprofiledDetails(APIView):
         role = got_user.role
         result = {
             "user":{
+             "id":got_user.id,   
             "is_profiled": is_profiled,
             "role": role
             }
@@ -373,7 +374,33 @@ def search_partial(request):
 
     # Paginate Users
     paginated_users = paginator.paginate_queryset(users, request)
-    serialized_users = UserSerializer(paginated_users, many=True)
+
+    # Manually serialize the users with a Python dict
+    serialized_users = []
+    for user in paginated_users:
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'role': user.role,
+            'profile_picture': None,  # Default value for profile_picture
+        }
+
+        # Add the profile_picture based on the role
+        if user.role == 'client':
+            try:
+                client_profile = ClientProfile.objects.get(user=user)
+                user_data['profile_picture'] = client_profile.profile_picture.url if client_profile.profile_picture else None
+            except ClientProfile.DoesNotExist:
+                user_data['profile_picture'] = None
+        elif user.role == 'freelancer':
+            try:
+                freelancer_profile = FreelancerProfile.objects.get(user=user)
+                user_data['profile_picture'] = freelancer_profile.profile_picture.url if freelancer_profile.profile_picture else None
+            except FreelancerProfile.DoesNotExist:
+                user_data['profile_picture'] = None
+
+        serialized_users.append(user_data)
+
 
     projects = Project.objects.filter(
     Q(title__icontains=query) | 
@@ -401,7 +428,7 @@ def search_partial(request):
             "count": users.count(),
             "next": paginator.get_next_link(),
             "previous": paginator.get_previous_link(),
-            "results": serialized_users.data
+            "results": serialized_users
         },
         "projects": {
             "count": projects.count(),
@@ -422,3 +449,52 @@ def search_partial(request):
 
     # Return the paginated response
     return Response(response_data)
+
+
+class NotificationListView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user)
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+
+
+# Mark a specific notification as read
+class MarkNotificationAsRead(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def patch(self, request, notification_id):
+        try:
+            notification = Notification.objects.get(id=notification_id, user=request.user)
+            notification.is_read = True
+            notification.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Notification.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+# Delete a specific notification
+class DeleteNotification(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def delete(self, request, notification_id):
+        try:
+            notification = Notification.objects.get(id=notification_id, user=request.user)
+            notification.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Notification.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class UnmarkedNotificationListView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self, request):
+        # Filter notifications by the current logged-in user and those that are unread
+        notifications = Notification.objects.filter(user=request.user, is_read=False)
+        
+        # Serialize the notifications
+        serializer = NotificationSerializer(notifications, many=True)
+        
+        # Return the serialized data as the response
+        return Response(serializer.data)

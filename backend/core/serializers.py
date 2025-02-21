@@ -59,6 +59,13 @@ class ProjectSerializer(serializers.ModelSerializer):
             'client', 'domain', 'is_collaborative', 'skills_required','status'
         ]
 
+    def update(self, instance, validated_data):
+        # Handling the 'skills_required' relationship explicitly
+        skills_data = validated_data.pop('skills_required', None)
+        if skills_data is not None:
+            instance.skills_required.set(skills_data)  # Assign skills directly
+        return super().update(instance, validated_data)
+
 
 class TaskSerializer(serializers.ModelSerializer):
     project = ProjectSerializer(read_only=True)
@@ -130,3 +137,10 @@ class SpendingDistributionByProjectSerializer(serializers.ModelSerializer):
             'payment_method', 'status', 'payment_date', 'currency', 'installment_period', 'discount_promo', 
             'notes', 'invoice_number', 'transaction_id'
         ]
+
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'type', 'related_model_id', 'notification_text', 'is_read', 'created_at']

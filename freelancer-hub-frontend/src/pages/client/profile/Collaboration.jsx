@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import Cookies from 'js-cookie';
-import { Button, Table, Pagination } from 'antd';
-import { FaEye } from 'react-icons/fa';
-import './Collaboration.css'
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { Button, Table, Pagination } from "antd";
+import { FaEye } from "react-icons/fa";
+import "./Collaboration.css";
 
 const Collaborations = () => {
   const navigate = useNavigate();
@@ -27,13 +27,16 @@ const Collaborations = () => {
   // Fetch collaboration data
   const fetchCollaborationData = async () => {
     setLoading(true);
-    const accessToken = Cookies.get('accessToken');
+    const accessToken = Cookies.get("accessToken");
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/client/get_collaborations', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await axios.get(
+        "http://127.0.0.1:8000/api/client/get_collaborations",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       const data = response.data;
       setCollaborations({
         ongoing: data.active_collaborations,
@@ -56,18 +59,18 @@ const Collaborations = () => {
   // Collaboration table columns
   const collaborationColumns = [
     {
-      title: 'Collaboration Title',
-      dataIndex: 'collaboration_name',
-      key: 'collaboration_name',
+      title: "Collaboration Title",
+      dataIndex: "collaboration_name",
+      key: "collaboration_name",
     },
     {
-      title: 'Status',
-      dataIndex: 'STATUS',
-      key: 'STATUS',
+      title: "Status",
+      dataIndex: "STATUS",
+      key: "STATUS",
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
+      key: "action",
       render: (text, collaboration) => (
         <Button
           onClick={() => navigate(`/collaboration/${collaboration.id}`)}
@@ -83,18 +86,18 @@ const Collaborations = () => {
   // Group overview (similar to WhatsApp groups)
   const groupColumns = [
     {
-      title: 'Group Name',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Group Name",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: 'Participants',
-      dataIndex: 'participants',
-      key: 'participants',
+      title: "Participants",
+      dataIndex: "participants",
+      key: "participants",
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
+      key: "action",
       render: (text, group) => (
         <Button
           onClick={() => navigate(`/group/${group.id}`)}
@@ -108,66 +111,76 @@ const Collaborations = () => {
   ];
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold text-teal-600 mb-4">Collaboration Overview</h2>
-      {collaborations.admin &&
-        <div className="bg-white p-6 rounded-md mb-6 shadow-lg border-l-4 border-teal-500">
-  <h3 className="text-xl font-semibold text-teal-600 mb-4">Your Collaborations (Admin)</h3>
-  <Table
-    loading={loading}
-    dataSource={collaborations.admin}
-    columns={collaborationColumns}
-    pagination={false}
-    rowKey="id"
-    className="custom-table"  // Apply custom class for the table
-  />
-</div>
+    <div className="p-6 max-w-[80rem] w-full bg-white min-h-fit rounded-lg">
+      <h2 className="text-2xl font-semibold text-teal-600 mb-4">
+        Collaboration Overview
+      </h2>
+      {collaborations.admin && (
+        <div className="bg-white p-6 rounded-lg mb-6 shadow-lg border-l-4 border-teal-500">
+          <h3 className="text-xl font-semibold text-teal-600 mb-4">
+            Your Collaborations (Admin)
+          </h3>
+          <Table
+            loading={loading}
+            dataSource={collaborations.admin}
+            columns={collaborationColumns}
+            pagination={false}
+            rowKey="id"
+            className="custom-table" // Apply custom class for the table
+          />
+        </div>
+      )}
+      <div className="bg-white p-6 rounded-lg lg:ml-22dow-sm mb-6 flex flex-col gap-3">
+        {/* Your Collaborations (Admin) */}
 
-             }
-      <div className="bg-white p-6 rounded-md lg:ml-22dow-sm mb-6">
-      {/* Your Collaborations (Admin) */}
-      
-      {/* Ongoing Collaborations */}
-      <div className="bg-white p-6 rounded-md">
-        <h3 className="text-xl font-semibold text-teal-600 mb-4">Ongoing Collaborations</h3>
-        <Table
-          loading={loading}
-          dataSource={collaborations.ongoing}
-          columns={collaborationColumns}
-          pagination={false}
-          rowKey="id"
-        />
-      </div>
+        {/* Ongoing Collaborations */}
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-xl font-semibold text-teal-600 mb-4">
+            Ongoing Collaborations
+          </h3>
+          <Table
+            loading={loading}
+            dataSource={collaborations.ongoing}
+            columns={collaborationColumns}
+            pagination={false}
+            rowKey="id"
+          />
+        </div>
 
-      {/* Inactive Collaborations */}
-      <div className="bg-white p-6 rounded-md">
-        <h3 className="text-xl font-semibold text-teal-600 mb-4">Inactive Collaborations</h3>
-        <Table
-          loading={loading}
-          dataSource={collaborations.inactive}
-          columns={collaborationColumns}
-          pagination={false}
-          rowKey="id"
-        />
-      </div>
+        {/* Inactive Collaborations */}
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-xl font-semibold text-teal-600 mb-4">
+            Inactive Collaborations
+          </h3>
+          <Table
+            loading={loading}
+            dataSource={collaborations.inactive}
+            columns={collaborationColumns}
+            pagination={false}
+            rowKey="id"
+          />
+        </div>
 
-      {/* Previous Collaborations */}
-      <div className="bg-white p-6 rounded-md">
-        <h3 className="text-xl font-semibold text-teal-600 mb-4">Previous Collaborations</h3>
-        <Table
-          loading={loading}
-          dataSource={collaborations.previous}
-          columns={collaborationColumns}
-          pagination={false}
-          rowKey="id"
-        />
+        {/* Previous Collaborations */}
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-xl font-semibold text-teal-600 mb-4">
+            Previous Collaborations
+          </h3>
+          <Table
+            loading={loading}
+            dataSource={collaborations.previous}
+            columns={collaborationColumns}
+            pagination={false}
+            rowKey="id"
+          />
+        </div>
       </div>
-</div>
-     
 
       {/* Groups Overview */}
-      <div className="bg-white p-6 rounded-md">
-        <h3 className="text-xl font-semibold text-teal-600 mb-4">Groups Overview</h3>
+      <div className="bg-white p-6 rounded-lg border">
+        <h3 className="text-xl font-semibold text-teal-600 mb-4">
+          Groups Overview
+        </h3>
         <Table
           dataSource={groups}
           columns={groupColumns}

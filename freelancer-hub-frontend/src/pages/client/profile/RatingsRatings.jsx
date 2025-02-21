@@ -4,7 +4,7 @@ import { GoReply } from "react-icons/go";
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const ReviewsRatings = () => {
+const ReviewsRatings = ({userId, role}) => {
   const [reviewsList, setReviewsList] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,15 +103,15 @@ const ReviewsRatings = () => {
   const paginatedReviews = reviewsList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <div className="flex flex-col items-start space-y-6">
-      <div className="bg-white p-6 rounded-md shadow-sm border w-full">
+    <div className="flex flex-col items-start space-y-6 max-w-[80rem] w-full bg-white rounded-lg p-4 min-h-fit">
+      <div className="bg-white p-6 rounded-lg  border w-full">
         <h3 className="text-xl font-semibold mb-4 text-teal-600">Average Rating</h3>
         <div className="flex items-center space-x-1">
           {renderStars(averageRating)} {averageRating.toFixed(1)}
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-md shadow-sm border w-full">
+      <div className="bg-white p-6 rounded-lg border w-full">
         <h3 className="text-xl font-semibold mb-4 text-teal-600">Reviews & Ratings</h3>
         <div className="space-y-4">
           {paginatedReviews.map((review) => (

@@ -17,7 +17,7 @@ import Cookies from "js-cookie";
 
 const { Panel } = Collapse;
 
-const EditProfile = () => {
+const EditProfile = ({userId,role}) => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [clientInfo, setClientInfo] = useState({
@@ -44,14 +44,13 @@ const EditProfile = () => {
     const fetchProfileDetails = async () => {
       const accessToken = Cookies.get("accessToken");
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:8000/api/client/get_profile_data",
+        const response = await axios.get('http://127.0.0.1:8000/api/client/get_profile_data',
           {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
+              params: { userId: userId }, // Passing userId as query parameter
+              headers: {
+                Authorization: `Bearer ${accessToken}`, // Passing the access token as Authorization header
+              },
+            });
         const data = response.data.client_profile;
         setClientInfo({
           name: data.name,
@@ -124,7 +123,7 @@ const EditProfile = () => {
         }
       );
       message.success("Profile updated successfully!");
-      navigate("/client/profile/");
+      navigate(`/client/profile/`);
     } catch (error) {
       console.error("Error updating profile:", error);
       message.error("Failed to update profile");
@@ -133,7 +132,7 @@ const EditProfile = () => {
   
 
   return (
-    <div className="bg-white p-6 rounded-md shadow-md w-full max-w-3xl mx-auto">
+    <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-[80rem] min-h-fit">
       <h2 className="text-2xl font-bold text-teal-600 mb-4">Edit Profile</h2>
 
       <Form

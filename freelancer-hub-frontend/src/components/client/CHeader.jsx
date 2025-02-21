@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import { FaSearch, FaBell, FaUserCircle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from 'js-cookie';
@@ -55,6 +55,7 @@ const CHeader = () => {
     try {
       const response = await axios.get(`http://127.0.0.1:8000/api/search/?query=${term}`);
       const data = response.data;
+      console.log(data.users.results);
       setSearchResults({
         users: data.users.results || { users: [] },
         projects: data.projects.results || { projects: [] },
@@ -65,6 +66,25 @@ const CHeader = () => {
       console.error("Search error:", error);
     }
   };
+
+  const [notificationsCount, setNotificationsCount] = useState(0);
+  useEffect(() => {
+    const fetchUnmarkedNotifications = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/notifications/unmarked/', {
+          headers: {
+            Authorization: `Bearer ${Cookies.get('accessToken')}`,
+          },
+        });
+        setNotificationsCount(response.data.length);
+      } catch (err) {
+        console.error('Error fetching unmarked notifications:', err);
+        
+      }
+    };
+
+    fetchUnmarkedNotifications();
+  }, []);
 
   return (
     <header className="border-b-gray-300 bg-gray-200 text-black border h-12 flex items-center px-4 justify-between z-10">
@@ -95,8 +115,13 @@ const CHeader = () => {
                 <p className="font-bold text-lg mb-2 text-teal-700">Users</p>
                 {searchResults.users.map((user) => (
                   <div key={user.id} className="p-2 hover:bg-gray-100 rounded-md flex items-center gap-2">
-                    <FaUserCircle className="text-gray-500" />
-                    <p>
+                  {user.profile_picture?
+                    <img className="w-6 h-6 rounded-full" src={`http://127.0.0.1:8000/${user.profile_picture}`} alt="" />
+                    :
+                    <FaUserCircle className="text-gray-500 h-6 w-6" />
+                  }
+                    
+                    <p onClick={()=>navigate(`/${user.role}/profile/${user.id}`)}>
   {user.role === "client" ? "Client" : "Freelancer"} :
   <span className="font-semibold"> {user.username}</span>
 </p>
@@ -151,7 +176,7 @@ const CHeader = () => {
         <div onClick={() => navigate('/client/notifications')} className="relative cursor-pointer">
           <FaBell className="text-lg" />
           <span className="absolute -top-1 -right-1 bg-red-600 text-xs text-black rounded-full px-1">
-            5
+            {notificationsCount}
           </span>
         </div>
 
