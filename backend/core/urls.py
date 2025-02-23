@@ -25,6 +25,8 @@ urlpatterns = [
 
     # Notifications
     path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('notify-freelancer/<int:object_id>/', NotifyFreelancerView.as_view(), name='notify_freelancer'),
+
 
     # Endpoint to mark a specific notification as read
     path('notifications/<int:notification_id>/mark-as-read/', MarkNotificationAsRead.as_view(), name='mark-notification-as-read'),

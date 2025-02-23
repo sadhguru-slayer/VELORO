@@ -1,6 +1,10 @@
 from django.db import models
 from django.conf import settings
-from core.models import Skill,Project,Category,User
+from core.models import Skill,Project,Category
+from django.contrib.auth import get_user_model
+
+User = get_user_model()  # This will point to your custom User model if defined
+
 from django.db.models import Avg,F
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
@@ -85,7 +89,7 @@ class Feedback(models.Model):
 
 # Extending User model to create a client profile
 class ClientProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="client_profile")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="client_profile")
     location = models.CharField(max_length=255)
     profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
     dob = models.DateField(null=True, blank=True)  # Date of Birth
@@ -139,7 +143,7 @@ class ClientProfile(models.Model):
         self.save()
 # Extending User model to create a freelancer profile
 class FreelancerProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="freelancer_profile")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="freelancer_profile")
 
     # Basic Info
     location = models.CharField(max_length=255)

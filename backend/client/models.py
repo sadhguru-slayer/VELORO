@@ -2,10 +2,25 @@ from django.db import models
 from core.models import User
 # Create your models here.
 
+
 class Event(models.Model):
-    user = models.ForeignKey(User,on_delete=models.CASCADE,null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     title = models.CharField(max_length=255)
-    start = models.DateField()
+    start = models.DateField(null=True)
+    type_choices = [
+        ('Meeting', 'Meeting'),
+        ('Deadline', 'Deadline'),
+        ('Others', 'Others'),
+    ]
+    type = models.CharField(max_length=100, choices=type_choices, blank=True, null=True)
+    
+    # New field to store the custom notification time
+    # Store the time in minutes
+    notification_time = models.PositiveIntegerField(
+        default=1440,  # Default: 1 day before (24 hours = 1440 minutes)
+        help_text="Notification time in minutes before the event."
+    )
+    notification_sent = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

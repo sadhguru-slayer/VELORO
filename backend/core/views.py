@@ -4,14 +4,14 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import authenticate
 from rest_framework import status, views, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from .models import *
 from django.middleware.csrf import get_token
 from datetime import timedelta
-from client.models import Activity
+from client.models import Activity,Event
 from Profile.models import *
 from .serializers import *
 from django.db.models import Q
@@ -22,9 +22,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import User, Project, Category
 from .serializers import UserSerializer, ProjectSerializer, CategorySerializer
-
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from .models import Task, Notification
+from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import get_user_model
+
+User = get_user_model()  # This will point to your custom User model if defined
 
 # Create your views here.
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -207,18 +215,35 @@ class LogoutView(APIView):
 
 
 
+
 class CreateProjectView(APIView):
     permission_classes = [IsAuthenticated]  # Only authenticated users can create projects
     
     def post(self, request):
-        # Add the client (user) to the project
+        # Get the client (user) creating the project
         client = request.user
-        
-        # Extract data from request
+
+        # Extract data from the request
         skills_data = request.data.get('skills_required', [])
         is_collaborative = request.data.get('is_collaborative', False)
         tasks = request.data.get('tasks', [])
         
+        # Check the user's membership and set the max task limit
+        if client.membership == 'free':
+            max_tasks = 2
+        elif client.membership == 'gold':
+            max_tasks = 3
+        elif client.membership == 'platinum':
+            max_tasks = 5
+        else:
+            max_tasks = 0  # Handle the case where the user doesn't have a valid membership
+
+        # Validate the number of tasks based on the membership
+        if is_collaborative and len(tasks) > max_tasks:
+            return Response({
+                "message": f"Task limit exceeded. You can create up to {max_tasks} tasks based on your membership level."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         # Validate and get the domain
         try:
             domain = Category.objects.get(id=request.data['domain'])
@@ -240,7 +265,16 @@ class CreateProjectView(APIView):
         # Save the project instance first to get an ID (necessary for Many-to-Many relationships)
         temp_project.save()
 
-        # Now handle the skills for the project
+        # Create an event based on the project deadline
+        event = Event(
+            user=client,
+            title=f"{temp_project.title} - Deadline",
+            type='Deadline',
+            start=temp_project.deadline
+        )
+        event.save()
+
+        # Handle the skills for the project
         if skills_data:
             try:
                 skills_required = Skill.objects.filter(id__in=[skill['value'] for skill in skills_data])
@@ -263,6 +297,14 @@ class CreateProjectView(APIView):
                         budget=task['budget']
                     )
                     temp_task.save()
+
+                    # Create an event for each task based on its deadline
+                    task_event = Event(
+                        user=client,
+                        title=f"{temp_task.title} - Deadline",
+                        start=temp_task.deadline
+                    )
+                    task_event.save()
 
                     # Set skills required for the task
                     if task_skill_data:
@@ -287,7 +329,7 @@ class CreateProjectView(APIView):
                 related_model='project',
                 related_object_id=temp_project.id
             )
-            
+
             # Activity log for each task creation
             for task in task_instances:
                 Activity.objects.create(
@@ -315,7 +357,7 @@ class CreateProjectView(APIView):
             related_model='project',
             related_object_id=temp_project.id
         )
-        
+
         return Response({
             "message": "Project created successfully.",
             "project": project_serializer.data
@@ -353,6 +395,8 @@ class CustomPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+from .models import User
+
 @api_view(['GET'])
 @permission_classes([])  # Open API, modify as needed
 def search_partial(request):
@@ -366,11 +410,11 @@ def search_partial(request):
         return Response(cached_results)
 
     paginator = CustomPagination()
-
     # Search Users (by username & role)
     users = User.objects.filter(
         Q(username__icontains=query) | Q(role__icontains=query)
-    ).order_by('id')  # Order by 'id' to ensure consistency in pagination
+    ).order_by('id')
+
 
     # Paginate Users
     paginated_users = paginator.paginate_queryset(users, request)
@@ -486,6 +530,20 @@ class DeleteNotification(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+def send_notification(user, message):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"notifications_{user.id}",
+        {
+            "type": "send_notification",
+            "message": {"message": message}
+        }
+    )
+
+
 class UnmarkedNotificationListView(APIView):
     permission_classes=[IsAuthenticated]
 
@@ -498,3 +556,73 @@ class UnmarkedNotificationListView(APIView):
         
         # Return the serialized data as the response
         return Response(serializer.data)
+
+
+from django.core.exceptions import ObjectDoesNotExist
+
+@method_decorator(csrf_exempt, name='dispatch')
+class NotifyFreelancerView(View):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, object_id):
+        
+        try:
+            task = None
+            project = None
+            notification_text = ''
+            users_to_notify = []
+
+            try:
+                # Try to fetch task
+                task = Task.objects.get(id=object_id)
+                project = task.project  # If task found, get associated project
+                notification_text = _(
+                    f"{task.title} - The task you have been assigned by {project.client.username} is pending. "
+                    f"Deadline: {task.deadline}. Project: {project.title}."
+                )
+                users_to_notify = task.assigned_to.all()
+
+            except ObjectDoesNotExist:
+                # If task is not found, try to fetch project
+                try:
+                    project = Project.objects.get(id=object_id)
+                    notification_text = _(
+                        f"{project.title} - The project you have been assigned by {project.client.username} is pending. "
+                        f"Deadline: {project.deadline}."
+                    )
+                    users_to_notify = project.assigned_to.all()
+                    
+
+                except ObjectDoesNotExist:
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "Invalid task or project ID."
+                    }, status=400)
+
+            # Check if user has already been notified within the last 24 hours
+            for user in users_to_notify:
+                recent_notification = Notification.objects.filter(
+                    user=user,
+                    related_model_id=task.id if task else project.id,
+                    created_at__gte=timezone.now() - timezone.timedelta(hours=24)
+                ).first()
+
+                if recent_notification:
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "Freelancer already notified. Please try again in 24 hours."
+                    }, status=400)
+
+                # Send new notification
+                Notification.objects.create(
+                    user=user,
+                    type='Projects & Tasks' if task else 'Projects',
+                    related_model_id=task.id if task else project.id,
+                    notification_text=notification_text
+                )
+
+            return JsonResponse({"status": "success", "message": "Notifications sent successfully."})
+
+        except Exception as e:
+            # Log exception here
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)

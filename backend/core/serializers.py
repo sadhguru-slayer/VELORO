@@ -4,14 +4,13 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import exceptions
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'role']
+        fields = ['id', 'username', 'role', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
-    def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user
 
 class ConnectionSerializer(serializers.ModelSerializer):
     from_user = serializers.StringRelatedField()
@@ -47,8 +46,9 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'  # Assuming User has fields 'id', 'username', 'email'
 
 class ProjectSerializer(serializers.ModelSerializer):
-    # Assuming the serializers for User, Category, and Skill are correct
-    client = UserSerializer(read_only=True)
+    # Custom method field for client to include only id and username
+    client = serializers.SerializerMethodField()
+    
     domain = CategorySerializer(read_only=True)
     skills_required = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all(), many=True)
 
@@ -56,8 +56,14 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'id', 'title', 'description', 'budget', 'deadline', 
-            'client', 'domain', 'is_collaborative', 'skills_required','status'
+            'client', 'domain', 'is_collaborative', 'skills_required', 'status'
         ]
+
+    def get_client(self, obj):
+        return {
+            'id': obj.client.id,
+            'username': obj.client.username
+        }
 
     def update(self, instance, validated_data):
         # Handling the 'skills_required' relationship explicitly
@@ -69,7 +75,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     project = ProjectSerializer(read_only=True)
-    assigned_to = UserSerializer(read_only=True)
+    assigned_to = UserSerializer(read_only=True,many=True)
     skills_required_for_task = SkillSerializer(many=True, read_only=True)
 
     class Meta:

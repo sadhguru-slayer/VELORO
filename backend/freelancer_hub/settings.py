@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+from celery.schedules import crontab
 
 from pathlib import Path
 import environ
@@ -33,7 +34,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    
+    'daphne',  # Daphne for ASGI support
+    'channels',
+    'client',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,14 +44,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-
+    "django_celery_beat",
     'core',
     'Profile',
     'freelancer',
-    'client',
     'collaborations',
-
-    'channels',
     'rest_framework_simplejwt',
     'drf_yasg',
     "corsheaders",
@@ -63,6 +63,13 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',  # Ensure that only authenticated users can access the view
     ],
 }
+
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#     },
+# }
 
 from datetime import timedelta
 
@@ -82,6 +89,8 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True  # For development only, not recommended for production
 
 
 MIDDLEWARE = [
@@ -115,6 +124,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'freelancer_hub.wsgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -125,6 +142,35 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://127.0.0.1:6379/1",  # DB 1 for caching
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }
+
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+
+CELERY_ACCEPT_CONTENT = ['json']  # Data format for communication
+CELERY_TASK_SERIALIZER = 'json'  # Task serialization format
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'  # Redis as result backend
+
+
+CELERY_BEAT_SCHEDULE = {
+    'check-deadlines-every-day': {
+        'task': 'client.tasks.check_deadlines',  # Task path
+        'schedule': crontab(minute=0, hour=0),  # Runs every day at midnight
+    },
+    'check-events-every-minute': {
+        'task': 'client.tasks.send_event_approaching_notification',  # Make sure this path is correct
+        'schedule': 30.0,  # Run every minute (adjust as needed)
+    },
+}
+    
 
 # DATABASES = {
 #     'default': {

@@ -34,7 +34,6 @@ def create_connection_notification(sender, instance, created, **kwargs):
 
 
 from django.db.models.signals import m2m_changed
-
 @receiver(m2m_changed, sender=Project.skills_required.through)
 def create_project_notification(sender, instance, action, **kwargs):
     if action == "post_add":  # This triggers after skills are added
@@ -42,83 +41,58 @@ def create_project_notification(sender, instance, action, **kwargs):
         project_skills = set(instance.skills_required.all())
 
         if project_skills:
-            # For each freelancer, check if their skills align with the project
-            freelancers = User.objects.filter(role='freelancer')
+            # Check if there are any tasks associated with this project
+            tasks = Task.objects.filter(project=instance)
 
-            for freelancer in freelancers:
-                # Get the FreelancerProfile or skip if it doesn't exist
-                freelancer_profile, created = FreelancerProfile.objects.get_or_create(user=freelancer)
+            # If there are tasks, send notifications based on task skills
+            if tasks.exists():
+                for task in tasks:
+                    task_skills = set(task.skills_required_for_task.all())
+                    send_skill_based_notifications(instance, task_skills, task)
 
-                # Get the freelancer's skills
-                freelancer_skills = set(freelancer_profile.skills.all())
+            # If there are no tasks, send notifications based on project skills
+            else:
+                send_skill_based_notifications(instance, project_skills, None)
+                
+def send_skill_based_notifications(project_instance, required_skills, task_instance):
+    # For each freelancer, check if their skills align with the project or task
+    freelancers = User.objects.filter(role='freelancer')
 
-                # Calculate skill match percentage
-                skill_match = len(freelancer_skills.intersection(project_skills)) / len(project_skills) * 100 if project_skills else 0
+    for freelancer in freelancers:
+        # Get or create freelancer profile
+        freelancer_profile, created = FreelancerProfile.objects.get_or_create(user=freelancer)
 
-                # Send notification only if there's a match
-                if skill_match > 0:
-                    notification_text = _(
-                        f"Exciting opportunity! A new project titled <strong>'{instance.title}'</strong> is looking for skills you possess! "
-                        f"Your skill alignment with this project is <strong>{skill_match:.2f}%</strong>."
-                    )
-                    Notification.objects.create(
-                        user=freelancer,
-                        type='Projects',
-                        related_model_id=instance.id,
-                        notification_text=notification_text
-                    )
-                else:
-                    notification_text = _(
-                        f"New project alert! A new project titled <strong>'{instance.title}'</strong> might be a great fit for your skillset. "
-                        "Explore the details to see if it's the right opportunity for you."
-                    )
-                    Notification.objects.create(
-                        user=freelancer,
-                        type='Projects',
-                        related_model_id=instance.id,
-                        notification_text=notification_text
-                    )
-               
+        # Get the freelancer's skills
+        freelancer_skills = set(freelancer_profile.skills.all())
+
+        # Calculate the skill match percentage
+        skill_match = len(freelancer_skills.intersection(required_skills)) / len(required_skills) * 100 if required_skills else 0
+
+        # Prepare notification text
+        if skill_match > 0:
+            notification_text = _(
+                f"Exciting opportunity! {'A task titled <strong>' + task_instance.title + '</strong> ' if task_instance else 'The project titled <strong>' + project_instance.title + '</strong> '}"
+                f"is looking for skills you possess! "
+                f"Your skill alignment with this {'task' if task_instance else 'project'} is <strong>{skill_match:.2f}%</strong>."
+            )
+
+
+        # Send the notification
+            Notification.objects.create(
+                user=freelancer,
+                type='Projects' if not task_instance else 'Tasks',
+                related_model_id=project_instance.id if not task_instance else task_instance.id,
+                notification_text=notification_text
+            )
 
 @receiver(m2m_changed, sender=Task.skills_required_for_task.through)
 def create_task_notification(sender, instance, action, **kwargs):
     if action == "post_add":
         # For each freelancer, check if their skills align with the task
-        freelancers = User.objects.filter(role='freelancer')
-
-        for freelancer in freelancers:
-            # Attempt to get FreelancerProfile or skip if it doesn't exist
-            freelancer_profile, created = FreelancerProfile.objects.get_or_create(user=freelancer)
-
-            # Calculate skill match percentage
-            freelancer_skills = set(freelancer_profile.skills.all())
-            task_skills = set(instance.skills_required_for_task.all())
-
-            if task_skills:
-                # Calculate the percentage of skills matching
-                skill_match = len(freelancer_skills.intersection(task_skills)) / len(task_skills) * 100
-            else:
-                skill_match = 0
-
-            # Send a tailored notification based on the skill match
-            if skill_match > 0:
-                notification_text = _(
-                    f"You may be the perfect fit for the task titled <strong>'{instance.title}'</strong>! "
-                    f"Your skill alignment with this task is <strong>{skill_match:.2f}%</strong>."
-                )
-            else:
-                notification_text = _(
-                    f"New task alert! The task titled <strong>'{instance.title}'</strong> might be a great opportunity for you. "
-                    "Explore the details to see if it's a match for your skillset."
-                )
-
-            Notification.objects.create(
-                user=freelancer,
-                type='Tasks',
-                related_model_id=instance.id,
-                notification_text=notification_text
-            )
-
+        task_skills = set(instance.skills_required_for_task.all())
+        
+        # Send notifications based on task skills
+        send_skill_based_notifications(instance.project, task_skills, instance)
 
 
 @receiver(post_save, sender=Payment)
@@ -174,3 +148,4 @@ def create_payment_notification(sender, instance, created, **kwargs):
                 related_model_id=instance.id,
                 notification_text=notification_text
             )
+

@@ -19,7 +19,8 @@ class User(AbstractUser):
     
     MEMBERSHIP_CHOICES = [
         ('free', 'Free'),
-        ('premium', 'Premium'),
+        ('gold', 'Gold'),
+        ('platinum', 'Platinum'),
     ]
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='freelancer',db_index=True)
@@ -167,7 +168,7 @@ class Task(models.Model):
     description = models.TextField()
     budget = models.DecimalField(max_digits=10, decimal_places=2)
     deadline = models.DateField()
-    assigned_to = models.ForeignKey(User, related_name='assigned_tasks', on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_to = models.ManyToManyField(User, related_name='assigned_tasks',  blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(max_length=15, choices=PAYMENT_STATUS_CHOICES, default='not_initiated')
@@ -276,6 +277,8 @@ class Notification(models.Model):
         ('Messages', 'Messages'),
         ('Payments', 'Payments'),
         ('Projects', 'Projects'),
+        ('Events', 'Events'),
+        ('Projects & Tasks', 'Projects & Tasks'),
         ('Connections', 'Connections'),
         ('System', 'System'),
         ('Collaborations', 'Collaborations'),

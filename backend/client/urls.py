@@ -7,6 +7,13 @@ from .DashBoardViews import SpendingDataView
 from .profileViews import ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView,ConnectionManageViewSet,ConnectionRequestView
 # from .profileViews import ClientViews,ClientProfileUpdateView,update_profile
 
+from django.urls import re_path
+from .consumers import NotificationConsumer
+
+websocket_urlpatterns = [
+    re_path(r'ws/notifications/$', NotificationConsumer.as_asgi()),
+]
+
 router = DefaultRouter()
 
 # # Register your views here

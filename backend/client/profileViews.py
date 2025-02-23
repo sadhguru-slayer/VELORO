@@ -166,9 +166,9 @@ class ClientViews(generics.ListAPIView):
 
         # Fetching completed projects based on the user's role
         if role == 'client':
-            projects = Project.objects.filter(client=user, status='completed')
+            projects = Project.objects.filter(client=user)
         else:
-            projects = Project.objects.filter(assigned_to=user, status='completed')
+            projects = Project.objects.filter(assigned_to=user)
 
         # Serializing the projects data
         serialized_projects = ProjectSerializer(projects, many=True)
@@ -267,10 +267,12 @@ class ConnectionView(generics.ListAPIView):
     
         # Fetch connections where the user is either 'from_user' or 'to_user' with status 'accepted'
         connections1 = Connection.objects.filter(to_user=user, status='accepted')
+        
         connections2 = Connection.objects.filter(from_user=user, status='accepted')
 
         # Combine both querysets using union (| operator)
         connections = connections1 | connections2
+        print(connections)
         return connections
 
     def list(self, request, *args, **kwargs):

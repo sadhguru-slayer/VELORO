@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import ClientProfile,FreelancerProfile,Feedback
 from core.models import Connection
+from django.contrib.auth import get_user_model
+
+User = get_user_model()  # This will point to your custom User model if defined
+
 class ClientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientProfile

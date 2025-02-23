@@ -18,6 +18,19 @@ import calendar
 from datetime import timedelta
 from collaborations.models import *
 from collaborations.serializers import *
+from collections import defaultdict
+
+
+
+from collections import defaultdict
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets
+from .models import Event, Activity
+from .serializers import EventSerializer
+from django.shortcuts import get_object_or_404
 
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
@@ -27,9 +40,14 @@ class EventViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def create_event(self, request):
         user = request.user
-        event_data = request.data.copy() 
-        event_data['user'] = user.id  
+        event_data = request.data.copy()
+        event_data['user'] = user.id
 
+        # Make sure notification_time is present and properly handled
+        notification_time = event_data.get('notification_time')
+        if notification_time:
+            event_data['notification_time'] = int(notification_time)  # Ensure it's an integer in minutes
+        
         serializer = self.get_serializer(data=event_data)
         if serializer.is_valid():
             serializer.save()
@@ -47,13 +65,29 @@ class EventViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=400)
 
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def get_events(self, request):
         user = request.user
         events = Event.objects.filter(user=user)
-        serializer = self.get_serializer(events, many=True)
-        return Response(serializer.data)    
     
+        # Group events by type
+        grouped_events = defaultdict(list)
+        for event in events:
+            grouped_events[event.type].append(event)
+    
+        # Convert grouped events to a list of dictionaries
+        response_data = {
+            'Meeting': [event for event in grouped_events.get('Meeting', [])],
+            'Deadline': [event for event in grouped_events.get('Deadline', [])],
+            'Others': [event for event in grouped_events.get('Others', [])],
+        }
+        
+        # You might want to serialize these events properly
+        serializer = self.get_serializer(response_data, many=True)
+        return Response(serializer.data)
+
+
     @action(detail=False, methods=['put'], permission_classes=[IsAuthenticated])
     def update_event(self, request):
         user = request.user
@@ -63,6 +97,12 @@ class EventViewSet(viewsets.ModelViewSet):
             return Response({'error': 'You are not the owner of this event'}, status=403)
 
         event_data = request.data.copy()
+
+        # Make sure notification_time is present and properly handled
+        notification_time = event_data.get('notification_time')
+        if notification_time:
+            event_data['notification_time'] = int(notification_time)  # Ensure it's an integer in minutes
+
         serializer = EventSerializer(event, data=event_data, partial=True)
         
         if serializer.is_valid():
@@ -101,7 +141,8 @@ class EventViewSet(viewsets.ModelViewSet):
         event.delete()
 
         return Response({'message': 'Event deleted successfully'}, status=status.HTTP_200_OK)
-    
+
+
 class RecentActivityView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -267,11 +308,17 @@ class DashBoard_Overview(APIView):
 
 # Get nearest deadlines function
 def get_nearest_deadlines(client):
-    projects_with_deadlines = Project.objects.filter(client=client, deadline__gte=timezone.now()).order_by('deadline').values('id', 'title','deadline')[:4]
+    projects_with_deadlines = Project.objects.filter(
+    client=client, 
+    deadline__gte=timezone.now(), 
+    assigned_to__isnull=False
+    ).order_by('deadline').values('id', 'title', 'deadline')[:4]
     tasks_with_deadlines = Task.objects.filter(
-            project__client=client,
-            deadline__gte=timezone.now()
-        ).order_by('deadline').values('id', 'title','deadline')[:4]
+        project__client=client,
+        deadline__gte=timezone.now(),
+    assigned_to__isnull=False
+
+    ).order_by('deadline').values('id', 'title', 'deadline')[:4]
     
     deadlines = []
 
@@ -279,18 +326,20 @@ def get_nearest_deadlines(client):
         for project in projects_with_deadlines:
             deadlines.append({
                 'id': project['id'],
-                'title':project['title'],
+                'title': project['title'],
                 'deadline': project['deadline'],
                 'type': 'project',
             })
+    
     if tasks_with_deadlines:
         for task in tasks_with_deadlines:
             deadlines.append({
                 'id': task['id'],
-                'title':task['title'],
+                'title': task['title'],
                 'deadline': task['deadline'],
                 'type': 'task',
             })
+
     deadlines.sort(key=lambda x: x['deadline'])
     return deadlines
 
