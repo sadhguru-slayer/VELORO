@@ -5,6 +5,7 @@ from .models import Connection, Notification,User,Project,Task,Payment
 from Profile.models import FreelancerProfile
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Count
+from .serializers import UserSerializer
 
 from django.urls import reverse
 
@@ -13,19 +14,22 @@ def create_connection_notification(sender, instance, created, **kwargs):
     if created and instance.status == 'pending':
         # Create a notification for the user who sent the connection request
         message_from_user = _(f"You have sent a connection request to <strong><a href='/{instance.to_user.role}/profile/{instance.to_user.id}'>{instance.to_user.username}</a></strong>.")
+        message_from_user = str(message_from_user)
+        fuser = instance.from_user
         
         Notification.objects.create(
-            user=instance.from_user,  # The user who sent the request
+            user=fuser,  # The user who sent the request
             type='Connections',
             related_model_id=instance.id,  # Link to the Connection model
             notification_text=message_from_user,
         )
 
         # Create a notification for the user who received the connection request
-        message_to_user = _(f"You have received a connection request from <strong><a href='/{instance.from_user.username}/profile/{instance.from_user.id}'>{instance.from_user.username}</a></strong>.")
-        
+        message_to_user = _(f"You have received a connection request from <strong><a href='/{instance.from_user.role}/profile/{instance.from_user.id}'>{instance.from_user.username}</a></strong>.")
+        message_to_user = str(message_to_user)
+        tuser = instance.to_user
         Notification.objects.create(
-            user=instance.to_user,  # The user who received the request
+            user=tuser,  # The user who received the request
             type='Connections',
             related_model_id=instance.id,  # Link to the Connection model
             notification_text=message_to_user,
@@ -106,8 +110,10 @@ def create_payment_notification(sender, instance, created, **kwargs):
             f"A new payment of {instance.amount} {instance.currency} has been initiated for {instance.payment_for}. "
             f"Payment method: {instance.get_payment_method_display()}. Status: {instance.get_status_display()}."
         )
+        user = instance.to_user.first()
+
         Notification.objects.create(
-            user=instance.to_user,  # Notify the recipient of the payment
+            user=user,  # Notify the recipient of the payment
             type='Payments',
             related_model_id=instance.id,
             notification_text=notification_text
@@ -119,8 +125,10 @@ def create_payment_notification(sender, instance, created, **kwargs):
                 f"Your payment of {instance.amount} {instance.currency} for {instance.payment_for} has been marked as paid. "
                 f"Transaction ID: {instance.transaction_id}."
             )
+            user = instance.to_user.first()
+
             Notification.objects.create(
-                user=instance.to_user,  # Notify the recipient of the payment
+                user=user,  # Notify the recipient of the payment
                 type='Payments',
                 related_model_id=instance.id,
                 notification_text=notification_text
@@ -131,8 +139,9 @@ def create_payment_notification(sender, instance, created, **kwargs):
                 f"Your payment of {instance.amount} {instance.currency} to {instance.to_user.username} for {instance.payment_for} "
                 f"has been successfully processed. Transaction ID: {instance.transaction_id}."
             )
+            user = instance.from_user.first()
             Notification.objects.create(
-                user=instance.from_user,  # Notify the sender of the payment
+                user=user,  # Notify the sender of the payment
                 type='Payments',
                 related_model_id=instance.id,
                 notification_text=sender_notification_text
@@ -142,8 +151,10 @@ def create_payment_notification(sender, instance, created, **kwargs):
                 f"Your payment of {instance.amount} {instance.currency} for {instance.payment_for} is pending. "
                 f"Please complete the payment process."
             )
+            user = instance.from_user.first()
+
             Notification.objects.create(
-                user=instance.from_user,  # Notify the sender of the payment
+                user=user,  # Notify the sender of the payment
                 type='Payments',
                 related_model_id=instance.id,
                 notification_text=notification_text

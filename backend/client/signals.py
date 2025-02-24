@@ -62,24 +62,89 @@ def notify_task_deadline(sender, instance, created, **kwargs):
                 )  # Debugging output
 
 
+
+
+# signals.py
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from channels.layers import get_channel_layer
+from core.models import Notification
+from asgiref.sync import async_to_sync
+
+def update_unread_notification_count(user):
+    """Helper function to get the unread notification count."""
+    return Notification.objects.filter(user=user, is_read=False).count()
+
+# Triggered when a Notification is created or updated (post_save)
 @receiver(post_save, sender=Notification)
-def notify_user_on_new_notification(sender, instance, created, **kwargs):
+def notify_count_user_on_new_notification(sender, instance, created, **kwargs):
     """Send real-time notification when a new Notification object is created."""
-    if created:
-        
+    user = instance.user
+    channel_layer = get_channel_layer()
+
+    # Get unread notification count
+    unread_count = update_unread_notification_count(user)
+
+    group_name = f"user_{user.id}"
+
+    # Send the message to the group
+    async_to_sync(channel_layer.group_send)(
+        group_name, 
+        {
+            "type": "send_notification_count",
+            "notifications_count": unread_count
+        }
+    )
+
+# Triggered when a Notification is deleted (post_delete)
+@receiver(post_delete, sender=Notification)
+def notify_count_user_on_deleted_notification(sender, instance, **kwargs):
+    """Send real-time notification when a Notification object is deleted."""
+    user = instance.user
+    channel_layer = get_channel_layer()
+
+    # Get unread notification count
+    unread_count = update_unread_notification_count(user)
+
+    group_name = f"user_{user.id}"
+
+    print(unread_count)
+
+    # Send the updated unread count to the group
+    async_to_sync(channel_layer.group_send)(
+        group_name, 
+        {
+            "type": "send_notification_count",
+            "notifications_count": unread_count
+        }
+    )
+
+
+
+@receiver(post_save, sender=Notification)
+def send_notification_to_user(sender, instance, created, **kwargs):
+    """Send real-time notification when a new Notification object is created."""
+    if created:  # Only trigger when the Notification is newly created
+        user = instance.user
         channel_layer = get_channel_layer()
-        group_name = f"notifications_{instance.user.id}"  # Group name based on user ID
-        
+        group_name = f"user_notification_{user.id}"
+
+        # Prepare a serializable data dictionary
+        notification_data = {
+            'id': instance.id,
+            'notification_text': instance.notification_text,
+            'created_at': instance.created_at.isoformat(),  # Format the date as string
+            'related_model_id': instance.related_model_id,
+            'type': instance.type,
+        }
+
+        # Send the notification data to the group
         async_to_sync(channel_layer.group_send)(
-            group_name, 
-            {
-                "type": "send_notification",
-                "message": {
-                    "id": instance.id,
-                    "text": instance.notification_text,
-                    "timestamp": instance.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                }
-            }
-        )
+    group_name,
+    {
+        "type": "send_notification",  # This must match the method name in the consumer
+        "notification": notification_data  # Send the notification data
+    }
+)
 
 

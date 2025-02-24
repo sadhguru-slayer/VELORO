@@ -193,6 +193,64 @@ class ClientViews(generics.ListAPIView):
 
 
         return Response(result, status=200)
+class UnAuthClientViews(generics.ListAPIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        user_id = request.GET.get('userId')
+
+        # Retrieve the user object for the requested userId
+        user = get_object_or_404(User, id=user_id)
+        role = user.role
+        
+        # Get connection count and connection status
+        connection_count = user.get_client_connections()
+
+        # Get the profile data based on user role
+        if role == 'client':
+            profile = get_object_or_404(ClientProfile, user=user)
+        else:
+            profile = get_object_or_404(FreelancerProfile, user=user)
+        
+        # Profile details response
+        profile_details = {
+            'id': user.id,
+            'name': user.username,
+            'email': user.email,
+            'bio': profile.bio,
+            'role':user.role,
+            'location': profile.location,
+            'profile_picture': profile.profile_picture.url if profile.profile_picture else None,
+        }
+
+        # Fetching completed projects based on the user's role
+        if role == 'client':
+            projects = Project.objects.filter(client=user)
+        else:
+            projects = Project.objects.filter(assigned_to=user)
+
+        # Serializing the projects data
+        serialized_projects = ProjectSerializer(projects, many=True)
+
+        # Fetching reviews and calculating average rating
+        reviews_ratings = Feedback.objects.filter(to_user=user,is_reply=False)
+        average_rating = reviews_ratings.aggregate(Avg('rating'))['rating__avg'] or 0
+        serialized_reviews = ClientFeedbackSerializer(reviews_ratings, many=True).data
+        
+
+        # Preparing the final response data
+        result = {
+            'client_profile': profile_details,
+            'projects': serialized_projects.data,
+            'connection_count': connection_count,
+            'reviews_and_ratings': {
+                'reviews': serialized_reviews,
+                'average_rating': average_rating,
+            }
+        }
+
+
+        return Response(result, status=200)
 
 
 @api_view(['PUT'])

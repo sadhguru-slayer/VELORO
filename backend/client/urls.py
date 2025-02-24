@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .DashBoardViews import EventViewSet,RecentActivityView,PostedProjects,DashBoard_Overview,ActivityListView,SpecifiedActivityListView,SpendingDistributionByProject,CollaborationView
 from core.views import *
 from .DashBoardViews import SpendingDataView
-from .profileViews import ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView,ConnectionManageViewSet,ConnectionRequestView
+from .profileViews import UnAuthClientViews,ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView,ConnectionManageViewSet,ConnectionRequestView
 # from .profileViews import ClientViews,ClientProfileUpdateView,update_profile
 
 from django.urls import re_path
@@ -37,6 +37,7 @@ urlpatterns = [
 
     # Profile
     path('get_profile_data/', ClientViews.as_view(), name='get_profile_data'),
+    path('get_unauth_profile_data/', UnAuthClientViews.as_view(), name='get_unauth_profile_data'),
      path('update_profile/', update_profile, name='update_profile'),
      path('get_reviews/', ClientReviewsandRatings.as_view(), name='get_reviews'),
      path('post_reply/',post_reply , name='post_reply'),
