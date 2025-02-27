@@ -68,7 +68,29 @@ const CSider = ({ dropdown, handleMenuClick, abcds, collapsed,handleProfileMenu,
 
   return (
     <div
-      className={`h-screen bg-[#2C3E50] text-gray-100 flex flex-col items-center transition-all duration-500 overflow-x-hidden ${isCollapsed ? 'w-14 sm:w-16 md:w-16 lg:w-22' : 'w-44 sm:w-52 md:w-52 lg:w-64'} absolute z-20`}
+    className={`
+      h-screen 
+      bg-[#2C3E50] 
+      text-gray-100 
+      flex flex-col items-center 
+      transition-all duration-500 
+      overflow-x-hidden 
+      absolute z-20 
+    
+      ${isCollapsed ? 
+        'w-14 sm:w-16 md:w-16 lg:w-22' : 
+        'w-44 sm:w-52 md:w-52 lg:w-64'}
+    
+      /* Custom scrollbar styling */
+      scrollbar 
+      scrollbar-thin 
+      scrollbar-thumb-slate-700 
+      scrollbar-thumb-rounded-full
+      scrollbar-track-slate-300 
+      scrollbar-track-rounded-full 
+      scrollbar-slate-300
+      overflow-y-auto
+    `}
     >
       {/* Toggle Button */}
       <div className="flex w-[80%] border border-gray-600 rounded-lg mt-6 flex-col justify-center items-center p-3">

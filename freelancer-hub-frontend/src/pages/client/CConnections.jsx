@@ -52,11 +52,11 @@ const CConnections = (userId, role) => {
               'Authorization': `Bearer ${Cookies.get('accessToken')}`,
               },
               }
-              );
+          );
 
 
         const connectionData = response.data;
-        console.log(connectionData)
+      
         setConnections(connectionData);
       } catch (error) {
         console.error("Error fetching connections", error);
@@ -130,7 +130,7 @@ const handleReject = async (connectionId) => {
         <CHeader />
 
         {/* Connections Content */}
-        <div className="flex justify-center overflow-auto items-center bg-gray-200 h-screen p-4 w-full  ">
+        <div className="flex justify-center overflow-auto items-center max-w-[80rem] min-h-fit  bg-gray-200 h-full p-4 w-full overflow-y-auto">
           <div className="flex-1 overflow-auto h-full bg-gray-100 rounded-lg p-4 max-w-[30rem]">
             {/* Connections Header */}
             <div className="flex justify-between items-center mb-6">
@@ -169,7 +169,7 @@ const handleReject = async (connectionId) => {
                     }
                     </span>
                     <span className='flex flex-col justify-center'>
-                    <h3 className="text-lg font-semibold text-teal-600">{connection.user_name}</h3>
+                    <h3 onClick={()=>navigate(`/${connection.role}/profile/${connection.id}`)} className=" cursor-pointer text-lg font-semibold text-teal-600">{connection.user_name}</h3>
                     <p className="text-sm text-gray-600">{connection.bio}</p>
                     <p className="text-[8px] md:text-[11px] lg:text-xs sm:text-[8px] text-gray-500 mt-1">{format_timeStamp(connection.created_at)}</p>
                     </span>

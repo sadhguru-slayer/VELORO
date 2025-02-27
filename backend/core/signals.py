@@ -105,29 +105,62 @@ def create_payment_notification(sender, instance, created, **kwargs):
     Signal to create notifications when a Payment is created or its status is updated.
     """
     if created:
-        # Notification for payment creation
-        notification_text = _(
-            f"A new payment of {instance.amount} {instance.currency} has been initiated for {instance.payment_for}. "
-            f"Payment method: {instance.get_payment_method_display()}. Status: {instance.get_status_display()}."
-        )
-        user = instance.to_user.first()
+        if instance.status == 'initiated':
+            # Notification for payment creation
+            notification_text_to_user = _(
+                f"A new payment of {instance.amount} {instance.currency} has been initiated for {instance.payment_for}. "
+                f"Payment method: {instance.get_payment_method_display()}. Status: {instance.get_status_display()}."
+            )
+            notification_title_to_user = _(
+                f"Payment initiated: {instance.amount}{instance.currency} - {instance.status}"
+            )
 
-        Notification.objects.create(
-            user=user,  # Notify the recipient of the payment
-            type='Payments',
-            related_model_id=instance.id,
-            notification_text=notification_text
-        )
-    else:
-        # Notification for payment status update
-        if instance.status == 'paid':
+            notification_text_to_user = str(notification_text_to_user)
+            notification_title_to_user = str(notification_title_to_user)
+
+            to_user = instance.to_user
+
+            Notification.objects.create(
+                title=notification_title_to_user,
+                user=to_user,  # Notify the recipient of the payment
+                type='Payments',
+                related_model_id=instance.id,
+                notification_text=notification_text_to_user
+            )
+        elif instance.status == 'pending':
+            notification_text = _(
+                f"Your payment of {instance.amount} {instance.currency} for {instance.payment_for} is pending. "
+                f"Please complete the payment process."
+            )
+            title = _(
+                f"Pending payment: {instance.amount}{instance.currency}"
+            )
+            notification_text = str(notification_text)
+            title = str(title)
+            user = instance.from_user
+
+            Notification.objects.create(
+                title=title,
+                user=user,  # Notify the sender of the payment
+                type='Payments',
+                related_model_id=instance.id,
+                notification_text=notification_text
+            )
+        elif instance.status == 'paid':
             notification_text = _(
                 f"Your payment of {instance.amount} {instance.currency} for {instance.payment_for} has been marked as paid. "
                 f"Transaction ID: {instance.transaction_id}."
             )
-            user = instance.to_user.first()
+            receiver_title = _(
+                f"Payment received: {instance.amount}{instance.currency} from {instance.from_user.username}"
+            )
+            notification_text = str(notification_text)
+            receiver_title = str(receiver_title)
+
+            user = instance.to_user
 
             Notification.objects.create(
+                title=receiver_title,
                 user=user,  # Notify the recipient of the payment
                 type='Payments',
                 related_model_id=instance.id,
@@ -139,8 +172,52 @@ def create_payment_notification(sender, instance, created, **kwargs):
                 f"Your payment of {instance.amount} {instance.currency} to {instance.to_user.username} for {instance.payment_for} "
                 f"has been successfully processed. Transaction ID: {instance.transaction_id}."
             )
-            user = instance.from_user.first()
+            sender_title = _(
+                f"Payment sent: {instance.amount}{instance.currency} to {instance.to_user.username}"
+            )
+            sender_notification_text = str(sender_notification_text)
+            sender_title = str(sender_title)
+            user = instance.from_user
             Notification.objects.create(
+                title=sender_title,
+                user=user,  # Notify the sender of the payment
+                type='Payments',
+                related_model_id=instance.id,
+                notification_text=sender_notification_text
+            )
+
+    else:
+        # Notification for payment status update
+        if instance.status == 'paid':
+            notification_text = _(
+                f"Your payment of {instance.amount} {instance.currency} for {instance.payment_for} has been marked as paid. "
+                f"Transaction ID: {instance.transaction_id}."
+            )
+            notification_title = _(
+                f"Payment confirmed: {instance.amount}{instance.currency} - Paid"
+            )
+            notification_text = str(notification_text)
+            notification_title = str(notification_title)
+
+            user = instance.to_user
+
+            Notification.objects.create(
+                title=notification_title,
+                user=user,  # Notify the recipient of the payment
+                type='Payments',
+                related_model_id=instance.id,
+                notification_text=notification_text
+            )
+
+            # Notify the sender of the payment
+            sender_notification_text = _(
+                f"Your payment of {instance.amount} {instance.currency} to {instance.to_user.username} for {instance.payment_for} "
+                f"has been successfully processed. Transaction ID: {instance.transaction_id}."
+            )
+            sender_notification_text = str(sender_notification_text)
+            user = instance.from_user
+            Notification.objects.create(
+                title=notification_title,
                 user=user,  # Notify the sender of the payment
                 type='Payments',
                 related_model_id=instance.id,
@@ -151,9 +228,15 @@ def create_payment_notification(sender, instance, created, **kwargs):
                 f"Your payment of {instance.amount} {instance.currency} for {instance.payment_for} is pending. "
                 f"Please complete the payment process."
             )
-            user = instance.from_user.first()
+            notification_title = _(
+                f"Pending payment: {instance.amount}{instance.currency} - Pending"
+            )
+            notification_text = str(notification_text)
+            notification_title = str(notification_title)
+            user = instance.from_user
 
             Notification.objects.create(
+                title=notification_title,
                 user=user,  # Notify the sender of the payment
                 type='Payments',
                 related_model_id=instance.id,

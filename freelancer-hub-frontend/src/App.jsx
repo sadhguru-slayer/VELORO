@@ -1,4 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+import DOMPurify from "dompurify";
+import { motion } from "framer-motion";
 import { useEffect, useState } from 'react';
 import HomePage from './pages/HomePage';
 import FProfile from './pages/freelancer/FProfile';
@@ -24,6 +27,8 @@ import PostedProjectForBidsPage from './pages/client/PostedProjectForBidsPage';
 import FNotifications from './pages/freelancer/FNotifications';
 import CNotifications from './pages/client/CNotifications';
 import Cookies from 'js-cookie';  // Import js-cookie
+import CConnections from './pages/client/CConnections';
+import { message } from 'antd';
 
 const App = () => {
   const [isTokenValid, setIsTokenValid] = useState(true);
@@ -47,6 +52,90 @@ const App = () => {
     checkTokenAndProfile();
   }, [token]);
 
+
+  const userRole = Cookies.get('role') || 'client'; // Default to 'client' if no role is found
+
+  useEffect(() => {
+    if (token) {
+      const socket = new WebSocket(`ws://127.0.0.1:8000/ws/notifications/?token=${token}`);
+  
+      socket.onmessage = (event) => {
+        try {
+          const notification = JSON.parse(event.data);
+          
+          // Check if the notification is an array (ignore it)
+          if (Array.isArray(notification)) {
+            return;
+          }
+  
+          // Check if the notification has the expected format
+          if (
+            notification &&
+            typeof notification === "object" &&
+            "notification_id" in notification &&
+            "notification_text" in notification &&
+            "created_at" in notification &&
+            "related_model_id" in notification &&
+            "type" in notification
+          ) {
+            showNotification(notification);
+          } else {
+            console.warn("Invalid notification format:", notification);
+          }
+        } catch (error) {
+          console.error("Error parsing notification:", error);
+        }
+      };
+  
+      socket.onclose = (event) => {
+        console.log(`WebSocket closed with code: ${event.code}`);
+        if (event.code !== 1000) {
+          console.error("WebSocket closed abnormally!", event);
+        }
+      };
+  
+      socket.onerror = (error) => {
+        console.error("WebSocket Error:", error);
+      };
+  
+      return () => {
+        socket.close();
+      };
+    }
+  }, [token]);
+  
+  
+
+const showNotification = (notification) => {
+  const isClient = userRole === "client";
+  const bgColor = isClient ? "from-teal-500 to-teal-700" : "from-violet-500 to-violet-700";
+  const textColor = "text-white";
+
+  message.open({
+    content: (
+      <motion.div
+        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className={`p-1 rounded-xl shadow-xl bg-gradient-to-r ${bgColor} ${textColor} flex items-start backdrop-blur-lg border border-white/20`}
+      >
+        <span className="text-lg mr-3 animate-bounce">🔔</span>
+        <div>
+          <p className="font-semibold text-md">{notification.title}</p>
+         
+        </div>
+      </motion.div>
+    ),
+    duration: 4,
+    style: {
+      width: 320,
+    },
+  });
+};
+
+
+
   if (!isTokenValid) {
     return <Navigate to="/login" />;
   }
@@ -63,7 +152,8 @@ const App = () => {
         <Route path="/client">  
         <Route path="profile/:id" element={<PrivateRoute element={CProfile} />} />
         <Route path="homepage" element={<PrivateRoute element={CHomepage} />} />
-        <Route path="connections" element={<PrivateRoute element={CConnectionRequests} />} />
+        <Route path="connections_requests" element={<PrivateRoute element={CConnectionRequests} />} />
+        <Route path="connections" element={<PrivateRoute element={CConnections} />} />
 
         <Route path="notifications" element={<PrivateRoute element={CNotifications} />} />
         

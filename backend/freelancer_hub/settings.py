@@ -123,6 +123,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'freelancer_hub.wsgi.application'
+ASGI_APPLICATION = "freelancer_hub.asgi.application"
 
 CHANNEL_LAYERS = {
     'default': {

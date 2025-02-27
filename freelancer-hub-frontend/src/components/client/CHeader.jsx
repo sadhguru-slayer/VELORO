@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState ,useEffect} from "react";
+import React, { useState ,useEffect,useRef} from "react";
 import { FaSearch, FaBell, FaUserCircle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from 'js-cookie';
@@ -37,12 +37,41 @@ const CHeader = () => {
   const [searchResults, setSearchResults] = useState({
     users: [],
     projects: [],
-    categories: []
+    categories: [],
   });
   const [showResults, setShowResults] = useState(false);
+  const socketRef = useRef(null);
 
-  // Function to handle search input
-  const handleSearch = async (event) => {
+  useEffect(() => {
+    // Connect to WebSocket only once
+    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/ws/search/`);
+
+    socketRef.current.onopen = () => {
+      console.log("WebSocket Connected");
+
+      // Send authentication token when WebSocket opens
+      const token = Cookies.get("accessToken");
+      if (token) {
+        socketRef.current.send(JSON.stringify({ type: "auth", token }));
+      }
+    };
+
+    socketRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setSearchResults({
+        users: data.users || [],
+        projects: data.projects || [],
+        categories: data.categories || [],
+      });
+      setShowResults(true);
+    };
+
+    socketRef.current.onclose = () => console.log("WebSocket Disconnected");
+
+    return () => socketRef.current.close();
+  }, []);
+
+  const handleSearch = (event) => {
     const term = event.target.value;
     setSearchTerm(term);
 
@@ -52,44 +81,48 @@ const CHeader = () => {
       return;
     }
 
-    try {
-      const response = await axios.get(`http://127.0.0.1:8000/api/search/?query=${term}`);
-      const data = response.data;
-      console.log(data.users.results);
-      setSearchResults({
-        users: data.users.results || { users: [] },
-        projects: data.projects.results || { projects: [] },
-        categories: data.categories.results || { categories: [] },
-      });
-      setShowResults(true);
-    } catch (error) {
-      console.error("Search error:", error);
+    // Get JWT Token from Cookies
+    const token = Cookies.get("accessToken");
+
+    // Send search query via WebSocket
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ query: term, token }));
     }
-  };
+  }
+  
   const [notificationsCount, setNotificationsCount] = useState(0);
 
-  useEffect(() => {
-    const fetchUnmarkedNotifications = async () => {
-      try {
-        const response = await axios.get('http://127.0.0.1:8000/api/notifications/unmarked/', {
-          headers: {
-            Authorization: `Bearer ${Cookies.get('accessToken')}`,
-          },
-        });
-        setNotificationsCount(response.data.length);
-      } catch (err) {
-        console.error('Error fetching unmarked notifications:', err);
-      }
-    };
+useEffect(() => {
+  // Construct WebSocket URL with the token as a query parameter
+  const socket = new WebSocket(
+    `ws://127.0.0.1:8000/ws/notification_count/?token=${Cookies.get('accessToken')}`
+  );
   
-    fetchUnmarkedNotifications();
-  
-    const intervalId = setInterval(fetchUnmarkedNotifications, 3000);
-  
-    return () => clearInterval(intervalId);
-  
-  }, []); 
-  
+
+  socket.onmessage = function (event) {
+    const data = JSON.parse(event.data);  // Parse the incoming JSON data
+    if (data.notifications_count !== undefined) {
+      setNotificationsCount(data.notifications_count);  // Update the object count state
+    }
+  };
+
+  socket.onclose = function (event) {
+    if (event.code !== 1000) {
+      // 
+    }
+  };
+
+  // Handle WebSocket errors
+  socket.onerror = function (error) {
+    console.error("WebSocket Error");
+  };
+
+  // Cleanup WebSocket connection when the component unmounts
+  return () => {
+    socket.close();
+  };
+}, []);
+
 
   return (
     <header className="border-b-gray-300 bg-gray-200 text-black border h-12 flex items-center px-4 justify-between z-10">
@@ -97,8 +130,8 @@ const CHeader = () => {
       <div className="flex items-center">
         <Link to="/" className="text-xl font-bold tracking-wide text-textPrimary">
           Freelancer Hub
-        </Link>
-      </div>
+          </Link>
+          </div>
 
       {/* Search Bar */}
       <div className="relative hidden md:block">
@@ -141,13 +174,21 @@ const CHeader = () => {
               <div className="mt-4">
                 <p className="font-bold text-lg mb-2 text-teal-700">Projects</p>
                 {searchResults.projects.map((project) => {
-                  const sanitizedDescription = DOMPurify.sanitize(project.description);
-                  return (
-                    <div key={project.id} className="p-2 hover:bg-gray-100 rounded-md">
-                      <p className="font-semibold">{project.title}</p>
-                      <div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
-                    </div>
-                  );
+                  const MAX_DESCRIPTION_LENGTH = 50; // Adjust this value as needed
+
+const sanitizedDescription = DOMPurify.sanitize(project.description);
+const shortDescription =
+  sanitizedDescription.length > MAX_DESCRIPTION_LENGTH
+    ? sanitizedDescription.slice(0, MAX_DESCRIPTION_LENGTH) + "..."
+    : sanitizedDescription;
+
+return (
+  <div key={project.id} className="p-2 hover:bg-gray-100 rounded-md">
+    <p className="font-semibold">{project.title}</p>
+    <div dangerouslySetInnerHTML={{ __html: shortDescription }} />
+  </div>
+);
+
                 })}
               </div>
             ) : null}

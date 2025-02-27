@@ -6,7 +6,10 @@ from core.models import Notification, User
 from asgiref.sync import async_to_sync
 from rest_framework_simplejwt.tokens import AccessToken
 from urllib.parse import parse_qs
-
+from django.core.paginator import Paginator
+from django.core.cache import cache
+from Profile.models import ClientProfile, FreelancerProfile  # Ensure correct import
+from core.serializers import ProjectSerializer, CategorySerializer
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -116,9 +119,9 @@ class NotificationShowConsumer(AsyncWebsocketConsumer):
         """Send a single notification to the WebSocket client."""
         notification = event['notification']
         if notification:  # Send the notification if there's one
-            print("Sending notification:", notification)
             await self.send(text_data=json.dumps({
                 'notification_id': notification['id'],
+                'title': notification['title'],
                 'notification_text': notification['notification_text'],
                 'created_at': notification['created_at'],
                 'related_model_id': notification['related_model_id'],

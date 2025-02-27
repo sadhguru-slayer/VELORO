@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aldabil/react-scheduler": "^2.9.5",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@faker-js/faker": "^9.3.0",
@@ -33,9 +34,11 @@
     "axios": "^1.7.9",
     "babel-polyfill": "^6.26.0",
     "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.8",
     "dayjs": "^1.11.13",
     "dompurify": "^3.2.4",
     "draft-js": "^0.11.7",
+    "framer-motion": "^12.4.7",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "primereact": "^10.9.1",
@@ -58,7 +61,10 @@
     "react-tailwindcss-datepicker": "^1.7.2",
     "react-use-wizard": "^2.3.0",
     "responsive-table-react": "^1.2.3",
-    "tailwind-datepicker-react": "^1.4.3"
+    "smart-webcomponents": "^22.0.0",
+    "smart-webcomponents-react": "^22.0.0",
+    "tailwind-datepicker-react": "^1.4.3",
+    "tailwind-scrollbar": "^3.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",

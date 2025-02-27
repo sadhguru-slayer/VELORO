@@ -3,11 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import axios from'axios';
 import { Button, Pagination,Table } from "antd";
-import { FaEye } from 'react-icons/fa';
+import { FaEye, FaLock } from 'react-icons/fa';
 
 
 const NotAuthProfile = ({userId, role,editable}) => {
-    console.log(userId)
     const navigate = useNavigate();
     const location = useLocation();
     const [clientInfo, setClientInfo] = useState({});
@@ -26,21 +25,18 @@ const NotAuthProfile = ({userId, role,editable}) => {
   
     useEffect(() => {
       const fetchProfileDetails = async () => {
-        const accessToken = Cookies.get('accessToken');
 
         try {
-          const response = await axios.get('http://127.0.0.1:8000/api/client/get_profile_data',
+          const response = await axios.get('http://127.0.0.1:8000/api/client/get_unauth_profile_data',{
+            params: { userId: userId },
+          }
            
-            {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
+          );
           const data = response.data;
           setClientInfo(data.client_profile);
           setProjects(data.projects);
           setReviewsList(data.reviews_and_ratings.reviews);
-          setConnectionCount(data.connection_Count);
+          setConnectionCount(data.connection_count);
           setAverageRating(data.reviews_and_ratings.average_rating);
         } catch (error) {
           console.log(error);
@@ -51,11 +47,12 @@ const NotAuthProfile = ({userId, role,editable}) => {
     }, []);
     
   return (
-    <div className="flex flex-col items-start space-y-6">
+    <div className="flex flex-col items-start space-y-6 w-full max-w-[80rem] min-h-full h-fit">
+
               {/* Profile Overview */}
               <div className="bg-white p-6 rounded-md shadow-md w-full">
                 <div className="flex items-center space-x-6">
-                
+              
                   <img src={ clientInfo.profile_picture?`http://127.0.0.1:8000${clientInfo.profile_picture}`:"https://www.w3schools.com/howto/img_avatar.png"} alt="Profile" className="w-24 h-24 rounded-full object-cover" />
                   <div className="flex flex-col">
                     <h2 className="text-2xl font-bold text-teal-600">{clientInfo.name}</h2>
@@ -66,11 +63,11 @@ const NotAuthProfile = ({userId, role,editable}) => {
                     
                     <div className="mt-2 text-gray-500">
                       <p>📍 {clientInfo.location}</p>
-                      <p onClick={()=>navigate('/client/connections/')}>🔗 {connectionCount} Connections</p>
+                      <p>🔗 {connectionCount} Connections</p>
                     </div>
                     <div className="mt-4 flex space-x-4">
-                      <button onClick={()=>navigate(`/client/profile/${userId}`,{state:{profileComponent:'edit_profile'}})} className="bg-teal-600 text-white py-2 px-6 rounded-md hover:bg-teal-500 transition duration-300">
-                        Edit Profile
+                      <button onClick={()=>navigate('/login/')} className="bg-teal-600 text-white py-2 px-6 rounded-md hover:bg-teal-500 transition duration-300">
+                        <FaLock/>
                       </button>
                     </div>
                   </div>
@@ -94,7 +91,7 @@ const NotAuthProfile = ({userId, role,editable}) => {
                       key: "action",
                       render: (text, project) => (
                         <span
-                          onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
+                          onClick={() => navigate(`/login/`)}
                           className="text-teal-600 hover:text-teal-500 transition duration-300"
                         >
                           View Project
@@ -125,7 +122,7 @@ const NotAuthProfile = ({userId, role,editable}) => {
                           
                           <Button
                             className="bg-charcolBlue text-teal-400 hover:text-teal-500"
-                            onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`, { state: { project } })}
+                            onClick={() => navigate('/login/')}
                           >
                             View Details
                           </Button>

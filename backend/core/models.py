@@ -194,6 +194,7 @@ class Payment(models.Model):
 
     STATUS_CHOICES = [
         ('paid', 'Paid'),
+        ('initiated', 'Initiated'),
         ('pending', 'Pending'),
     ]
     
@@ -205,7 +206,7 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_date = models.DateTimeField(auto_now_add=True)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='initiated')
     invoice_number = models.CharField(max_length=255, blank=True, null=True)
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
     currency = models.CharField(max_length=10, default='INR')
@@ -283,7 +284,7 @@ class Notification(models.Model):
         ('System', 'System'),
         ('Collaborations', 'Collaborations'),
     ]
-
+    title = models.CharField(null=True,max_length=200)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     related_model_id = models.PositiveIntegerField()

@@ -115,7 +115,28 @@ For platform management.
 
 21-02-2025:CLIENT
 -Create Search functions using Qs
+-Implemented notifications
+
+22-02-2025
+-Improved Client Side Notification(Notify freelancer, Event Notification)
+-
 -Create connection features(accept, reject, pending ) and show connections of a user
 -Worry about Notifications (sending, navigating on click)
--Add feature ,Hire Freelancer
+
+23-02-2025:
+-Celery worker and Celery beat to manage scheduled tasks like sending signals
+-Celery worker to send notifications
+-Check upcoming deadlines
+-Connections notification
+-Project notifcations to freelancers
+---Everything is scheduled not live
+
+24-02-2025:
+-Live notification list
+-Live notification count
+-Notification pop up
+---Everything is live and schedule can be improved further
+
+25-02-2025:
+-Created search using sockets(need to understand)
 

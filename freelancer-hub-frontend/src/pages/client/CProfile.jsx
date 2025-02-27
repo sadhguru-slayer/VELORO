@@ -52,7 +52,10 @@ const CProfile = ({ userId, role, editable }) => {
           const response = await axios.get("http://127.0.0.1:8000/api/profile/", {
             headers: { Authorization: `Bearer ${accessToken}` },
           });
-          setIsAuthenticated(true);
+          if(response.status>=200){
+            setIsAuthenticated(true);
+            
+          }
         } catch (error) {
           setIsAuthenticated(false);
         }
@@ -81,6 +84,7 @@ const CProfile = ({ userId, role, editable }) => {
   const handleProfileMenu = (profileComponent) => {
     if (location.pathname !== "/client/profile") {
       navigate(`/client/profile/${userId}`, { state: { profileComponent } });
+      
     } else {
       setActiveProfileComponent(profileComponent);
     }

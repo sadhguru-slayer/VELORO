@@ -133,7 +133,7 @@ const OtherProfile = ({userId, role,editable}) => {
       };
     
   return (
-    <div className="flex flex-col items-start space-y-6">
+    <div className="flex flex-col items-start space-y-6 w-full max-w-[80rem] min-h-full h-fit">
   {/* Profile Overview */}
   <div className="bg-white p-6 rounded-lg shadow-md w-full">
   <div className="flex flex-col sm:flex-row md:flex-row items-center space-x-6">

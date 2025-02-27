@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { Button, Modal, Input, message } from 'antd';
+import { Button, Modal, Input, message, Table, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -15,9 +13,10 @@ const UpcomingEvents = () => {
   const [isBaseModalOpen, setIsBaseModalOpen] = useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
   const [isUpdateEventModalOpen, setIsUpdateEventModalOpen] = useState(false);
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState({ Meeting: [], Deadline: [], Others: [] });
   const [newEvent, setNewEvent] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [notificationTime, setNotificationTime] = useState(1440); // Default 1 day (in minutes)
 
   const showBaseModal = () => setIsBaseModalOpen(true);
   const handleBaseCancel = () => setIsBaseModalOpen(false);
@@ -52,9 +51,14 @@ const UpcomingEvents = () => {
             data: deleteEventData,
           }
         );
-        setEvents(events.filter((event) => event.id !== selectedEvent.id));
+        setEvents((prevEvents) => {
+          const updatedEvents = { ...prevEvents };
+          updatedEvents[selectedEvent.type] = updatedEvents[selectedEvent.type].filter(
+            (event) => event.id !== selectedEvent.id
+          );
+          return updatedEvents;
+        });
         message.success('Event deleted successfully!');
-        fetchEvents();
         handleBaseCancel();
       } catch (error) {
         message.error('Failed to delete event. Please try again later.');
@@ -63,22 +67,22 @@ const UpcomingEvents = () => {
     }
   };
 
-  const handleDateClick = (e) => {
-    if (selectedDate) {
-      selectedDate.style.backgroundColor = 'unset';
-    }
-    e.dayEl.style.backgroundColor = 'red';
-    setSelectedDate(e.dayEl);
-    setSelectedEvent(null);
-    showBaseModal();
-  };
-
   const fetchEvents = async () => {
     try {
       const response = await axios.get('http://127.0.0.1:8000/api/client/events/', {
         headers: getAuthHeaders(),
       });
-      setEvents(response.data);
+      const groupedEvents = { Meeting: [], Deadline: [], Others: [] };
+      response.data.forEach((event) => {
+        if (event.type === 'Meeting') {
+          groupedEvents.Meeting.push(event);
+        } else if (event.type === 'Deadline') {
+          groupedEvents.Deadline.push(event);
+        } else {
+          groupedEvents.Others.push(event);
+        }
+      });
+      setEvents(groupedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
     }
@@ -90,16 +94,18 @@ const UpcomingEvents = () => {
 
   const handleCreateEvent = async () => {
     if (newEvent.trim()) {
-      setEvents([...events, { title: newEvent, start: selectedDate.dataset.date }]);
       try {
-        const newEventData = { title: newEvent, start: selectedDate.dataset.date };
+        const newEventData = {
+          title: newEvent,
+          start: selectedDate.dataset.date, // Ensure it's YYYY-MM-DD
+          notification_time: notificationTime,
+        };
         await axios.post(
           'http://127.0.0.1:8000/api/client/events/create_event/',
           newEventData,
           { headers: getAuthHeaders() }
         );
         message.success('Event created successfully!');
-        setNewEvent('');
         fetchEvents();
         handleCreateCancel();
       } catch (error) {
@@ -112,7 +118,7 @@ const UpcomingEvents = () => {
 
   const handleUpdateEvent = async () => {
     if (newEvent.trim()) {
-      const updatedEventData = { id: selectedEvent.id, title: newEvent };
+      const updatedEventData = { id: selectedEvent.id, title: newEvent, notification_time: notificationTime };
 
       try {
         await axios.put(
@@ -121,13 +127,14 @@ const UpcomingEvents = () => {
           { headers: getAuthHeaders() }
         );
 
-        setEvents(
-          events.map((event) =>
+        setEvents((prevEvents) => {
+          const updatedEvents = { ...prevEvents };
+          updatedEvents[selectedEvent.type] = updatedEvents[selectedEvent.type].map((event) =>
             event.id === selectedEvent.id ? { ...event, title: newEvent } : event
-          )
-        );
+          );
+          return updatedEvents;
+        });
         message.success('Event updated successfully!');
-        setNewEvent('');
         fetchEvents();
         handleUpdateCancel();
       } catch (error) {
@@ -139,15 +146,53 @@ const UpcomingEvents = () => {
     }
   };
 
+  const eventColumns = [
+    {
+      title: 'Event Title',
+      dataIndex: 'title',
+      key: 'title',
+    },
+    {
+      title: 'Date',
+      dataIndex: 'start',
+      key: 'start',
+    },
+    {
+      title: 'Actions',
+      key: 'action',
+      render: (text, event) => (
+        <div>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => {
+              setSelectedEvent(event);
+              setNewEvent(event.title);
+              setNotificationTime(event.notification_time || 1440); // Set notification time when editing
+              showUpdateEventModal();
+            }}
+          />
+          <Button
+            icon={<DeleteOutlined />}
+            danger
+            onClick={() => {
+              setSelectedEvent(event);
+              handleDeleteEvent();
+            }}
+          />
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="mt-6 bg-white p-4 rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
+    <div className="p-6 bg-white rounded-lg shadow-lg">
+      <h2 className="text-2xl font-semibold mb-4 text-teal-600">Upcoming Events</h2>
 
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
         initialView="dayGridMonth"
-        events={events}
-        height="auto" // Allow calendar height to adjust based on viewport
+        events={events.Meeting.concat(events.Deadline, events.Others)}
+        height="auto"
         headerToolbar={{
           start: 'prev,next today',
           center: 'title',
@@ -157,31 +202,35 @@ const UpcomingEvents = () => {
           setSelectedEvent(info.event);
           showBaseModal();
         }}
-        dateClick={handleDateClick}
-        eventContent={(eventInfo) => {
-          const { event } = eventInfo;
-          return (
-            <div style={{ padding: '5px', backgroundColor: event.extendedProps.color }}>
-              <strong>{event.title}</strong>
-            </div>
-          );
+        dateClick={(e) => {
+          if (selectedDate) {
+            selectedDate.style.backgroundColor = 'unset';
+          }
+          e.dayEl.style.backgroundColor = 'red';
+          setSelectedDate(e.dayEl);
+          setSelectedEvent(null);
+          showBaseModal();
         }}
-        eventColor="#008080"
-        buttonText={{
-          today: 'Today',
-          month: 'Month',
-          week: 'Week',
-          day: 'Day',
-        }}
-        customButtons={{
-          myCustomButton: {
-            text: 'Custom',
-            click: () => alert('Custom Button Clicked!'),
-          },
-        }}
-        // Responsiveness
-        windowResize={true} // Automatically adjust when the window is resized
       />
+
+      {/* Event List */}
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold mb-4 text-teal-600">Event List</h3>
+
+        {Object.entries(events).map(([type, eventList]) => (
+          eventList.length > 0 && (
+            <div key={type} className="mb-6">
+              <h4 className="text-xl font-semibold text-teal-600">{type} Events</h4>
+              <Table
+                dataSource={eventList}
+                columns={eventColumns}
+                rowKey="id"
+                pagination={false}
+              />
+            </div>
+          )
+        ))}
+      </div>
 
       {/* Base Modal */}
       <Modal
@@ -189,37 +238,33 @@ const UpcomingEvents = () => {
         open={isBaseModalOpen}
         onCancel={handleBaseCancel}
         footer={null}
-        width="100%" // Make it full width on small screens
-        style={{ maxWidth: '300px' }} // Set maxWidth for larger screens
       >
-        <div className="content w-full h-full p-2 flex flex-col gap-2">
-          <Button
-            icon={<PlusOutlined />}
-            className="w-full"
-            onClick={showCreateEventModal}
-          >
-            Create Event
-          </Button>
-          {selectedEvent && (
-            <>
-              <Button
-                icon={<EditOutlined />}
-                className="w-full"
-                onClick={showUpdateEventModal}
-              >
-                Update Event
-              </Button>
-              <Button
-                icon={<DeleteOutlined />}
-                className="w-full"
-                danger
-                onClick={handleDeleteEvent}
-              >
-                Delete Event
-              </Button>
-            </>
-          )}
-        </div>
+        <Button
+          icon={<PlusOutlined />}
+          className="w-full"
+          onClick={showCreateEventModal}
+        >
+          Create Event
+        </Button>
+        {selectedEvent && (
+          <>
+            <Button
+              icon={<EditOutlined />}
+              className="w-full"
+              onClick={showUpdateEventModal}
+            >
+              Update Event
+            </Button>
+            <Button
+              icon={<DeleteOutlined />}
+              className="w-full"
+              danger
+              onClick={handleDeleteEvent}
+            >
+              Delete Event
+            </Button>
+          </>
+        )}
       </Modal>
 
       {/* Create Event Modal */}
@@ -228,7 +273,7 @@ const UpcomingEvents = () => {
         open={isCreateEventModalOpen}
         onCancel={handleCreateCancel}
         onOk={handleCreateEvent}
-        width="100%" // Make it responsive
+        width="100%"
         style={{ maxWidth: '400px' }}
       >
         <Input
@@ -236,6 +281,18 @@ const UpcomingEvents = () => {
           value={newEvent}
           onChange={(e) => setNewEvent(e.target.value)}
         />
+        <Select
+          value={notificationTime}
+          onChange={(value) => setNotificationTime(value)}
+          style={{ width: '100%', marginTop: 10 }}
+        >
+          <Select.Option value={60}>1 Hour</Select.Option>
+          <Select.Option value={180}>3 Hours</Select.Option>
+          <Select.Option value={360}>6 Hours</Select.Option>
+          <Select.Option value={1440}>1 Day</Select.Option>
+          <Select.Option value={4320}>3 Days</Select.Option>
+          <Select.Option value={10080}>1 Week</Select.Option>
+        </Select>
       </Modal>
 
       {/* Update Event Modal */}
@@ -244,7 +301,7 @@ const UpcomingEvents = () => {
         open={isUpdateEventModalOpen}
         onCancel={handleUpdateCancel}
         onOk={handleUpdateEvent}
-        width="100%" // Make it responsive
+        width="100%"
         style={{ maxWidth: '400px' }}
       >
         <Input
@@ -252,9 +309,20 @@ const UpcomingEvents = () => {
           value={newEvent}
           onChange={(e) => setNewEvent(e.target.value)}
         />
+        <Select
+          value={notificationTime}
+          onChange={(value) => setNotificationTime(value)}
+          style={{ width: '100%', marginTop: 10 }}
+        >
+          <Select.Option value={60}>1 Hour</Select.Option>
+          <Select.Option value={180}>3 Hours</Select.Option>
+          <Select.Option value={360}>6 Hours</Select.Option>
+          <Select.Option value={1440}>1 Day</Select.Option>
+          <Select.Option value={4320}>3 Days</Select.Option>
+          <Select.Option value={10080}>1 Week</Select.Option>
+        </Select>
       </Modal>
     </div>
   );
 };
-
 export default UpcomingEvents;

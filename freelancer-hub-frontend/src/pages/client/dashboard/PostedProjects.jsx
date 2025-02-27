@@ -75,6 +75,7 @@ const PostedProjects = () => {
   };
 
   const openDetails = (project) => {
+    console.log(project)
     setSelectedProject(project);
     setShowDetails(true);
   };
@@ -230,22 +231,23 @@ const PostedProjects = () => {
       </div>
 
       <Modal
-        title="Project Details"
-        open={showDetails}
-        onCancel={closeDetails}
-        footer={[<Button key="close" onClick={closeDetails} type="primary">Close</Button>]}
-        width={800}
-      >
-        {selectedProject && (
-          <div>
-            <h3>{selectedProject.title}</h3>
-            <p><strong>Deadline:</strong> {selectedProject.deadline}</p>
-            <p><strong>Status:</strong> {selectedProject.status}</p>
-            <p><strong>Client:</strong> {selectedProject.client}</p>
-            <Tabs defaultActiveKey='1' items={tabItems}/>
-          </div>
-        )}
-      </Modal>
+      title="Project Details"
+      open={showDetails}
+      onCancel={closeDetails}
+      footer={[<Button key="close" onClick={closeDetails} type="primary">Close</Button>]}
+      width={800}
+    >
+      {selectedProject && (
+        <div>
+          <h3>{selectedProject.title}</h3>
+          <p><strong>Deadline:</strong> {selectedProject.deadline}</p>
+          <p><strong>Status:</strong> {selectedProject.status}</p>
+          <p><strong className='cursor-pointer' onClick={()=>navigate(`/client/profile/${selectedProject.client?.id}`)} >Client:</strong> {selectedProject.client?.username}</p>
+          <Tabs defaultActiveKey='1' items={tabItems} />
+        </div>
+      )}
+    </Modal>
+    
     </div>
   );
 };

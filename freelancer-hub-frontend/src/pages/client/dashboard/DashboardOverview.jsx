@@ -4,7 +4,7 @@ import { Bar } from 'react-chartjs-2';
 import {useNavigate} from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie'
-import { Modal, Button, Table, Input, Select, Pagination, Tabs } from 'antd';
+import { Modal, Button, Table, Input, Select, Pagination, Tabs, message } from 'antd';
 
 
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -26,8 +26,12 @@ const DashboardOverview = () => {
   const [totalSpend, setTotalSpend] = useState(0);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [notofyButtonLoad,setNotifyButtonLoad]=useState(false);
   const pageSize = 4;
   const navigate = useNavigate();
+
+  const [messageApi, contextHolder] = message.useMessage();
+  const key = 'updatable';
   const [chartData, setChartData] = useState({
     labels: [],
     datasets: [
@@ -144,6 +148,105 @@ const DashboardOverview = () => {
       navigate("/client/dashboard/", { state: { component: "upcoming-events" } });
     }
   };
+
+  // Check for all tasks' notifications in localStorage when the component mounts
+  useEffect(() => {
+    const storedNotifications = localStorage.getItem('notifiedTasks');
+    if (storedNotifications) {
+      const notifications = JSON.parse(storedNotifications);
+      const currentTime = new Date().getTime();
+
+      // Filter out any tasks with expired notifications (older than 24 hours)
+      const updatedNotifications = {};
+      for (let taskId in notifications) {
+        const { notifiedAt } = notifications[taskId];
+        const elapsedTime = currentTime - notifiedAt;
+
+        if (elapsedTime < 24 * 60 * 60 * 1000) {
+          updatedNotifications[taskId] = notifications[taskId];
+        }
+      }
+
+      setNotifiedTasks(updatedNotifications);
+    }
+  }, []);
+
+
+
+  const [notifiedTasks, setNotifiedTasks] = useState({});
+const [loadingTasks, setLoadingTasks] = useState({});
+
+  
+const openMessage = (type, content) => {
+  message.open({
+    key,
+    type: type,
+    content: content,
+  });
+
+  if (type === 'loading') {
+    setTimeout(() => {
+      message.open({
+        key,
+        type: type === 'loading' ? 'success' : 'error',
+        content: content,
+        duration: 2,
+      });
+    }, 1000);
+  }
+};
+
+const handleNotifyFreelancer = async (taskId) => {
+  openMessage('loading', 'Loading...');
+  
+  setLoadingTasks(prevState => ({
+    ...prevState,
+    [taskId]: true,
+  }));
+
+  try {
+    const response = await axios.post(
+      `http://127.0.0.1:8000/api/notify-freelancer/${taskId}/`,
+      {},
+      {
+        headers: {
+          'Authorization': `Bearer ${Cookies.get('accessToken')}`,
+        },
+      }
+    );
+
+    if (response.data.status === 'success') {
+      setTimeout(() => {
+        openMessage('success', 'Notified freelancer!');
+      }, 1000);
+
+      const notifiedAt = new Date().getTime();
+      const updatedNotifications = {
+        ...notifiedTasks,
+        [taskId]: { notifiedAt },
+      };
+      localStorage.setItem('notifiedTasks', JSON.stringify(updatedNotifications));
+
+      setTimeout(() => {
+        const newNotifications = { ...updatedNotifications };
+        delete newNotifications[taskId];
+        setNotifiedTasks(newNotifications);
+        localStorage.setItem('notifiedTasks', JSON.stringify(newNotifications));
+      }, 24 * 60 * 60 * 1000);
+
+    }
+  } catch (error) {
+    openMessage('error', error.response?.data?.message || 'Failed to send notification.');
+  } finally {
+    setLoadingTasks(prevState => ({
+      ...prevState,
+      [taskId]: false,
+    }));
+    
+  }
+};
+
+
   return (
     <div className="p-3 sm:p-3 md:p-4 lg:p-6">
       {/* Welcome Banner */}
@@ -252,17 +355,13 @@ const DashboardOverview = () => {
                       {record.title}
                     </button>
                     {openDropdown === index && (
-                      <div className="p-3 bg-white flex flex-wrap justify-center">
-                        <p><strong>Deadline:</strong> {record.deadline}</p>
-                        <p><strong>Status:</strong> {record.status}</p>
+                      <div className="p-3 bg-white flex flex-col flex-wrap justify-center">
+                      <div className="">
+                      <p><strong>Deadline:</strong> {record.deadline}</p>
+                      <p><strong>Status:</strong> {record.status}</p>
+                      </div>
                         <div className="flex space-x-2 mt-2">
-                          <Button
-                            className="text-charcolBlue"
-                            icon={<FaEye />}
-                            onClick={() => openDetails(record)}
-                          >
-                            Preview
-                          </Button>
+                          
                           <Button
                             className="bg-charcolBlue text-teal-400 hover:text-teal-500"
                             onClick={() => navigate(`/client/view-bids/posted-project/${record.id}`, { state: { record } })}
@@ -313,12 +412,28 @@ const DashboardOverview = () => {
       <h2 className="text-xl font-semibold flex justify-between"><span>Upcoming Deadlines</span><span className='underline text-teal-600 cursor-pointer text-md' onClick={()=>onMoreClick("upcoming-events")}>more+</span></h2>
 
         <div className="mt-4">
-          {upcomingDeadlines.slice(0,5).map((tasks, index) => (
-            <div key={index} className="flex justify-between items-center mb-4">
-              <p>{tasks.title} - {tasks.deadline}</p>
-              <button className="bg-mutedGold text-white px-2 py-2 rounded">Notify Freelancer</button>
-            </div>
-          ))}
+        {upcomingDeadlines.slice(0, 5).map((task,index) => (
+          <div key={task.id} className="flex justify-between items-center mb-4">
+            <p>
+              {task.title} - {new Date(task.deadline).toLocaleDateString()}
+            </p>
+            {loadingTasks[task.id] ? (
+              <span className="bg-teal-200 disabled:cursor-not-allowed text-white p-1 rounded-lg px-2">
+                Wait
+              </span>
+            ) : notifiedTasks[task.id] ? (
+              <span className="bg-teal-500 text-white p-1 rounded-lg px-2">Notified</span>
+            ) : (
+              <button
+                onClick={() => handleNotifyFreelancer(task.id)}
+                className="bg-mutedGold text-white p-1 rounded-lg px-2"
+              >
+                Notify Freelancer
+              </button>
+            )}
+          </div>
+        ))}
+        
         </div>
       </div>
 

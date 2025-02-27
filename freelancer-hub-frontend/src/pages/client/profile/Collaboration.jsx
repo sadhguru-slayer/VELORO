@@ -111,7 +111,7 @@ const Collaborations = () => {
   ];
 
   return (
-    <div className="p-6 max-w-[80rem] w-full bg-white min-h-fit rounded-lg">
+    <div className="p-6 max-w-[80rem] w-full bg-white min-h-fit h-fit rounded-lg">
       <h2 className="text-2xl font-semibold text-teal-600 mb-4">
         Collaboration Overview
       </h2>

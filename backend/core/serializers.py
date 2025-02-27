@@ -149,4 +149,4 @@ class SpendingDistributionByProjectSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ['id', 'type', 'related_model_id', 'notification_text', 'is_read', 'created_at']
+        fields = ['id', 'title','type', 'related_model_id', 'notification_text', 'is_read', 'created_at']

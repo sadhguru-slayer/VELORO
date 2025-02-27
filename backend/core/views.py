@@ -390,12 +390,11 @@ class SkillsByCategoryView(APIView):
 
 
 # Custom pagination class
+from .models import User
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
-
-from .models import User
 
 @api_view(['GET'])
 @permission_classes([])  # Open API, modify as needed
@@ -415,12 +414,14 @@ def search_partial(request):
         Q(username__icontains=query) | Q(role__icontains=query)
     ).order_by('id')
 
-
     # Paginate Users
     paginated_users = paginator.paginate_queryset(users, request)
 
     # Manually serialize the users with a Python dict
     serialized_users = []
+    projects = []
+    seen_project_ids = set()  # To track unique project IDs
+
     for user in paginated_users:
         user_data = {
             'id': user.id,
@@ -434,33 +435,57 @@ def search_partial(request):
             try:
                 client_profile = ClientProfile.objects.get(user=user)
                 user_data['profile_picture'] = client_profile.profile_picture.url if client_profile.profile_picture else None
+                # Query for projects assigned to this client
+                client_projects = Project.objects.filter(
+                    Q(client=user) |  # Projects assigned to this client
+                    Q(title__icontains=query) | 
+                    Q(description__icontains=query) | 
+                    Q(domain__name__icontains=query)
+                ).distinct().order_by('id')
+
+                # Add only unique projects by ID
+                for project in client_projects:
+                    if project.id not in seen_project_ids:
+                        seen_project_ids.add(project.id)
+                        projects.append(project)
+
             except ClientProfile.DoesNotExist:
                 user_data['profile_picture'] = None
         elif user.role == 'freelancer':
             try:
                 freelancer_profile = FreelancerProfile.objects.get(user=user)
+                # Query for projects assigned to this freelancer
+                freelancer_projects = Project.objects.filter(
+                    Q(assigned_to=user) |  # Correct for ManyToManyField lookup
+                    Q(title__icontains=query) | 
+                    Q(description__icontains=query) | 
+                    Q(domain__name__icontains=query)
+                ).distinct().order_by('id')
+
+                # Add only unique projects by ID
+                for project in freelancer_projects:
+                    if project.id not in seen_project_ids:
+                        seen_project_ids.add(project.id)
+                        projects.append(project)
+
                 user_data['profile_picture'] = freelancer_profile.profile_picture.url if freelancer_profile.profile_picture else None
             except FreelancerProfile.DoesNotExist:
                 user_data['profile_picture'] = None
 
         serialized_users.append(user_data)
 
-
-    projects = Project.objects.filter(
-    Q(title__icontains=query) | 
-    Q(description__icontains=query) | 
-    Q(domain__name__icontains=query)
-    ).order_by('id')
- # Order by 'id' for consistency
-
     # Paginate Projects
-    paginated_projects = paginator.paginate_queryset(projects, request)
-    serialized_projects = ProjectSerializer(paginated_projects, many=True)
+    if projects:
+        paginated_projects = paginator.paginate_queryset(projects, request)
+        serialized_projects = ProjectSerializer(paginated_projects, many=True)
+        project_count = len(projects)  # Count the total number of projects
+    else:
+        project_count = 0
 
     # Search Categories (by name)
     categories = Category.objects.filter(
         Q(name__icontains=query)
-    ).order_by('id')  # Order by 'id' for consistency
+    ).order_by('id')
 
     # Paginate Categories
     paginated_categories = paginator.paginate_queryset(categories, request)
@@ -475,10 +500,10 @@ def search_partial(request):
             "results": serialized_users
         },
         "projects": {
-            "count": projects.count(),
+            "count": project_count,
             "next": paginator.get_next_link(),
             "previous": paginator.get_previous_link(),
-            "results": serialized_projects.data
+            "results": serialized_projects.data if projects else []
         },
         "categories": {
             "count": categories.count(),
@@ -487,12 +512,14 @@ def search_partial(request):
             "results": serialized_categories.data
         }
     }
+    print(response_data)
 
     # Cache the results for 15 minutes
     cache.set(query, response_data, timeout=60*15)
 
     # Return the paginated response
     return Response(response_data)
+
 
 
 class NotificationListView(APIView):

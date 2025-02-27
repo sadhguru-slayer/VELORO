@@ -75,9 +75,8 @@ const dateOptions = {
   },
 };
 
-const ProjectPost = ({userId, role}) => {
+const ProjectPost = ({userId, role,MAX_TASKS=3}) => {
   const [show, setShow] = useState(false);
- 
   const [isCollaborative, setIsCollaborative] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState("");
   const [filteredOptions, setFilteredOptions] = useState([]);
@@ -86,11 +85,16 @@ const ProjectPost = ({userId, role}) => {
   const [postProject, setPostProject] = useState(false);
   const [domain, setDomain] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [taskDateErrors, setTaskDateErrors] = useState([]);
+  const [taskBudgetErrors, setTaskBudgetErrors] = useState([]);
+  const [errorsResolved, setErrorResolved] = useState(true);
+
+
   const [formValues, setFormValues] = useState({
     title: "",
     description: "", // Adding description for project
     budget: 0, // Budget for the entire project
-    deadline: "", // Deadline for the project
+    deadline: "2025-02-24", // Deadline for the project
     domain: "", // The category/domain of the project
     is_collaborative: false, // To handle collaborative projects
     skills_required: [], // Array of skill IDs required for the project
@@ -212,6 +216,7 @@ const ProjectPost = ({userId, role}) => {
   };
 
   const handleAddTask = () => {
+    if (formValues.tasks.length < MAX_TASKS) {
     setFormValues({
       ...formValues,
       tasks: [
@@ -219,6 +224,7 @@ const ProjectPost = ({userId, role}) => {
         { title: "", description: "", budget: 0, skills_required_for_task: [],deadline:"" },
       ],
     });
+  }
   };
   const [taskShow, setTaskShow] = useState(
     formValues.tasks.reduce((acc, _, index) => {
@@ -227,49 +233,178 @@ const ProjectPost = ({userId, role}) => {
     }, {})
   );
 
-  const handleTasksDeadlineChange = (date,taskIndex) => {
-    // Check if the passed date is valid
-    if (!(date instanceof Date) || isNaN(date)) {
-      console.error("Invalid date value:", date);
-      return;
-    }
-    const formattedDate = formatDate(date);
+  const validateTaskBudget = () => {
+    let totalTaskBudget = 0;
+    let newTaskBudgetErrors = [...taskBudgetErrors]; // Start with a copy of the existing errors
   
-    handleTaskChange(taskIndex, "deadline", formattedDate);
+    // Loop through each task to calculate the total task budget
+    for (let i = 0; i < formValues.tasks.length; i++) {
+      totalTaskBudget += Number(formValues.tasks[i].budget);
+      
+      // If any task has a budget error, add it to the errors array
+      if (Number(formValues.tasks[i].budget) < 0) {
+        newTaskBudgetErrors[i] = 'Budget cannot be negative'; // Set error for this task
+      } else if(Number(totalTaskBudget) > Number(formValues.budget)){
+        console.log(Number(totalTaskBudget,Number(formValues.budget)))
+        newTaskBudgetErrors[i] = 'Total budget exceeded'; // Set error for this task
+      }
+      else {
+        newTaskBudgetErrors[i] = ''; // Clear any previous error for this task
+      }
+    }
+    // Check if total task budget exceeds the project budget
+  
+    setTaskBudgetErrors([...newTaskBudgetErrors]); // Ensure the error state is updated
+    setErrorResolved(true); // Form is valid for submission
+    return true;
   };
+  
+  
 
-  const handleTaskChange = (taskIndex, name, value) => {
-    const updatedTasks = [...formValues.tasks];
+// Function to parse date and return valid date object
+const parseDate = (dateString) => {
+  if (!dateString) {
+    console.error("Date string is empty or undefined");
+    return null;
+  }
 
-    updatedTasks[taskIndex] = {
-      ...updatedTasks[taskIndex],
-      [name]: value, // Dynamically set the value based on name (e.g., task name, task description, etc.)
-    };
+  const formattedDateString = `${dateString}T00:00:00Z`;
+  const date = new Date(formattedDateString);
 
-    setFormValues({
-      ...formValues,
-      tasks: updatedTasks,
-    });
-  };
+  if (isNaN(date.getTime())) {
+    console.error("Invalid date format:", formattedDateString);
+    return null;
+  }
 
-  const formOnchange = (e) => {
-    if (!e.target) {
-      console.error("Event target is undefined");
-      return;
+  return date;
+};
+
+
+
+const validateTaskDeadlines = (date = undefined) => {
+  let projectDeadline;
+  
+  if (date === undefined) {
+    projectDeadline = parseDate(formValues.deadline);
+  } else {
+    projectDeadline = parseDate(date);
+  }
+
+  if (!projectDeadline) {
+    console.error("Invalid project deadline.");
+    setErrorResolved(false); // Project deadline error
+    return false;
+  }
+
+  const today = new Date();
+  let newTaskDateErrors = [...taskDateErrors]; // Start with a copy of existing task date errors
+
+  // Loop through each task to validate its deadline
+  for (let i = 0; i < formValues.tasks.length; i++) {
+    const task = formValues.tasks[i];
+    const taskDeadline = parseDate(task.deadline);
+
+    if (!taskDeadline) {
+      console.error(`Invalid task deadline for Task ${i + 1}`);
+      continue; // Skip invalid task deadlines
     }
 
-    const { name, value } = e.target;
+    // Check if task deadline is before today or after the project deadline
+    if (taskDeadline > projectDeadline || taskDeadline < today) {
+      newTaskDateErrors[i] = "Task deadlines must be before the project deadline and cannot be today or before.";
+    } else {
+      newTaskDateErrors[i] = ''; // Clear previous errors for this task
+    }
+  }
 
-    // Check if name and value exist to prevent further issues
-    if (name !== undefined && value !== undefined) {
-      setFormValues((prevValues) => ({
+  // If any task deadline is invalid, set the errors array
+  if (newTaskDateErrors.some((error) => error !== '')) {
+    setTaskDateErrors([...newTaskDateErrors]);
+    setErrorResolved(false); // Form is not ready for submission
+    return false;
+  }
+
+  // Clear any errors if validation passes
+  setTaskDateErrors([...newTaskDateErrors]);
+  setErrorResolved(true); // Form is valid for submission
+  return true;
+};
+
+
+
+// Handle changes in the task deadline
+const handleTasksDeadlineChange = (date, taskIndex) => {
+  if (!(date instanceof Date) || isNaN(date)) {
+    console.error("Invalid date value:", date);
+    return;
+  }
+
+  const formattedDate = formatDate(date);
+  handleTaskChange(taskIndex, "deadline", formattedDate);
+  validateTaskDeadlines(); // Only validate deadlines when deadline changes
+  
+};
+
+// Handle changes in the task data (such as budget or deadline)
+const handleTaskChange = (taskIndex, name, value) => {
+  const updatedTasks = [...formValues.tasks];
+
+  updatedTasks[taskIndex] = {
+    ...updatedTasks[taskIndex],
+    [name]: value,
+  };
+
+  setFormValues((prevValues) => {
+    const updatedFormValues = {
+      ...prevValues,
+      tasks: updatedTasks,
+    };
+    console.log(name)
+    if (name === 'deadline') {
+      validateTaskDeadlines(); // Validate deadlines when deadline changes
+    } else if (name === 'budget') {
+      validateTaskBudget(); // Validate budget when budget changes
+    }
+
+    return updatedFormValues;
+  });
+};
+
+// Handle form changes (e.g., project budget or deadline)
+const formOnchange = (e) => {
+  if (!e.target) {
+    console.error("Event target is undefined");
+    return;
+  }
+
+  const { name, value } = e.target;
+
+  if (name !== undefined && value !== undefined) {
+    setFormValues((prevValues) => {
+      const updatedFormValues = {
         ...prevValues,
         [name]: value,
-      }));
-    } else {
-      console.error("Form field missing name or value");
-    }
-  };
+      };
+      if (name === 'deadline') {
+
+        validateTaskDeadlines();
+      } else if (name === 'budget') {
+        validateTaskBudget();
+      }
+
+      return updatedFormValues;
+    });
+  } else {
+    console.error("Form field missing name or value");
+  }
+};
+
+// UseEffect to ensure validation runs when tasks are updated
+useEffect(() => {
+  validateTaskDeadlines();
+  validateTaskBudget();
+}, [formValues.tasks]);
+  
 
   const getAuthHeaders = () => {
     const accessToken = Cookies.get("accessToken");
@@ -280,6 +415,14 @@ const ProjectPost = ({userId, role}) => {
 
   const formSubmit = async (e) => {
     e.preventDefault();
+
+    const isBudgetValid = validateTaskBudget();
+  const areDeadlinesValid = validateTaskDeadlines();
+
+  if (!isBudgetValid || !areDeadlinesValid) {
+    console.log("Validation failed. Please fix the errors.");
+    return; // Prevent form submission
+  }
   
     try {
       // Make the POST request
@@ -290,7 +433,6 @@ const ProjectPost = ({userId, role}) => {
           headers: getAuthHeaders(),
         }
       );
-
       if (response.status >= 200 && response.status < 300) {
         message.success("Project Posted")
         setFormValues({
@@ -298,11 +440,12 @@ const ProjectPost = ({userId, role}) => {
           title: '',
           description: '',
           budget: 0,
-          deadline: '',
+          deadline: new Date(),
           domain: '',
           is_collaborative: false,
           skills_required: [],
         });
+        window.location.reload();
       }
 
     } catch (error) {
@@ -341,6 +484,8 @@ const ProjectPost = ({userId, role}) => {
       ...prevValues,
       deadline: formattedDate, // Store the formatted date in the form values
     }));
+
+    validateTaskDeadlines(formattedDate);
   };
  
 
@@ -358,255 +503,275 @@ const ProjectPost = ({userId, role}) => {
     }));
   };
 
+  const handleDeleteTask = (index) => {
+    const updatedTasks = [...formValues.tasks];
+    updatedTasks.splice(index, 1); // Removes the task at the specified index
+    setFormValues({
+      ...formValues,
+      tasks: updatedTasks,
+    });
+  };
+  
+
   return (
     <div className="flex h-screen bg-gray-100">
-      <CSider
-      userId={userId} 
+    <CSider
+      userId={userId}
       role={role}
-        dropdown={true}
-        collapsed={true}
-        handleMenuClick={handleMenuClick}
-        handleProfileMenu={handleProfileMenu}
-      />
-
-      <div
-        className=" bg-gray-100 flex-1 flex flex-col overflow-x-hidden 
-  ml-14 sm:ml-16 md:ml-16 lg:ml-22"
-      >
-        {/* Header */}
-        <CHeader />
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto bg-gray-200 p-6">
-          {/* Content Section */}
-          {loading ? (
-            <IndividualLoadingComponent />
-          ) : (
-            <>
-              <div className="create_rpoject_section w-full h-auto">
-                <div className="flex justify-center items-center w-full h-full py-4 rounded-lg bg-white">
-                  {!postProject ? (
-                    <div
-                      className="flex flex-col items-center cursor-pointer "
-                      onClick={handleAddProjectClick}
-                    >
-                      <IoMdAdd className="text-gray-500 text-9xl" />
-                      <p>Post a project?Click here</p>
+      dropdown={true}
+      collapsed={true}
+      handleMenuClick={handleMenuClick}
+      handleProfileMenu={handleProfileMenu}
+    />
+  
+    <div
+      className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22 bg-gray-100"
+    >
+      {/* Header */}
+      <CHeader />
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto bg-gray-200 p-6">
+        {/* Content Section */}
+        {loading ? (
+          <IndividualLoadingComponent />
+        ) : (
+          <>
+            <div className="create_project_section w-full h-auto bg-white shadow-md rounded-lg p-6">
+              <div className="flex justify-center items-center w-full py-4 rounded-lg bg-white">
+                {!postProject ? (
+                  <div
+                    className="flex flex-col items-center cursor-pointer "
+                    onClick={handleAddProjectClick}
+                  >
+                    <IoMdAdd className="text-gray-500 text-9xl" />
+                    <p className="text-gray-700 text-lg font-medium mt-2">
+                      Post a project? Click here
+                    </p>
+                  </div>
+                ) : (
+                  <form
+                    className="w-[80%] mx-auto"
+                    onSubmit={formSubmit}
+                  >
+                    <h2 className="text-xl text-gray-900 font-bold my-5">
+                      Project Details
+                    </h2>
+                    {/* Project Title */}
+                    <div className="relative z-0 w-full mb-5 group">
+                      <input
+                        type="text"
+                        name="title"
+                        id="title"
+                        className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" "
+                        value={formValues.title}
+                        onChange={formOnchange}
+                        required
+                      />
+                      <label
+                        htmlFor="title"
+                        className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600"
+                      >
+                        Project Title
+                      </label>
                     </div>
-                  ) : (
-                    <form
-                      className="w-[80%] h-full mx-auto"
-                      onSubmit={formSubmit}
-                    >
-                      <h2 className="text-xl text-gray-900 font-bold my-5">
-                        Project Details
-                      </h2>
-                      <div className="relative z-0 w-full mb-5 group">
-                        <input
-                          type="text"
-                          name="title"
-                          id="title"
-                          className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                          placeholder=" "
-                          value={formValues.title}
-                          onChange={formOnchange}
-                          required
-                        />
-                        <label
-                          htmlFor="title"
-                          className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-                        >
-                          Project Title
+  
+                    {/* Project Description */}
+                    <div className="relative z-0 w-full mb-5 group">
+                      <Editor
+                        placeholder="Project Description"
+                        onTextChange={(e) =>
+                          setFormValues({
+                            ...formValues,
+                            description: e.htmlValue,
+                          })
+                        }
+                        style={{ height: "15rem" }}
+                      />
+                    </div>
+  
+                    {/* Project Budget */}
+                    <div className="relative z-0 w-full mb-5 group">
+                      <input
+                        type="number"
+                        name="budget"
+                        id="budget"
+                        className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" "
+                        value={formValues.budget}
+                        onChange={formOnchange}
+                        required
+                      />
+                      <label
+                        htmlFor="budget"
+                        className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600"
+                      >
+                        Project Budget
+                      </label>
+                    </div>
+  
+                    {/* Deadline Date Picker */}
+                    <div className="cursor-pointer relative z-1 w-full mb-5 mt-2 group md:gap-6">
+                      <Datepicker
+                        options={dateOptions}
+                        selected={new Date(formValues.deadline)}
+                        onChange={handleDeadlineChange}
+                        show={show}
+                        setShow={handleClose}
+                      />
+                    </div>
+  
+                    {/* Domain Selection */}
+                    <div className="relative z-0 w-full mb-5 flex flex-col gap-3 group">
+                      <Select
+                        name="domain"
+                        options={domain}
+                        onChange={domainChange}
+                        value={selectedDomain}
+                        className="basic-multi-select"
+                        classNamePrefix="select"
+                        placeholder="Select a Domain"
+                      />
+                    </div>
+  
+                    {/* Collaborative Checkbox */}
+                    <div className="relative z-0 w-full mb-5 flex flex-col gap-3 group">
+                      <div className="flex items-center gap-5">
+                        <label htmlFor="is_collaborative" className="text-gray-500">
+                          Collaborative
                         </label>
-                      </div>
-                      <div className="relative z-0 w-full mb-5 group">
-                        <Editor
-                          placeholder="Project Description"
-                          onTextChange={(e) =>
-                            setFormValues({
-                              ...formValues,
-                              description: e.htmlValue,
-                            })
-                          }
-                          style={{ height: "15rem" }}
+                        <Checkbox
+                          name="is_collaborative"
+                          id="is_collaborative"
+                          value={isCollaborative}
+                          {...label}
+                          color="#009688"
+                          onChange={() => {
+                            const newValue = !isCollaborative;
+                            setIsCollaborative(newValue);
+                            formOnchange({
+                              target: {
+                                name: "is_collaborative",
+                                value: newValue,
+                              },
+                            });
+                          }}
                         />
                       </div>
-                      <div className="relative z-0 w-full mb-5 group">
-                        <input
-                          type="number"
-                          name="budget"
-                          id="budget"
-                          className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                          placeholder=" "
-                          value={formValues.budget}
-                          onChange={formOnchange}
-                          required
-                        />
-                        <label
-                          htmlFor="budget"
-                          className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 rtl:peer-focus:translate-x-1/4 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-                        >
-                          Project Budget
-                        </label>
-                      </div>
-                      <div className="cursor-pointer relative z-1 w-full mb-5 mt-2 group md:gap-6">
-                        <Datepicker
-                          options={dateOptions}
-                          selected={new Date(formValues.deadline)}
-                          onChange={handleDeadlineChange}
-                          show={show}
-                          setShow={handleClose}
-                        />
-                      </div>
-
+                    </div>
+  
+                    {/* Task Management */}
+                    {!isCollaborative ? (
                       <div className="relative z-auto w-full mb-5 flex flex-col gap-3 group">
-                        <Select
-                          name="domain"
-                          options={domain} // Use the domain options fetched and formatted
-                          onChange={domainChange} // Handle domain change
-                          value={selectedDomain} // Set the selected domain
-                          className="basic-multi-select"
-                          classNamePrefix="select"
-                          placeholder="Select a Domain"
-                        />
-                      </div>
-                      <div className="relative z-0 w-full mb-5 flex flex-col gap-3 group">
-                        <div className="flex items-center gap-5 group">
-                          <label
-                            htmlFor="is_collaborative"
-                            className="text-gray-500"
-                          >
-                            Collaborative
-                          </label>
-                          <Checkbox
-                            name="is_collaborative"
-                            id="is_collaborative"
-                            value={isCollaborative}
-                            {...label}
-                            color="#009688"
-                            onChange={() => {
-                              const newValue = !isCollaborative; // Toggle the value of isCollaborative
-                              setIsCollaborative(newValue); // Update the state
-                              formOnchange({
-                                target: {
-                                  name: "is_collaborative",
-                                  value: newValue,
-                                }, // Correctly set the value
-                              });
-                            }}
+                        <div className="relative z-auto w-full mb-5 group">
+                          <Select
+                            isMulti
+                            required={false}
+                            name="skills_required"
+                            options={filteredOptions}
+                            value={formValues.skills_required}
+                            onChange={handleSkillChange}
+                            className="basic-multi-select"
+                            classNamePrefix="select"
+                            placeholder="Select Skills"
                           />
                         </div>
                       </div>
-
-                      {!isCollaborative ? (
-                        <div className="relative z-auto w-full mb-5 flex flex-col gap-3 group">
-                          <div className="relative z-auto w-full mb-5 group">
-                            <Select
-                              isMulti
-                              required={false}
-                              name="skills_required"
-                              options={filteredOptions} // Pass the filtered options
-                              value={formValues.skills_required} // Set the selected skills
-                              onChange={handleSkillChange} // Handle skill selection change
-                              className="basic-multi-select"
-                              classNamePrefix="select"
-                              placeholder="Select Skills"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="tasks_section flex flex-col gap-3">
-                          <h2 className="text-lg font-bold">
-                            Divide Tasks Based on {capitalize(selectedDomain)}
-                          </h2>
-                          {formValues.tasks.map((task, index) => (
-                            <div
-                              key={index}
-                              className="tasks_cards w-full h-full p-4 border rounded-md"
-                            >
-                              <h2 className="text-md font-bold pl-lg">
-                                Task {index + 1}
-                              </h2>
-                              <div className="card_content border p-4 flex flex-col gap-3 rounded-md">
-                                <input
-                                  type="text"
-                                  name={`task_${index + 1}_name`}
-                                  className="block py-2.5 px-2.5 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none"
-                                  placeholder="Task name"
-                                  value={task.title}
-                                  onChange={(e) =>
-                                    handleTaskChange(
-                                      index,
-                                      "title",
-                                      e.target.value
-                                    )
-                                  }
-                                  required
-                                />
-
-                                <Editor
-                                  placeholder="Task Description"
-                                  value={task.description}
-                                  onTextChange={(e) =>
-                                    handleTaskChange(
-                                      index,
-                                      "description",
-                                      e.htmlValue
-                                    )
-                                  }
-                                  style={{ height: "12rem" }}
-                                />
-
-                                <Select
-                                  isMulti
-                                  name={`task_${index + 1}_skills`}
-                                  options={filteredOptions}
-                                  className="basic-multi-select"
-                                  classNamePrefix="skills_required_for_task"
-                                  value={task.skills_required_for_task}
-                                  onChange={(e) =>
-                                    handleTaskChange(index, "skills_required_for_task", e)
-                                  }
-                                  placeholder={`Select Skills for Task ${
-                                    index + 1
-                                  }`}
-                                />
-
-                                <Datepicker
+                    ) : (
+                      <div className="tasks_section flex flex-col gap-3">
+                        <h2 className="text-lg font-bold">
+                          Divide Tasks Based on {capitalize(selectedDomain)}
+                        </h2>
+                        {formValues.tasks.map((task, index) => (
+                          <div key={index} className="task-card border p-4 rounded-md shadow-sm mb-5">
+                            <h2 className="text-md font-bold pl-4">Task {index + 1}</h2>
+                            <div className="flex flex-col gap-4">
+                              {/* Task Name */}
+                              <input
+                                type="text"
+                                name={`task_${index + 1}_name`}
+                                className="block py-2.5 px-2.5 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none"
+                                placeholder="Task name"
+                                value={task.title}
+                                onChange={(e) =>
+                                  handleTaskChange(index, "title", e.target.value)
+                                }
+                                required
+                              />
+                              
+                              {/* Task Description */}
+                              <Editor
+                                placeholder="Task Description"
+                                value={task.description}
+                                onTextChange={(e) =>
+                                  handleTaskChange(index, "description", e.htmlValue)
+                                }
+                                style={{ height: "12rem" }}
+                              />
+                        
+                              {/* Task Skills */}
+                              <Select
+                                isMulti
+                                name={`task_${index + 1}_skills`}
+                                options={filteredOptions}
+                                value={task.skills_required_for_task}
+                                onChange={(e) =>
+                                  handleTaskChange(index, "skills_required_for_task", e)
+                                }
+                                className="basic-multi-select"
+                                classNamePrefix="skills_required_for_task"
+                                placeholder={`Select Skills for Task ${index + 1}`}
+                              />
+                        
+                              {/* Task Deadline */}
+                              <Datepicker
                                 options={dateOptions}
-                                selected={new Date(formValues.tasks[index].deadline)}
-                                onChange={(date) => {
-                                  handleTasksDeadlineChange(date, index);
-                                }}
-                                show={taskShow[index]}  // Show or hide based on the task's specific state
+                                selected={new Date(task.deadline)} 
+                                onChange={(date) => handleTasksDeadlineChange(date, index)}
+                                show={taskShow[index]}
                                 setShow={(show) => {
-                                  if (show) {
-                                    handleShowDatePicker(index);  // Show the date picker for the specific task
-                                  } else {
-                                    handleHideDatePicker(index);  // Hide the date picker for the specific task
-                                  }
+                                  show ? handleShowDatePicker(index) : handleHideDatePicker(index);
                                 }}
                                 dateFormat="yyyy-MM-dd"
                               />
-
-                                <input
-                                  type="number"
-                                  name={`task_${index + 1}_budget`}
-                                  className="block p-2.5 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none"
-                                  placeholder="Task Budget"
-                                  value={task.budget}
-                                  onChange={(e) =>
-                                    handleTaskChange(
-                                      index,
-                                      "budget",
-                                      e.target.value
-                                    )
-                                  }
-                                  required
-                                />
-                              </div>
+                              {/* Show task deadline error */}
+                              {taskDateErrors[index] && (
+                                <div className="error-message text-red-500">{taskDateErrors[index]}</div>
+                              )}
+                        
+                              {/* Task Budget */}
+                              <input
+                                type="number"
+                                name={`task_${index + 1}_budget`}
+                                className="block p-2.5 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none"
+                                placeholder="Task Budget"
+                                value={task.budget}
+                                onChange={(e) =>
+                                  handleTaskChange(index, "budget", e.target.value)
+                                }
+                                required
+                              />
+                              {/* Show task budget error */}
+                              {taskBudgetErrors[index] && (
+                                <div className="error-message text-red-500">
+                                  {taskBudgetErrors[index]}
+                                </div>
+                              )}
+                              
+                        
+                              {/* Delete Task Button */}
+                              <button
+                                onClick={() => handleDeleteTask(index)}
+                                className="text-red-500 mt-2"
+                              >
+                                Delete Task
+                              </button>
                             </div>
-                          ))}
-                          <div className="border rounded-md add_tasks_cards w-full py-3 flex justify-center items-center flex-col">
+                          </div>
+                        ))}              
+                        {/* Add Task Button */}
+                        {formValues.tasks.length < MAX_TASKS && (
+                          <div className="border rounded-md w-full py-3 flex justify-center items-center flex-col">
                             <button
                               onClick={handleAddTask}
                               className="border p-4 py-2 rounded-md text-md bg-teal-400 text-white"
@@ -614,28 +779,36 @@ const ProjectPost = ({userId, role}) => {
                               Add Task
                             </button>
                           </div>
-                        </div>
-                      )}
-                      <div className="mt-4">
-                        <button
-                          type="submit"
-                          className="bg-teal-500 text-white py-2 px-4 rounded-md"
-                        >
-                          Submit Project
-                        </button>
+                        )}                        
                       </div>
-                    </form>
-                  )}
-                  <div className="">
-                  
-                  </div>
-                </div>
+                    )}
+  
+                    {/* Submit Button */}
+                    <div className="mt-4 flex justify-center">
+                    {!errorsResolved ? (
+                      <button onClick={()=>message.error("There are few errors please resolve")}
+                      className="bg-teal-500 text-white py-2 px-6 rounded-md hover:bg-teal-400"
+                      
+                      >Submit Project</button>
+                    ):(
+                      <button
+                        type="submit"
+                        className="bg-teal-500 text-white py-2 px-6 rounded-md hover:bg-teal-400"
+                      >
+                        Submit Project
+                      </button>
+                    )}
+                    </div>
+                  </form>
+                )}
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
+  </div>
+  
   );
 };
 

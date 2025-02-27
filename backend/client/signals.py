@@ -132,6 +132,7 @@ def send_notification_to_user(sender, instance, created, **kwargs):
         # Prepare a serializable data dictionary
         notification_data = {
             'id': instance.id,
+            'title': instance.title,
             'notification_text': instance.notification_text,
             'created_at': instance.created_at.isoformat(),  # Format the date as string
             'related_model_id': instance.related_model_id,

@@ -47,11 +47,10 @@ const AuthProfile = ({userId, role,editable}) => {
   
           // Assuming the response data structure is as expected
           const data = response.data;
-  
           setClientInfo(data.client_profile);
           setProjects(data.projects);
           setReviewsList(data.reviews_and_ratings.reviews);
-          setConnectionCount(data.connection_Count);
+          setConnectionCount(data.connection_count);
           setAverageRating(data.reviews_and_ratings.average_rating);
         } catch (error) {
           console.log(error); // Handle any errors
@@ -69,7 +68,7 @@ const AuthProfile = ({userId, role,editable}) => {
     }, [userId]); 
     
   return (
-    <div className="authUserClass flex flex-col items-start gap-2 max-w-[80rem] w-full min-h-fit bg-white rounded-lg p-4 ">
+    <div className="authUserClass flex flex-col items-start gap-2 max-w-[80rem] w-full min-h-fit h-fit bg-white rounded-lg p-4 ">
   {/* Profile Overview */}
   <div className="bg-white p-4 rounded-md border w-full">
     <div className="flex items-center space-x-6">
@@ -86,7 +85,7 @@ const AuthProfile = ({userId, role,editable}) => {
         }
         <div className="mt-2 text-gray-500">
           <p>📍 {clientInfo.location}</p>
-          <p onClick={() => navigate('/client/connections/')}>🔗 {connectionCount} Connections</p>
+          <p className='cursor-pointer' onClick={() => navigate('/client/connections/')}>🔗 {connectionCount} Connections</p>
         </div>
         <div className="mt-4 flex space-x-4">
           <button 
