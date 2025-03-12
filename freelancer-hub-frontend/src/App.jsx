@@ -78,6 +78,7 @@ const App = () => {
             "related_model_id" in notification &&
             "type" in notification
           ) {
+            console.log(notification)
             showNotification(notification);
           } else {
             console.warn("Invalid notification format:", notification);
@@ -122,7 +123,9 @@ const showNotification = (notification) => {
       >
         <span className="text-lg mr-3 animate-bounce">🔔</span>
         <div>
-          <p className="font-semibold text-md">{notification.title}</p>
+          <p className="text-sm">
+          <div dangerouslySetInnerHTML={{ __html: notification.notification_text }} />
+          </p>
          
         </div>
       </motion.div>

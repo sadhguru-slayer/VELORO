@@ -520,3 +520,63 @@ def get_spending_data(user, time_frame='monthly'):
     }
 
     return chart_data
+
+
+
+# views.py
+
+class ProjectDetailsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, project_id, format=None):
+        try:
+            # Fetch the project by id
+            project = Project.objects.get(id=project_id)
+            tasks = Task.objects.filter(project=project)
+            
+            # Serialize the project and task data
+            project_data = ProjectSerializer(project).data
+            tasks_data = TaskSerializer(tasks, many=True).data
+            
+            # Add the tasks to the project data
+            project_data['tasks'] = tasks_data
+            return Response(project_data)
+        except Project.DoesNotExist:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class BidsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, project_id, format=None):
+        try:
+            bids_data = [
+                {
+                    "freelancer": "John Doe",
+                    "task": "Task Title",
+                    "skills": ["Python", "Pandas"],
+                    "duration": "2 weeks",
+                    "bidAmount": 1400,
+                },
+                {
+                    "freelancer": "Jane Smith",
+                    "task": "Task Title",
+                    "skills": ["TensorFlow", "Machine Learning"],
+                    "duration": "3 weeks",
+                    "bidAmount": 2800,
+                },
+                {
+                    "freelancer": "Tom Brown",
+                    "task": "Task Title",
+                    "skills": ["Python", "Data Analysis"],
+                    "duration": "1 week",
+                    "bidAmount": 1900,
+                },
+            ]
+            
+            return Response(bids_data)
+        except Task.DoesNotExist:
+            return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+

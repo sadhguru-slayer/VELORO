@@ -1,7 +1,7 @@
 # client/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .DashBoardViews import EventViewSet,RecentActivityView,PostedProjects,DashBoard_Overview,ActivityListView,SpecifiedActivityListView,SpendingDistributionByProject,CollaborationView
+from .DashBoardViews import EventViewSet,RecentActivityView,PostedProjects,DashBoard_Overview,ActivityListView,SpecifiedActivityListView,SpendingDistributionByProject,CollaborationView,ProjectDetailsAPIView,BidsAPIView
 from core.views import *
 from .DashBoardViews import SpendingDataView
 from .profileViews import UnAuthClientViews,ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView,ConnectionManageViewSet,ConnectionRequestView
@@ -45,6 +45,8 @@ urlpatterns = [
 
     #  Connections
      path('get_connections/',ConnectionView.as_view() , name='get_connections'),
+     path('get_project/<int:project_id>',ProjectDetailsAPIView.as_view() , name='get_project'),
+     path('get_bids_on_project/<int:project_id>',BidsAPIView.as_view() , name='get_bids_on_project'),
      path('get_connection_requests/',ConnectionRequestView.as_view() , name='get_connection_requests'),
    
 ]

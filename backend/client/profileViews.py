@@ -342,6 +342,8 @@ class ConnectionView(generics.ListAPIView):
 
         # Return the response with the connection data and profiles of both users in each connection
         return Response(connection_serializer.data, status=200)
+
+
 class ConnectionRequestView(generics.ListAPIView):
     serializer_class = ConnectionSendinSerializer
     permission_classes = [IsAuthenticated]

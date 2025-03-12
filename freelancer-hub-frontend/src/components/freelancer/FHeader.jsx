@@ -36,7 +36,11 @@ const handleLogout = async () => {
       {/* Logo Section */}
       <div className="flex items-center">
         <Link to="/" className="text-xl font-bold tracking-wide text-textPrimary">
-          Freelancer Hub
+        Veloro<span
+        style={{
+          width:'100px'
+        }}
+        className="text-violet-500 rounded-full"></span>
         </Link>
       </div>
 

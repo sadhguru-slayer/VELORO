@@ -5,8 +5,81 @@ import { Link, useNavigate } from "react-router-dom";
 import Cookies from 'js-cookie';
 import DOMPurify from 'dompurify';
 
-const CHeader = () => {
+const CHeader = ({userId}) => {
   const navigate = useNavigate();
+
+  const [notificationsCount, setNotificationsCount] = useState(0);
+
+  useEffect(() => {
+    // Construct WebSocket URL with the token as a query parameter
+    const socket = new WebSocket(
+      `ws://127.0.0.1:8000/ws/notification_count/?token=${Cookies.get('accessToken')}`
+    );
+    
+  
+    socket.onmessage = function (event) {
+      const data = JSON.parse(event.data);  // Parse the incoming JSON data
+      if (data.notifications_count !== undefined) {
+        setNotificationsCount(data.notifications_count);  // Update the object count state
+      }
+    };
+  
+    socket.onclose = function (event) {
+      if (event.code !== 1000) {
+        // 
+      }
+    };
+  
+    // Handle WebSocket errors
+    socket.onerror = function (error) {
+      console.error("WebSocket Error");
+    };
+  
+    // Cleanup WebSocket connection when the component unmounts
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState({
+    users: [],
+    projects: [],
+    categories: [],
+  });
+  const [showResults, setShowResults] = useState(false);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    // Connect to WebSocket only once
+    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/ws/search/`);
+    console.log(socketRef)
+    socketRef.current.onopen = () => {
+      console.log("WebSocket Connected");
+
+      // Send authentication token when WebSocket opens
+      const token = Cookies.get("accessToken");
+      if (token) {
+        socketRef.current.send(JSON.stringify({ type: "auth", token }));
+      }
+    };
+
+    socketRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setSearchResults({
+        users: data.users || [],
+        projects: data.projects || [],
+        categories: data.categories || [],
+      });
+      setShowResults(true);
+    };
+
+    socketRef.current.onclose = () => console.log("WebSocket Disconnected");
+
+    return () => socketRef.current.close();
+  }, []);
+  
   const [isProfiledClicked, setIsProfiledClicked] = useState(false);
   const toggleProfileDropdown = () => {
     setIsProfiledClicked(prevState => !prevState);
@@ -33,43 +106,7 @@ const CHeader = () => {
     }
   };
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState({
-    users: [],
-    projects: [],
-    categories: [],
-  });
-  const [showResults, setShowResults] = useState(false);
-  const socketRef = useRef(null);
 
-  useEffect(() => {
-    // Connect to WebSocket only once
-    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/ws/search/`);
-
-    socketRef.current.onopen = () => {
-      console.log("WebSocket Connected");
-
-      // Send authentication token when WebSocket opens
-      const token = Cookies.get("accessToken");
-      if (token) {
-        socketRef.current.send(JSON.stringify({ type: "auth", token }));
-      }
-    };
-
-    socketRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setSearchResults({
-        users: data.users || [],
-        projects: data.projects || [],
-        categories: data.categories || [],
-      });
-      setShowResults(true);
-    };
-
-    socketRef.current.onclose = () => console.log("WebSocket Disconnected");
-
-    return () => socketRef.current.close();
-  }, []);
 
   const handleSearch = (event) => {
     const term = event.target.value;
@@ -90,46 +127,14 @@ const CHeader = () => {
     }
   }
   
-  const [notificationsCount, setNotificationsCount] = useState(0);
-
-useEffect(() => {
-  // Construct WebSocket URL with the token as a query parameter
-  const socket = new WebSocket(
-    `ws://127.0.0.1:8000/ws/notification_count/?token=${Cookies.get('accessToken')}`
-  );
-  
-
-  socket.onmessage = function (event) {
-    const data = JSON.parse(event.data);  // Parse the incoming JSON data
-    if (data.notifications_count !== undefined) {
-      setNotificationsCount(data.notifications_count);  // Update the object count state
-    }
-  };
-
-  socket.onclose = function (event) {
-    if (event.code !== 1000) {
-      // 
-    }
-  };
-
-  // Handle WebSocket errors
-  socket.onerror = function (error) {
-    console.error("WebSocket Error");
-  };
-
-  // Cleanup WebSocket connection when the component unmounts
-  return () => {
-    socket.close();
-  };
-}, []);
-
+ 
 
   return (
     <header className="border-b-gray-300 bg-gray-200 text-black border h-12 flex items-center px-4 justify-between z-10">
       {/* Logo Section */}
       <div className="flex items-center">
         <Link to="/" className="text-xl font-bold tracking-wide text-textPrimary">
-          Freelancer Hub
+          Veloro<span className="text-teal-500 w-1 h-1 rounded-full"></span>
           </Link>
           </div>
 
@@ -145,7 +150,7 @@ useEffect(() => {
         <FaSearch className="absolute right-3 top-2 text-teal-400" />
 
         {/* Search Results Dropdown */}
-        {showResults && (
+        {showResults && searchTerm.length>=2 && (
           <div className="absolute top-12 bg-white shadow-lg mt-1 w-72 rounded-lg p-2 max-h-72 overflow-y-auto">
             {/* Users */}
             {searchResults.users.length > 0 ? (
@@ -206,7 +211,7 @@ return (
             ) : null}
         
             {/* No Data Message */}
-            {searchResults.users.length === 0 && searchResults.projects.length === 0 && searchResults.categories.length === 0 && (
+            {searchResults.users.length === 0 && searchResults.projects.length === 0 && searchResults.categories.length === 0 && searchTerm.length>=2 && (
               <div className="p-4 text-center text-gray-500">
                 <p>No data available</p>
               </div>
@@ -238,7 +243,7 @@ return (
                 className="block px-4 py-2 hover:bg-gray-100 transition"
                 onClick={() => { 
                   setIsProfiledClicked(false);
-                  navigate('/client/profile');
+                  navigate(`/client/profile/${userId}`);
                 }} // Close on click
               >
                 <p className="text-black">Profile</p>

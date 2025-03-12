@@ -72,7 +72,7 @@ const CDashboard = ({userId, role}) => {
       {/* Main Content Area */}
       <div className=" bg-gray-100 flex-1 flex flex-col overflow-x-hidden 
   ml-14 sm:ml-16 md:ml-16 lg:ml-22">  {/* Header */}
-        <CHeader />
+        <CHeader userId = {userId}/>
         
         {/* Main Content */}
         <div className="flex-1 overflow-auto bg-gray-200 p-3">

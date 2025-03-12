@@ -142,11 +142,13 @@ const handleReject = async (connectionId) => {
             {connections.length > 0 ? (
               connections.map((connection) => (
                 <div
-                  key={connection.id}
+                  key={connection.user_id}
                   className={`p-4 
                     ${connection.role === 'client' ? 'border-l-teal-600 shadow-md border-l-4' : ''}
                   rounded-lg bg-gray-50 hover:bg-gray-100 transition duration-200`}
                 >
+
+
                   <div className="flex justify-between items-start">
                     <div className="flex-1 flex gap-1 items-center">
                     <span>
@@ -169,7 +171,7 @@ const handleReject = async (connectionId) => {
                     }
                     </span>
                     <span className='flex flex-col justify-center'>
-                    <h3 onClick={()=>navigate(`/${connection.role}/profile/${connection.id}`)} className=" cursor-pointer text-lg font-semibold text-teal-600">{connection.user_name}</h3>
+                    <h3 onClick={()=>navigate(`/${connection.role}/profile/${connection.user_id}`)} className=" cursor-pointer text-lg font-semibold text-teal-600">{connection.user_name}</h3>
                     <p className="text-sm text-gray-600">{connection.bio}</p>
                     <p className="text-[8px] md:text-[11px] lg:text-xs sm:text-[8px] text-gray-500 mt-1">{format_timeStamp(connection.created_at)}</p>
                     </span>

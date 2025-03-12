@@ -87,7 +87,8 @@ class LoginView(APIView):
             "message": "Login successful.",
             "access": access_token,
             "refresh": str(refresh),
-            "role": user.role  # Add role in the response
+            "role": user.role,  # Add role in the response
+            "user_id": user.id  # Add role in the response
         }, status=status.HTTP_200_OK)
 
         # Set CSRF token in cookie

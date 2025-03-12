@@ -184,6 +184,73 @@ class Task(models.Model):
             self.completed_at = timezone.now()  # Mark the time when the task is completed
         super().save(*args, **kwargs)
 
+
+class Bid_By_Freelancer(models.Model):
+    BUDGET_TYPE_CHOICES = [
+        ('combined', 'Combined Budget'),
+        ('individual', 'Individual Budget'),
+    ]
+    COMM_TYPE_CHOICES = [
+        ('video', 'Video'),
+        ('chat', 'Chat'),
+    ]
+    
+    freelancer = models.ForeignKey(User, related_name='bids', on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name='bids', on_delete=models.CASCADE)
+    tasks = models.ManyToManyField(Task, related_name='bids')  # Freelancer can bid on multiple tasks
+    budget_type = models.CharField(max_length=10, choices=BUDGET_TYPE_CHOICES, default='individual')
+    estimated_duration = models.CharField(max_length=100)  # Estimated time to complete the tasks
+    comments = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    communication_channels= models.CharField(max_length=10, choices=COMM_TYPE_CHOICES, default='chat')
+
+    
+    # Combined Budget (if selected)
+    combined_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # Media files and links for the freelancer
+    media_files = models.FileField(upload_to='bid_media/', null=True, blank=True)
+    link = models.URLField(max_length=200, null=True, blank=True)
+
+    # Store individual budgets for each task (only used for individual budget type)
+    task_budgets = models.JSONField(default=dict, blank=True)  # Store budget per task
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['freelancer', 'project', 'status']),
+        ]
+        unique_together = ('freelancer', 'project')  # Ensure a freelancer can't bid on the same project multiple times
+    
+    def __str__(self):
+        return f"Bid by {self.freelancer.username} on {self.project.title}"
+
+    def calculate_total_bid(self):
+        """ Method to calculate the total bid amount based on budget type and task difficulty """
+        if self.budget_type == 'combined':
+            # Return the combined budget if combined budget is selected
+            return self.combined_budget
+        elif self.budget_type == 'individual':
+            # If individual budget, calculate the bid based on each task's difficulty level
+            total_bid = 0
+            for task in self.tasks.all():
+                task_bid = self.get_individual_task_bid(task)
+                total_bid += task_bid
+            return total_bid
+        return 0
+
+    def get_individual_task_bid(self, task):
+        """ Calculate the bid amount for each task based on its difficulty level """
+        task_budget = self.task_budgets.get(str(task.id), 0)  # Get the budget for this specific task
+        if task.difficulty == 'easy':
+            return task_budget * 0.8  # Discount for easy tasks
+        elif task.difficulty == 'medium':
+            return task_budget  # Standard rate for medium tasks
+        elif task.difficulty == 'hard':
+            return task_budget * 1.2  # Premium for hard tasks
+        return task_budget
+
 # Payment Model
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [
