@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CHeader from '../../components/client/CHeader';
 import CSider from '../../components/client/CSider';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useMediaQuery } from 'react-responsive';
 
 import { BiddingOverview, Notifications, ProjectManagementPage, ProjectStatusOverview, UpcomingEvents, WeeklyBiddingActivity } from '../freelancer/dashboard';
 import IndividualLoadingComponent from '../../components/IndividualLoadingComponent';
@@ -10,9 +11,10 @@ import RecentActivity from './dashboard/RecentActivity';
 import Spendings from './dashboard/Spendings';
 import PostedProjects from './dashboard/PostedProjects';
 
-const CDashboard = ({userId, role}) => {
+const CDashboard = ({ userId, role }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useMediaQuery({ maxWidth: 767 });
   
   const [activeComponent, setActiveComponent] = useState('overview');
   const [activeProfileComponent, setActiveProfileComponent] = useState('');
@@ -25,15 +27,13 @@ const CDashboard = ({userId, role}) => {
     if (currentState) {
       setActiveComponent(currentState);
     } else {
-      // Default to 'projects' if no component is passed via state
+      // Default to 'overview' if no component is passed via state
       setActiveComponent('overview');
     }
     setLoading(false);
   }, [location.state]);
- 
 
   const handleMenuClick = (component) => {
-    
     if (location.pathname !== '/client/dashboard') {
       navigate('/client/dashboard', { state: { component } });
     } else {
@@ -47,11 +47,9 @@ const CDashboard = ({userId, role}) => {
   };
 
   const handleProfileMenu = (profileComponent) => {
-    
     if (location.pathname !== '/client/profile') {
       navigate(`/client/profile/${userId}`, { state: { profileComponent } });
-    }
-    else {
+    } else {
       setActiveProfileComponent(profileComponent);
     }
 
@@ -62,21 +60,30 @@ const CDashboard = ({userId, role}) => {
     }, 500);
   };
 
-
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <CSider  userId={userId} 
-      role={role} dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} abcds={activeComponent} handleProfileMenu={handleProfileMenu} activeProfileComponent={activeProfileComponent}/>
+      <CSider  
+        userId={userId} 
+        role={role} 
+        dropdown={true} 
+        collapsed={true} 
+        handleMenuClick={handleMenuClick} 
+        abcds={activeComponent} 
+        handleProfileMenu={handleProfileMenu} 
+        activeProfileComponent={activeProfileComponent}
+      />
       
       {/* Main Content Area */}
-      <div className=" bg-gray-100 flex-1 flex flex-col overflow-x-hidden 
-  ml-14 sm:ml-16 md:ml-16 lg:ml-22">  {/* Header */}
-        <CHeader userId = {userId}/>
+      <div className={`
+        bg-gray-100 flex-1 flex flex-col overflow-x-hidden
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-16'}
+      `}>
+        {/* Header */}
+        <CHeader userId={userId}/>
         
         {/* Main Content */}
-        <div className="flex-1 overflow-auto bg-gray-200 p-3">
-          
+        <div className="flex-1 overflow-auto bg-gray-50 p-3">
           {/* Content Section */}
           {loading ? (
             <div>Loading...</div>

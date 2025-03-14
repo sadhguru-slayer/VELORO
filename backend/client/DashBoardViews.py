@@ -32,14 +32,29 @@ from .models import Event, Activity
 from .serializers import EventSerializer
 from django.shortcuts import get_object_or_404
 
+
 class EventViewSet(viewsets.ModelViewSet):
-    queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated]
-    
+
+    # Override the `get_queryset` method to filter events by the authenticated user
+    def get_queryset(self):
+        return Event.objects.filter(user=self.request.user)
+
+    def check_if_client(self, user):
+        # Check if the user has a 'client' role
+        if user.role != 'client':
+            return False
+        return True
+
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def create_event(self, request):
         user = request.user
+
+        # Check if user is a client
+        if not self.check_if_client(user):
+            return Response({'error': 'You are not authorized to create an event'}, status=403)
+
         event_data = request.data.copy()
         event_data['user'] = user.id
 
@@ -65,12 +80,16 @@ class EventViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=400)
 
-
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def get_events(self, request):
         user = request.user
-        events = Event.objects.filter(user=user)
-    
+
+        # Check if user is a client
+        if not self.check_if_client(user):
+            return Response({'error': 'You are not authorized to view events'}, status=403)
+
+        events = self.get_queryset()  # Get user-specific events
+        
         # Group events by type
         grouped_events = defaultdict(list)
         for event in events:
@@ -82,15 +101,19 @@ class EventViewSet(viewsets.ModelViewSet):
             'Deadline': [event for event in grouped_events.get('Deadline', [])],
             'Others': [event for event in grouped_events.get('Others', [])],
         }
-        
-        # You might want to serialize these events properly
+
+        # Serialize the grouped events
         serializer = self.get_serializer(response_data, many=True)
         return Response(serializer.data)
-
 
     @action(detail=False, methods=['put'], permission_classes=[IsAuthenticated])
     def update_event(self, request):
         user = request.user
+
+        # Check if user is a client
+        if not self.check_if_client(user):
+            return Response({'error': 'You are not authorized to update this event'}, status=403)
+
         event = get_object_or_404(Event, id=request.data.get('id'))
         
         if event.user != user:
@@ -119,11 +142,15 @@ class EventViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 
     @action(detail=False, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
     def delete_event(self, request):
         user = request.user
+
+        # Check if user is a client
+        if not self.check_if_client(user):
+            return Response({'error': 'You are not authorized to delete this event'}, status=403)
+
         event = get_object_or_404(Event, id=request.data.get('id'))
 
         if event.user != user:

@@ -72,16 +72,21 @@ def send_skill_based_notifications(project_instance, required_skills, task_insta
         # Calculate the skill match percentage
         skill_match = len(freelancer_skills.intersection(required_skills)) / len(required_skills) * 100 if required_skills else 0
 
-        # Prepare notification text
+        # Prepare notification text - Convert gettext_lazy to string immediately
         if skill_match > 0:
-            notification_text = _(
-                f"Exciting opportunity! {'A task titled <strong>' + task_instance.title + '</strong> ' if task_instance else 'The project titled <strong>' + project_instance.title + '</strong> '}"
+            # Create the notification text parts separately and convert to string
+            if task_instance:
+                title_part = f"A task titled <strong>{task_instance.title}</strong>"
+            else:
+                title_part = f"The project titled <strong>{project_instance.title}</strong>"
+
+            notification_text = (
+                f"Exciting opportunity! {title_part} "
                 f"is looking for skills you possess! "
                 f"Your skill alignment with this {'task' if task_instance else 'project'} is <strong>{skill_match:.2f}%</strong>."
             )
 
-
-        # Send the notification
+            # Create the notification with the plain string
             Notification.objects.create(
                 user=freelancer,
                 type='Projects' if not task_instance else 'Tasks',

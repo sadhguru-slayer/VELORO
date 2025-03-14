@@ -23,6 +23,7 @@ router = DefaultRouter()
 # router.register(r'recentactivity', views.RecentActivityViewSet, basename='recentactivity')
 # router.register(r'spendingOverview', views.SpendingOverviewViewSet, basename='spendingOverview')
 router.register(r'events', EventViewSet, basename='events')
+
 router.register(r'connections', ConnectionManageViewSet, basename='connection')
 
 urlpatterns = [

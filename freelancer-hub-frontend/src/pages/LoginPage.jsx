@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import LoadingComponent from '../components/LoadingComponent';
 import { verifyToken, refreshToken as refreshAuthToken } from '../utils/auth';
 import Cookies from 'js-cookie';
@@ -120,101 +121,160 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="h-[100vh] items-center flex justify-center px-5 lg:px-0">
-      <div className="h-[100%] max-w-screen-xl bg-white border shadow sm:rounded-lg flex justify-center flex-1">
-        <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12 flex w-[100%] justify-center items-center">
-          <div className="flex flex-col items-center w-[100%]">
-            <div className="text-center">
-              <h1 className="text-2xl xl:text-4xl font-extrabold text-blue-900">
-                Login
+    <div className="min-h-screen bg-[#0A0A1B] flex items-center justify-center p-4 md:p-0">
+      {/* Animated Background with both color schemes */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-violet-600/20 to-teal-500/20 rounded-full filter blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-l from-violet-600/20 to-teal-500/20 rounded-full filter blur-[120px]" />
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="relative w-full max-w-6xl bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl flex overflow-hidden"
+      >
+        {/* Left Panel - Feature Showcase */}
+        <div className="hidden lg:block lg:w-1/2 relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 to-teal-500/10" />
+          <div className="relative h-full flex flex-col items-center justify-center p-12 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="max-w-md"
+            >
+              <h2 className="text-3xl font-bold text-white mb-6">
+                Welcome Back to Veloro
+              </h2>
+              <p className="text-gray-300 mb-8">
+                Your gateway to professional excellence and meaningful collaborations
+              </p>
+
+              {/* Role Cards */}
+              <div className="grid grid-cols-1 gap-4 mb-8">
+                <div className="p-6 bg-white/5 rounded-xl backdrop-blur-sm border border-violet-500/20">
+                  <h3 className="text-xl font-semibold text-violet-300 mb-2">Freelancer Portal</h3>
+                  <p className="text-gray-400 text-sm">Access your projects, track earnings, and find new opportunities.</p>
+                </div>
+                <div className="p-6 bg-white/5 rounded-xl backdrop-blur-sm border border-teal-500/20">
+                  <h3 className="text-xl font-semibold text-teal-300 mb-2">Client Dashboard</h3>
+                  <p className="text-gray-400 text-sm">Manage your projects, connect with talent, and grow your business.</p>
+                </div>
+              </div>
+
+              {/* Platform Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { stat: "20K+", label: "Active Users" },
+                  { stat: "98%", label: "Success Rate" },
+                  { stat: "15K+", label: "Projects" },
+                  { stat: "$10M+", label: "Paid Out" }
+                ].map((item, index) => (
+                  <div key={index} className="p-4 bg-white/5 rounded-xl backdrop-blur-sm">
+                    <div className="text-2xl font-bold text-white">{item.stat}</div>
+                    <div className="text-sm text-gray-400">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Right Panel - Login Form */}
+        <div className="w-full lg:w-1/2 p-8 md:p-12">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+                Sign In to Veloro
               </h1>
-              <p className="text-[12px] text-gray-500">
-                Hey, enter your details to login to your account
+              <p className="text-gray-400">
+                Access your professional workspace
               </p>
             </div>
-            <div className="w-full flex-1 mt-8">
-              <form
-                className="mx-auto max-w-xs flex flex-col gap-4"
-                onSubmit={handleSubmit}
-              >
-                {errors.api && (
-                  <p className="text-red-500 text-sm">{errors.api}</p>
-                )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {errors.api && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-red-400 text-sm text-center">{errors.api}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300" htmlFor="username">
+                  Username
+                </label>
                 <input
-                  className={`w-full px-5 py-3 rounded-lg font-medium bg-gray-100 border ${
-                    errors.username ? "border-red-500" : "border-gray-200"
-                  } placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white`}
+                  id="username"
                   type="text"
+                  className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                    errors.username ? "border-red-500" : "border-white/10"
+                  } text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200`}
                   placeholder="Enter your username"
-                  autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
                 {errors.username && (
-                  <p className="text-red-500 text-xs">{errors.username}</p>
+                  <p className="text-red-400 text-xs">{errors.username}</p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300" htmlFor="password">
+                  Password
+                </label>
                 <input
-                  className={`w-full px-5 py-3 rounded-lg font-medium bg-gray-100 border ${
-                    errors.password ? "border-red-500" : "border-gray-200"
-                  } placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white`}
+                  id="password"
                   type="password"
-                  placeholder="Password"
-                  autoComplete="current-password"
+                  className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                    errors.password ? "border-red-500" : "border-white/10"
+                  } text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200`}
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 {errors.password && (
-                  <p className="text-red-500 text-xs">{errors.password}</p>
+                  <p className="text-red-400 text-xs">{errors.password}</p>
                 )}
-                <div className="flex items-center">
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    id="rememberMe"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="mr-2"
+                    className="w-4 h-4 rounded border-white/10 bg-white/5 text-gray-600 focus:ring-gray-400"
                   />
-                  <label htmlFor="rememberMe" className="text-sm">
-                    Remember me
-                  </label>
-                </div>
-                <button
-                  type="submit"
-                  className="mt-5 tracking-wide font-semibold bg-blue-900 text-gray-100 w-full py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 ease-in-out flex items-center justify-center focus:shadow-outline focus:outline-none"
-                >
-                  <svg
-                    className="w-6 h-6 -ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                    <circle cx="8.5" cy="7" r="4" />
-                    <path d="M20 8v6M23 11h-6" />
-                  </svg>
-                  <span className="ml-3">Login</span>
-                </button>
-                <p className="mt-6 text-xs text-gray-600 text-center">
-                  New user?{" "}
-                  <a href="/register">
-                    <span className="text-blue-900 font-semibold">Sign Up</span>
-                  </a>
-                </p>
-              </form>
-            </div>
+                  <span className="text-sm text-gray-300">Remember me</span>
+                </label>
+                <a href="/forgot-password" className="text-sm text-gray-300 hover:text-white transition-colors duration-200">
+                  Forgot password?
+                </a>
+              </div>
+
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-teal-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-violet-500/25 transition-all duration-300 flex items-center justify-center space-x-2"
+              >
+                <span>Sign In</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </motion.button>
+
+              <p className="text-center text-gray-400">
+                New to Veloro?{" "}
+                <a href="/register" className="font-medium text-white hover:text-gray-300 transition-colors duration-200">
+                  Create an account
+                </a>
+              </p>
+            </form>
           </div>
         </div>
-        <div className="flex-1 bg-blue-900 text-center hidden md:flex">
-          <div
-            className="m-12 xl:m-16 w-full bg-contain bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url(https://www.tailwindtap.com/assets/common/marketing.svg)`,
-            }}
-          ></div>
-        </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

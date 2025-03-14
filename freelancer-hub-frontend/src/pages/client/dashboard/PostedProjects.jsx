@@ -1,18 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, Input, Select, Pagination, Tabs } from 'antd';
+import { Modal, Button, Table, Input, Select, Pagination, Tabs, Tag } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { SearchOutlined } from "@ant-design/icons";
-import { FaEye } from 'react-icons/fa';
+import { SearchOutlined, CalendarOutlined, UserOutlined } from "@ant-design/icons";
+import { FaEye, FaBriefcase, FaClock, FaCheckCircle } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-
+import { useMediaQuery } from 'react-responsive';
 
 const { Option } = Select;
 
 const tabItems = [
-  { label: 'Milestones', key: '1', children: <p>Milestone tracking will go here.</p> },
-  { label: 'Shared Files', key: '2', children: <p>File sharing and uploads will go here.</p> },
-  { label: 'Messages', key: '3', children: <p>Messaging and collaboration tools will go here.</p> },
+  {
+    label: (
+      <span className="flex items-center gap-2">
+        <FaClock className="text-teal-500" />
+        Milestones
+      </span>
+    ),
+    key: '1',
+    children: (
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Milestone tracking will go here.</p>
+      </div>
+    ),
+  },
+  {
+    label: (
+      <span className="flex items-center gap-2">
+        <FaBriefcase className="text-teal-500" />
+        Shared Files
+      </span>
+    ),
+    key: '2',
+    children: (
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">File sharing and uploads will go here.</p>
+      </div>
+    ),
+  },
+  {
+    label: (
+      <span className="flex items-center gap-2">
+        <UserOutlined className="text-teal-500" />
+        Messages
+      </span>
+    ),
+    key: '3',
+    children: (
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">Messaging and collaboration tools will go here.</p>
+      </div>
+    ),
+  },
 ];
 
 const PostedProjects = () => {
@@ -28,6 +68,7 @@ const PostedProjects = () => {
   
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery({ maxWidth: 767 });
 
   const fetchTheProjects = async () => {
     try {
@@ -105,69 +146,122 @@ const PostedProjects = () => {
     }
   }, [location.state, projects]);
 
-  const columns = [
-    { title: 'Project Name', dataIndex: 'title', key: 'title' },
-    { title: 'Deadline', dataIndex: 'deadline', key: 'deadline' },
-    { 
-      title: 'Status', 
-      dataIndex: 'status', 
-      key: 'status', 
-      render: (text) => {
-        const capitalizedStatus = 
-        
-        text? text.charAt(0).toUpperCase() + text.slice(1) :''
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return {
+          color: 'orange',
+          bg: 'bg-orange-50',
+          text: 'text-orange-600'
+        };
+      case 'ongoing':
+        return {
+          color: 'blue',
+          bg: 'bg-blue-50',
+          text: 'text-blue-600'
+        };
+      case 'completed':
+        return {
+          color: 'green',
+          bg: 'bg-green-50',
+          text: 'text-green-600'
+        };
+      default:
+        return {
+          color: 'gray',
+          bg: 'bg-gray-50',
+          text: 'text-gray-600'
+        };
+    }
+  };
 
-        ;
-        let statusClass = '';
-        if (capitalizedStatus === 'Pending') {
-          statusClass = 'text-red-500';
-        } else if (capitalizedStatus === 'Ongoing') {
-          statusClass = 'text-blue-500';
-        } else if (capitalizedStatus === 'Completed') {
-          statusClass = 'text-green-500';
-        }
-        return <span className={`status ${statusClass}`}>{capitalizedStatus}</span>;
-      }
+  const columns = [
+    {
+      title: 'Project Name',
+      dataIndex: 'title',
+      key: 'title',
+      render: (text) => (
+        <div className="font-medium text-gray-900">{text}</div>
+      ),
     },
-    { 
-      title: 'Actions', 
-      key: 'actions', 
+    {
+      title: 'Deadline',
+      dataIndex: 'deadline',
+      key: 'deadline',
+      render: (date) => (
+        <div className="flex items-center gap-2 text-gray-600">
+          <CalendarOutlined className="text-teal-500" />
+          {date}
+        </div>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => {
+        const { color, bg, text } = getStatusColor(status);
+        return (
+          <Tag color={color} className={`${bg} ${text} border-0 font-medium`}>
+            {status}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
       render: (_, record) => (
         <div className="flex space-x-2">
           <Button
-            className="text-charcolBlue"
+            type="text"
+            className="flex items-center gap-2 text-gray-600 hover:text-teal-600"
             icon={<FaEye />}
             onClick={() => openDetails(record)}
           >
             Preview
           </Button>
           <Button
-            className="bg-charcolBlue text-teal-400 hover:text-teal-500"
+            type="primary"
+            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600"
             onClick={() => navigate(`/client/view-bids/posted-project/${record.id}`, { state: { record } })}
           >
             View Details
           </Button>
         </div>
-      ) 
-    }
+      ),
+    },
   ];
 
   return (
-    <div className="p-3 bg-gray-100 rounded-lg shadow-sm hover:shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Projects</h2>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 bg-white rounded-xl shadow-sm"
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-gray-900">Posted Projects</h2>
+        <Button
+          type="primary"
+          className="bg-teal-500 hover:bg-teal-600"
+          onClick={() => navigate('/client/post-project')}
+        >
+          Post New Project
+        </Button>
+      </div>
 
-      <div className="flex mb-6 space-x-4">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
         <Input
           placeholder="Search by project name"
           value={searchTerm}
           onChange={handleSearch}
-          prefix={<SearchOutlined />}
-          className="w-72"
+          prefix={<SearchOutlined className="text-gray-400" />}
+          className="w-full md:w-72 rounded-lg"
         />
         <Select
           value={statusFilter}
           onChange={handleFilter}
-          className="w-48"
+          className="w-full md:w-48"
           placeholder="Filter by Status"
         >
           <Option value="">All Statuses</Option>
@@ -177,50 +271,79 @@ const PostedProjects = () => {
         </Select>
       </div>
 
+      {/* Desktop View */}
       <div className="hidden md:block">
         <Table
           dataSource={paginatedData}
           columns={columns}
           pagination={false}
           rowKey="id"
+          className="custom-table"
         />
       </div>
 
-      <div className="block md:hidden">
-        {paginatedData.map((record, index) => (
-          <div key={record.id} className="mb-4 border border-gray-200 rounded-md">
-            <button
-              onClick={() => setOpenDropdown(openDropdown === index ? null : index)}
-              className="w-full p-3 text-left bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none"
+      {/* Mobile View */}
+      <div className="block md:hidden space-y-4">
+        <AnimatePresence>
+          {paginatedData.map((record, index) => (
+            <motion.div
+              key={record.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-white rounded-lg border border-gray-200 overflow-hidden"
             >
-              {record.title}
-            </button>
-            {openDropdown === index && (
-              <div className="p-3 bg-white flex flex-wrap justify-center">
-                <p><strong>Deadline:</strong> {record.deadline}</p>
-                <p><strong>Status:</strong> {record.status}</p>
-                <div className="flex space-x-2 mt-2">
-                  <Button
-                    className="text-charcolBlue"
-                    icon={<FaEye />}
-                    onClick={() => openDetails(record)}
-                  >
-                    Preview
-                  </Button>
-                  <Button
-                    className="bg-charcolBlue text-teal-400 hover:text-teal-500"
-                    onClick={() => navigate(`/client/view-bids/posted-project/${record.id}`, { state: { record } })}
-                  >
-                    View Details
-                  </Button>
+              <div
+                className="p-4 cursor-pointer"
+                onClick={() => setOpenDropdown(openDropdown === index ? null : index)}
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium text-gray-900">{record.title}</h3>
+                  <Tag color={getStatusColor(record.status).color}>
+                    {record.status}
+                  </Tag>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              <AnimatePresence>
+                {openDropdown === index && (
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: 'auto' }}
+                    exit={{ height: 0 }}
+                    className="border-t border-gray-200 overflow-hidden"
+                  >
+                    <div className="p-4 space-y-4">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <CalendarOutlined />
+                        <span>{record.deadline}</span>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="text"
+                          icon={<FaEye />}
+                          onClick={() => openDetails(record)}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          type="primary"
+                          className="bg-teal-500 hover:bg-teal-600"
+                          onClick={() => navigate(`/client/view-bids/posted-project/${record.id}`, { state: { record } })}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-6 flex justify-end">
         <Pagination
           current={currentPage}
           pageSize={pageSize}
@@ -230,25 +353,112 @@ const PostedProjects = () => {
         />
       </div>
 
+      {/* Project Details Modal */}
       <Modal
-      title="Project Details"
-      open={showDetails}
-      onCancel={closeDetails}
-      footer={[<Button key="close" onClick={closeDetails} type="primary">Close</Button>]}
-      width={800}
-    >
-      {selectedProject && (
-        <div>
-          <h3>{selectedProject.title}</h3>
-          <p><strong>Deadline:</strong> {selectedProject.deadline}</p>
-          <p><strong>Status:</strong> {selectedProject.status}</p>
-          <p><strong className='cursor-pointer' onClick={()=>navigate(`/client/profile/${selectedProject.client?.id}`)} >Client:</strong> {selectedProject.client?.username}</p>
-          <Tabs defaultActiveKey='1' items={tabItems} />
-        </div>
-      )}
-    </Modal>
-    
-    </div>
+        title={
+          <div className="flex items-center gap-3 pb-3 border-b">
+            <FaBriefcase className="text-teal-500 text-xl" />
+            <span className="text-xl font-semibold">Project Details</span>
+          </div>
+        }
+        open={showDetails}
+        onCancel={closeDetails}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={closeDetails}
+            className="bg-teal-500 hover:bg-teal-600"
+          >
+            Close
+          </Button>
+        ]}
+        width={800}
+        className="custom-modal"
+      >
+        {selectedProject && (
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {selectedProject.title}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <CalendarOutlined className="text-teal-500" />
+                  <span>Deadline: {selectedProject.deadline}</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <FaCheckCircle className="text-teal-500" />
+                  <span>Status: </span>
+                  <Tag color={getStatusColor(selectedProject.status).color}>
+                    {selectedProject.status}
+                  </Tag>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-gray-600">
+                <UserOutlined className="text-teal-500" />
+                <span>Client: </span>
+                <button
+                  onClick={() => navigate(`/client/profile/${selectedProject.client?.id}`)}
+                  className="text-teal-500 hover:text-teal-600 font-medium"
+                >
+                  {selectedProject.client?.username}
+                </button>
+              </div>
+            </div>
+
+            <Tabs
+              defaultActiveKey="1"
+              items={tabItems}
+              className="custom-tabs"
+            />
+          </div>
+        )}
+      </Modal>
+
+      {/* Custom Styles */}
+      <style jsx global>{`
+        .custom-table .ant-table {
+          border-radius: 0.5rem;
+          overflow: hidden;
+        }
+
+        .custom-table .ant-table-thead > tr > th {
+          background-color: #f8fafc;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .custom-table .ant-table-tbody > tr:hover > td {
+          background-color: #f1f5f9;
+        }
+
+        .custom-modal .ant-modal-content {
+          border-radius: 1rem;
+          overflow: hidden;
+        }
+
+        .custom-tabs .ant-tabs-nav::before {
+          border-bottom-color: #e2e8f0;
+        }
+
+        .custom-tabs .ant-tabs-tab {
+          padding: 12px 0;
+          margin: 0 16px;
+        }
+
+        .custom-tabs .ant-tabs-tab-active {
+          font-weight: 600;
+        }
+
+        .custom-tabs .ant-tabs-ink-bar {
+          background-color: #14b8a6;
+        }
+      `}</style>
+    </motion.div>
   );
 };
 

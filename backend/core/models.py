@@ -92,7 +92,6 @@ class Category(models.Model):
     def __str__(self):
         return self.name
     
-
 # Skill Model
 class Skill(models.Model):
     category = models.ForeignKey(Category, related_name='skills', on_delete=models.CASCADE)

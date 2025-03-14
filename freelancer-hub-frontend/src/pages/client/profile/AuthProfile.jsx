@@ -1,12 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Button, Pagination, Table, Tooltip, Progress, Tabs, Card, Statistic } from "antd";
+import { 
+  UserOutlined, 
+  EnvironmentOutlined, 
+  LinkOutlined,
+  EditOutlined,
+  ProjectOutlined,
+  StarOutlined,
+  TeamOutlined,
+  CalendarOutlined,
+  MailOutlined,
+  GlobalOutlined,
+  CheckCircleOutlined,
+  EyeOutlined,
+  UserAddOutlined,
+  DashboardOutlined,
+
+} from '@ant-design/icons';
+import { Tag,Avatar } from 'antd'; 
+import { Timeline } from 'antd';
+import { motion } from 'framer-motion';
 import Cookies from 'js-cookie';
-import axios from'axios';
-import { Button, Pagination,Table } from "antd";
-import { FaEye } from 'react-icons/fa';
+import axios from 'axios';
 
+const { TabPane } = Tabs;
 
-const AuthProfile = ({userId, role,editable}) => {  
+const AuthProfile = ({userId, role, editable}) => {  
     const navigate = useNavigate();
     const location = useLocation();
     const [clientInfo, setClientInfo] = useState({});
@@ -24,6 +44,14 @@ const AuthProfile = ({userId, role,editable}) => {
     };
   
     const [loading, setLoading] = useState(true);
+
+    // Add new states for enhanced features
+    const [activeTab, setActiveTab] = useState('1');
+    const [projectStats, setProjectStats] = useState({
+      completed: 0,
+      ongoing: 0,
+      total: 0
+    });
 
     useEffect(() => {
       // This ensures that we wait for userId and accessToken to be available
@@ -67,145 +95,351 @@ const AuthProfile = ({userId, role,editable}) => {
       }
     }, [userId]); 
     
+    // Calculate project stats
+    useEffect(() => {
+      if (projects.length > 0) {
+        const stats = projects.reduce((acc, project) => {
+          if (project.status === 'completed') acc.completed++;
+          if (project.status === 'ongoing') acc.ongoing++;
+          acc.total++;
+          return acc;
+        }, { completed: 0, ongoing: 0, total: 0 });
+        setProjectStats(stats);
+      }
+    }, [projects]);
+
   return (
-    <div className="authUserClass flex flex-col items-start gap-2 max-w-[80rem] w-full min-h-fit h-fit bg-white rounded-lg p-4 ">
-  {/* Profile Overview */}
-  <div className="bg-white p-4 rounded-md border w-full">
-    <div className="flex items-center space-x-6">
-      <img 
-        src={ clientInfo.profile_picture ? `http://127.0.0.1:8000${clientInfo.profile_picture}` : "https://www.w3schools.com/howto/img_avatar.png"} 
-        alt="Profile" 
-        className="w-24 h-24 rounded-full object-cover" 
-      />
-      <div className="flex flex-col">
-        <h2 className="text-2xl font-bold text-teal-600">{clientInfo.name}</h2>
-        <p className="text-gray-600 text-sm ">{clientInfo.email}</p>
-        {clientInfo.bio &&
-          <p className="text-gray-600 text-sm my-3">{clientInfo.bio}</p>
-        }
-        <div className="mt-2 text-gray-500">
-          <p>📍 {clientInfo.location}</p>
-          <p className='cursor-pointer' onClick={() => navigate('/client/connections/')}>🔗 {connectionCount} Connections</p>
+    <div className="w-full min-h-fit max-w-[1200px] min-w-[320px] mx-auto p-4 space-y-4">
+      {/* Profile Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-lg shadow-md overflow-hidden"
+      >
+        {/* Cover Photo */}
+        <div className="h-40 bg-gradient-to-r from-charcolBlue to-teal-500 relative">
+          <div className="absolute -bottom-12 left-6 flex items-end space-x-6">
+            <div className="relative">
+              <img 
+                src={clientInfo.profile_picture ? `http://127.0.0.1:8000${clientInfo.profile_picture}` : "https://www.w3schools.com/howto/img_avatar.png"} 
+                alt="Profile" 
+                className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-md"
+              />
+              {editable && (
+                <Tooltip title="Edit Profile">
+                  <Button 
+                    icon={<EditOutlined />}
+                    className="absolute bottom-0 right-0 rounded-full bg-white hover:bg-gray-50"
+                    onClick={() => navigate(`/client/profile/${userId}`, { state: { profileComponent: 'edit_profile' } })}
+                  />
+                </Tooltip>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="mt-4 flex space-x-4">
-          <button 
-            onClick={() => navigate(`/client/profile/${userId}`, { state: { profileComponent: 'edit_profile' } })} 
-            className="bg-teal-600 text-white py-2 px-6 rounded-md hover:bg-teal-500 transition duration-300"
-          >
-            Edit Profile
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  {/* Projects */}
-  <div className="bg-white p-4 rounded-md border w-full">
-    <h3 className="text-xl font-semibold mb-4 text-teal-600">Projects</h3>
-    <div className="hidden md:block">
-      <Table
-        dataSource={paginatedData}
-        columns={[
-          {
-            title: "Project Title",
-            dataIndex: "title",
-            key: "title",
-          },
-          {
-            title: "Action",
-            key: "action",
-            render: (text, project) => (
-              <span
-                onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
-                className="text-teal-600 hover:text-teal-500 transition duration-300"
-              >
-                View Project
-              </span>
-            ),
-          },
-        ]}
-        pagination={false}
-        rowKey="id"
-      />
-    </div>
-
-    {/* Mobile View */}
-    <div className="block md:hidden">
-      {paginatedData.map((project, index) => (
-        <div key={project.id} className="mb-4 border border-gray-200 rounded-md">
-          <button
-            onClick={() => setOpenDropdown(openDropdown === index ? null : index)}
-            className="w-full p-3 text-left bg-white hover:bg-gray-200 rounded-md focus:outline-none"
-          >
-            {project.title}
-          </button>
-          {openDropdown === index && (
-            <div className="p-3 bg-white flex flex-wrap justify-center items-center gap-1">
-              <p><strong>Deadline:</strong> {project.deadline}</p>
-              <p><strong>Status:</strong> {project.status}</p>
-              <div className="flex space-x-2 mt-2">
-                <Button
-                  className="bg-charcolBlue text-teal-400 hover:text-teal-500"
-                  onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`, { state: { project } })}
-                >
-                  View Details
-                </Button>
+        {/* Profile Info */}
+        <div className="pt-16 px-6 pb-6">
+          <div className="flex justify-between items-start flex-wrap gap-4">
+            <div className="max-w-xl">
+              <h1 className="text-xl font-semibold text-charcolBlue">{clientInfo.name}</h1>
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center text-gray-600">
+                  <MailOutlined className="mr-2 text-teal-500" />
+                  {clientInfo.email}
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <EnvironmentOutlined className="mr-2 text-teal-500" />
+                  {clientInfo.location}
+                </div>
+                <div className="flex items-center text-gray-600 cursor-pointer hover:text-teal-500 transition-colors" 
+                     onClick={() => navigate('/client/connections/')}>
+                  <LinkOutlined className="mr-2 text-teal-500" />
+                  {connectionCount} Connections
+                </div>
               </div>
+            </div>
+            <div className="flex gap-3">
+              
+              <Button 
+                onClick={() => navigate('/client/post-project')}
+                className="border-teal-500 text-teal-500 hover:text-teal-600 hover:border-teal-600"
+              >
+                Post New Project
+              </Button>
+            </div>
+          </div>
+
+          {clientInfo.bio && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <h3 className="text-sm font-medium text-charcolBlue mb-2">About</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{clientInfo.bio}</p>
             </div>
           )}
         </div>
-      ))}
-    </div>
+      </motion.div>
 
-    {/* Pagination */}
-    <div className="mt-4 flex justify-end">
-      <Pagination
-        current={currentPage}
-        pageSize={pageSize}
-        total={projects.length} // Total projects count
-        onChange={handlePaginationChange}
-        showSizeChanger={false}
-      />
-    </div>
-  </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            title: "Total Projects",
+            value: projectStats.total,
+            icon: <ProjectOutlined />,
+            color: '#0d9488'
+          },
+          {
+            title: "Average Rating",
+            value: averageRating,
+            icon: <StarOutlined />,
+            suffix: "/5",
+            color: '#eab308'
+          },
+          {
+            title: "Connections",
+            value: connectionCount,
+            icon: <TeamOutlined />,
+            color: '#3b82f6'
+          },
+          {
+            title: "Success Rate",
+            value: (projectStats.completed / projectStats.total * 100) || 0,
+            icon: <CheckCircleOutlined />,
+            suffix: "%",
+            color: '#22c55e'
+          }
+        ].map((stat, index) => (
+          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+            <Statistic 
+              title={
+                <span className="text-charcolBlue font-medium flex items-center gap-2">
+                  {stat.icon}
+                  {stat.title}
+                </span>
+              }
+              value={stat.value}
+              precision={stat.suffix === "/5" ? 1 : stat.suffix === "%" ? 1 : 0}
+              suffix={stat.suffix}
+              valueStyle={{ color: stat.color }}
+            />
+          </Card>
+        ))}
+      </div>
 
-  {/* Reviews */}
-  <div className="bg-white p-4 rounded-md border w-full">
-    <h3 className="text-xl font-semibold mb-4 text-teal-600">Reviews & Ratings</h3>
-    <div className="space-y-4">
-      {reviewsList.map((review) => (
-        <div key={review.id} className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-600">{review.from_freelancer_username}</span>
-          </div>
-          <div className="flex flex-col">
-            <p className="text-sm font-medium">{review.from_freelancer_username}</p>
-            <div className="flex items-center space-x-1">
-              {[...Array(review.rating)].map((_, i) => (
-                <span key={i} className="text-yellow-500">★</span>
-              ))}
+      {/* Main Content Tabs */}
+      <Card className="rounded-lg shadow-md">
+        <Tabs 
+          activeKey={activeTab} 
+          onChange={setActiveTab}
+          className="custom-tabs"
+        >
+          <TabPane 
+            tab={<span><ProjectOutlined />Projects</span>} 
+            key="1"
+          >
+            <div className="space-y-4">
+              {/* Project Progress */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <Card className="bg-gray-50">
+                  <h4 className="text-sm font-semibold mb-4">Project Status</h4>
+                  <Progress
+                    percent={Math.round((projectStats.completed / projectStats.total) * 100)}
+                    success={{ percent: Math.round((projectStats.ongoing / projectStats.total) * 100) }}
+                    format={() => `${projectStats.completed}/${projectStats.total}`}
+                  />
+                </Card>
+                <Card className="bg-gray-50">
+                  <h4 className="text-sm font-semibold mb-4">Recent Activity</h4>
+                  <Timeline>
+                    {projects.slice(0, 3).map(project => (
+                      <Timeline.Item key={project.id}>
+                        {project.title}
+                      </Timeline.Item>
+                    ))}
+                  </Timeline>
+                </Card>
+              </div>
+
+              {/* Projects Table */}
+              <Table
+                dataSource={paginatedData}
+                columns={[
+                  {
+                    title: "Project Title",
+                    dataIndex: "title",
+                    key: "title",
+                    render: (text, project) => (
+                      <div className="flex items-center space-x-2">
+                        <ProjectOutlined />
+                        <span>{text}</span>
+                      </div>
+                    )
+                  },
+                  {
+                    title: "Status",
+                    dataIndex: "status",
+                    key: "status",
+                    render: (status) => (
+                      <Tag color={
+                        status === 'completed' ? 'success' :
+                        status === 'ongoing' ? 'processing' :
+                        'default'
+                      }>
+                        {status}
+                      </Tag>
+                    )
+                  },
+                  {
+                    title: "Action",
+                    key: "action",
+                    render: (_, project) => (
+                      <Button 
+                        type="link" 
+                        onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
+                        icon={<EyeOutlined />}
+                      >
+                        View Details
+                      </Button>
+                    )
+                  }
+                ]}
+                pagination={false}
+                rowKey="id"
+                className="custom-table"
+              />
+              
+              <div className="flex justify-end mt-4">
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={projects.length}
+                  onChange={handlePaginationChange}
+                  showSizeChanger={false}
+                />
+              </div>
             </div>
-            <p className="text-gray-600 text-sm">{review.feedback}</p>
-          </div>
-        </div>
-      ))}
+          </TabPane>
+
+          <TabPane 
+            tab={<span><StarOutlined />Reviews</span>} 
+            key="2"
+          >
+            <div className="space-y-6">
+              {/* Rating Overview */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-yellow-500">{averageRating}</div>
+                  <div className="text-sm text-gray-500">Average Rating</div>
+                </div>
+                <div className="flex-1 max-w-sm mx-8">
+                  {[5,4,3,2,1].map(rating => {
+                    const count = reviewsList.filter(r => r.rating === rating).length;
+                    const percentage = (count / reviewsList.length) * 100;
+                    return (
+                      <div key={rating} className="flex items-center space-x-2">
+                        <span className="text-sm w-8">{rating}★</span>
+                        <Progress percent={percentage} size="small" showInfo={false} />
+                        <span className="text-sm w-8">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Reviews List */}
+              <div className="space-y-4">
+                {reviewsList.map((review) => (
+                  <motion.div
+                    key={review.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <Avatar size={48}>
+                        {review.from_freelancer_username ? review.from_freelancer_username[0] : '?'}
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium">{review.from_freelancer_username || 'Anonymous'}</h4>
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <StarOutlined 
+                                key={i}
+                                className={i < (review.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="mt-2 text-gray-600">{review.feedback || 'No feedback provided'}</p>
+                        <div className="mt-2 text-sm text-gray-400">
+                          <CalendarOutlined className="mr-1" />
+                          {review.created_at ? new Date(review.created_at).toLocaleDateString() : 'Date not available'}
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </TabPane>
+        </Tabs>
+      </Card>
+
+      {/* Quick Actions */}
+      <div className="flex justify-between gap-4 flex-wrap">
+        <Button 
+          type="primary" 
+          icon={<DashboardOutlined />}
+          onClick={() => navigate('/client/dashboard')}
+          className="bg-charcolBlue hover:bg-charcolBlue/90 text-white border-none min-w-[150px]"
+        >
+          Dashboard
+        </Button>
+        <Button 
+          type="primary" 
+          icon={<UserAddOutlined />}
+          onClick={() => navigate('/client/browse-freelancers')}
+          className="bg-teal-500 hover:bg-teal-600 text-white border-none min-w-[150px]"
+        >
+          Browse Freelancers
+        </Button>
+      </div>
+
+      <style jsx>{`
+        .custom-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+          color: #0d9488;
+        }
+        
+        .custom-tabs .ant-tabs-ink-bar {
+          background: #0d9488;
+        }
+
+        .custom-table .ant-table-thead > tr > th {
+          background-color: #f8fafc;
+          color: #1e293b;
+          font-weight: 500;
+        }
+        
+        .custom-table .ant-table-tbody > tr:hover > td {
+          background-color: #f1f5f9;
+        }
+
+        .ant-progress-bg {
+          background-color: #0d9488;
+        }
+
+        .ant-btn-primary:hover {
+          background-color: #0d9488 !important;
+        }
+
+        .ant-progress-success-bg {
+          background-color: #22c55e;
+        }
+      `}</style>
     </div>
-  </div>
-
-  {/* Call-to-Action Buttons */}
-  <div className="flex justify-between w-full">
-    <Link to="/client/dashboard">
-      <button className="bg-teal-600 text-white py-2 px-6 rounded-md hover:bg-teal-500 transition duration-300">
-        Go to Dashboard
-      </button>
-    </Link>
-    <button className="bg-teal-500 text-white py-2 px-6 rounded-md hover:bg-teal-600 transition duration-300">
-      Hire Freelancers
-    </button>
-  </div>
-</div>
-
-  )
+  );
 }
 
 export default AuthProfile;

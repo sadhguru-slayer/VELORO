@@ -16,13 +16,12 @@ User = get_user_model()
 
 class SearchConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        """Accept WebSocket connection"""
-        self.user = None  # Default to anonymous
+        print("WebSocket connection received")
         await self.accept()
+        print("WebSocket connection accepted")
 
     async def disconnect(self, close_code):
-        """Handle WebSocket disconnection"""
-        pass
+        print(f"WebSocket disconnected with code: {close_code}")
 
     async def receive(self, text_data):
         """Handle incoming WebSocket messages"""
@@ -122,8 +121,7 @@ class SearchConsumer(AsyncWebsocketConsumer):
             user_data_list.append(user_data)
 
         # 🔹 Search Projects (Filter based on user role)
-        print(user.role)
-        print(user)
+        
         if user.role == "client":
             # For clients, search projects where the client is the user and match the query in the title or description
             projects = Project.objects.filter(client=user).filter(

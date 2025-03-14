@@ -6,6 +6,9 @@ import CSider from '../../components/client/CSider';
 import Cookies from 'js-cookie'
 import axios from 'axios';
 import { FaTimes,FaCheck } from "react-icons/fa";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Empty, Spin, Avatar, Tooltip } from 'antd';
+import { UserOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 
 
 const CConnectionRequests = ({userId, role}) => {
@@ -139,72 +142,150 @@ const CConnectionRequests = ({userId, role}) => {
     return <div>Loading...</div>;
   }
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Sidebar */}
       <CSider 
-      userId={userId} 
-      role={role}
-      dropdown={true} 
-      collapsed={true} 
-      handleMenuClick={handleMenuClick} 
-      activeComponent={activeComponent} 
-      handleProfileMenu={handleProfileMenu} 
-    />
+        userId={userId} 
+        role={role}
+        dropdown={true} 
+        collapsed={true} 
+        handleMenuClick={handleMenuClick} 
+        activeComponent={activeComponent} 
+        handleProfileMenu={handleProfileMenu} 
+      />
+
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
         {/* Header */}
         <CHeader />
 
         {/* Connections Content */}
-        <div className="flex-1 overflow-auto bg-gray-100 p-4 flex justify-center w-full">
-        <div className="flex flex-col items-start gap-2 max-w-[80rem] w-fit min-h-fit bg-white rounded-lg p-4 ">
-
-            {/* Connections Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-teal-600">Your Connections</h1>
-            </div>
-
-            {/* Connections List */}
-            <div className="space-y-4">
-            {connections.length > 0 ? (
-              connections.map((connection) => (
-                <div
-                  key={connection.id}
-                  className="p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition duration-200"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-teal-600">{connection.user_name}</h3>
-                      <p className="text-sm text-gray-600">{connection.bio}</p>
-                      <p className="text-[8px] md:text-[11px] lg:text-xs sm:text-[8px] text-gray-500 mt-1">{format_timeStamp(connection.created_at)}</p>
-                    </div>
-                    <div className="flex space-x-2 items-center">
-                      {/* Accept button */}
-                      <button
-                        className="flex items-center justify-center w-8 h-8 bg-teal-700 text-white rounded-full hover:bg-teal-800 transition"
-                        onClick={() => handleAccept(connection.id)} // Add your accept handler
-                      >
-                      <FaCheck /> 
-                      </button>
-          
-                      {/* Reject button */}
-                      <button
-                        className="flex items-center justify-center w-8 h-8 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition"
-                        onClick={() => handleReject(connection.id)} // Add your reject handler
-                      >
-                      <FaTimes /> 
-                      </button>
-                    </div>
+        <div className="flex-1 overflow-auto p-4">
+          <div className="w-full min-w-[320px] max-w-[1200px] mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+            >
+              {/* Enhanced Header Section */}
+              <div className="bg-gradient-to-r from-teal-500/10 to-charcolBlue/10 p-6 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h1 className="text-2xl font-bold text-charcolBlue">Connection Requests</h1>
+                    <p className="text-gray-600 mt-1">Manage your incoming connection requests</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => navigate('/client/connections')}
+                      className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all duration-300 flex items-center gap-2"
+                    >
+                      <GlobalOutlined />
+                      View All Connections
+                    </motion.button>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-gray-600">You have no connections yet.</p>
               </div>
-            )}
-          </div>
-          
+
+              {/* Connections List */}
+              <div className="p-6">
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Spin size="large" />
+                  </div>
+                ) : (
+                  <AnimatePresence>
+                    <div className="space-y-4">
+                      {connections.length > 0 ? (
+                        connections.map((connection, index) => (
+                          <motion.div
+                            key={connection.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="p-6 rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300 bg-white"
+                          >
+                            <div className="flex items-start gap-4">
+                              {/* User Avatar */}
+                              <Avatar
+                                size={64}
+                                icon={<UserOutlined />}
+                                className="bg-gradient-to-br from-teal-500 to-teal-600"
+                              />
+
+                              {/* Connection Info */}
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="text-lg font-semibold text-charcolBlue">
+                                      {connection.user_name}
+                                    </h3>
+                                    <p className="text-gray-600 mt-1">{connection.bio}</p>
+                                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                                      <ClockCircleOutlined />
+                                      {format_timeStamp(connection.created_at)}
+                                    </div>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="flex gap-3">
+                                    <Tooltip title="Accept Request">
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => handleAccept(connection.id)}
+                                        className="p-3 rounded-full bg-teal-100 text-teal-600 hover:bg-teal-200 transition-all duration-300"
+                                      >
+                                        <FaCheck className="text-lg" />
+                                      </motion.button>
+                                    </Tooltip>
+                                    <Tooltip title="Reject Request">
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => handleReject(connection.id)}
+                                        className="p-3 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-all duration-300"
+                                      >
+                                        <FaTimes className="text-lg" />
+                                      </motion.button>
+                                    </Tooltip>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex flex-col items-center justify-center py-12"
+                        >
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={
+                              <div className="text-center">
+                                <p className="text-gray-600 mb-4">No pending connection requests</p>
+                                <motion.button
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => navigate('/client/browse-freelancers')}
+                                  className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all duration-300"
+                                >
+                                  Browse Freelancers
+                                </motion.button>
+                              </div>
+                            }
+                          />
+                        </motion.div>
+                      )}
+                    </div>
+                  </AnimatePresence>
+                )}
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>

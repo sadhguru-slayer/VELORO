@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Badge, Empty, Tooltip, Spin } from 'antd';
 import CHeader from '../../components/client/CHeader';
 import CSider from '../../components/client/CSider';
 import axios from 'axios'; // Import axios to make API requests
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
+import {
+  BellOutlined,
+  MessageOutlined,
+  DollarOutlined,
+  ProjectOutlined,
+  TeamOutlined,
+  SettingOutlined,
+  CalendarOutlined,
+  UsergroupAddOutlined,
+  CheckCircleOutlined,
+  DeleteOutlined,
+  LoadingOutlined
+} from '@ant-design/icons';
 
 const CNotifications = ({ userId, role }) => {
   const navigate = useNavigate();
@@ -11,10 +26,23 @@ const CNotifications = ({ userId, role }) => {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
   const [activeProfileComponent, setActiveProfileComponent] = useState('');
-  const [individualLoading, setIndividualLoading] = useState(false);
   const [activeComponent, setActiveComponent] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const token = Cookies.get('accessToken'); 
   
+  // Filter categories with icons
+  const filterCategories = [
+    { key: 'all', label: 'All', icon: <BellOutlined /> },
+    { key: 'Messages', label: 'Messages', icon: <MessageOutlined /> },
+    { key: 'Payments', label: 'Payments', icon: <DollarOutlined /> },
+    { key: 'Projects', label: 'Projects', icon: <ProjectOutlined /> },
+    { key: 'Connections', label: 'Connections', icon: <TeamOutlined /> },
+    { key: 'System', label: 'System', icon: <SettingOutlined /> },
+    { key: 'Events', label: 'Events', icon: <CalendarOutlined /> },
+    { key: 'Collaborations', label: 'Collaborations', icon: <UsergroupAddOutlined /> }
+  ];
+
   const handleMenuClick = (component) => {
     
     if (location.pathname !== '/client/dashboard') {
@@ -22,10 +50,10 @@ const CNotifications = ({ userId, role }) => {
     } else {
       setActiveComponent(component);
     }
-    setIndividualLoading(true);
+    setLoading(true);
 
     setTimeout(() => {
-      setIndividualLoading(false);
+      setLoading(false);
     }, 500);
   };
 
@@ -38,28 +66,27 @@ const CNotifications = ({ userId, role }) => {
       setActiveProfileComponent(profileComponent);
     }
 
-    setIndividualLoading(true);
+    setLoading(true);
 
     setTimeout(() => {
-      setIndividualLoading(false);
+      setLoading(false);
     }, 500);
   };
 
   useEffect(() => {
     const fetchNotifications = async () => {
+      setLoading(true);
       try {
         const response = await axios.get('http://127.0.0.1:8000/api/notifications/', {
-          headers: {
-            Authorization: `Bearer ${token}` // Send token to get user-specific notifications
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
-        console.log(response.data)
-        // Only set the notifications if it's an array (in case there is no data)
         if (Array.isArray(response.data)) {
           setNotifications(response.data);
         }
       } catch (error) {
         console.error('Error fetching notifications:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -127,19 +154,15 @@ const CNotifications = ({ userId, role }) => {
       await axios.patch(
         `http://127.0.0.1:8000/api/notifications/${id}/mark-as-read/`,
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${Cookies.get('accessToken')}`
-          }
-        }
+        { headers: { Authorization: `Bearer ${token}` }}
       );
-      setNotifications((prev) =>
-        prev.map((notification) =>
-          notification.id === id ? { ...notification, is_read: true } : notification
+      setNotifications(prev =>
+        prev.map(notif => 
+          notif.id === id ? { ...notif, is_read: true } : notif
         )
       );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error marking as read:', error);
     }
   };
 
@@ -147,11 +170,10 @@ const CNotifications = ({ userId, role }) => {
   const deleteNotification = async (id) => {
     try {
       await axios.delete(`http://127.0.0.1:8000/api/notifications/${id}/`, {
-        headers: {
-          Authorization: `Bearer ${Cookies.get('accessToken')}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+      setSelectedNotification(null);
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
@@ -165,13 +187,63 @@ const CNotifications = ({ userId, role }) => {
   };
 
   // Filter notifications by type
-  const filteredNotifications = notifications.filter((notification) => {
-    if (filter === 'all') return true;
-    return notification.type === filter;
-  });
+  const filteredNotifications = notifications.filter(notification => 
+    filter === 'all' ? true : notification.type === filter
+  );
+
+  // Add this helper function to check if notification is a connection request
+  const isConnectionRequest = (notification) => {
+    return notification.type === 'Connections' && 
+      notification.notification_text.toLowerCase().includes('received a connection request');
+  };
+
+  // Add this helper function to check for unread connection requests
+  const hasUnreadConnectionRequests = notifications.some(
+    notif => notif.type === 'Connections' && 
+    !notif.is_read && 
+    notif.notification_text.toLowerCase().includes('received a connection request')
+  );
+
+  // Add function to mark all connection request notifications as read
+  const markAllConnectionRequestsAsRead = async () => {
+    try {
+      const connectionRequestIds = notifications
+        .filter(notif => 
+          notif.type === 'Connections' && 
+          !notif.is_read && 
+          notif.notification_text.toLowerCase().includes('received a connection request')
+        )
+        .map(notif => notif.id);
+
+      // Mark all relevant notifications as read
+      await Promise.all(
+        connectionRequestIds.map(id =>
+          axios.patch(
+            `http://127.0.0.1:8000/api/notifications/${id}/mark-as-read/`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` }}
+          )
+        )
+      );
+
+      // Update local state
+      setNotifications(prev =>
+        prev.map(notif =>
+          connectionRequestIds.includes(notif.id)
+            ? { ...notif, is_read: true }
+            : notif
+        )
+      );
+
+      // Navigate to connection requests page
+      navigate('/client/connections_requests');
+    } catch (error) {
+      console.error('Error marking connection requests as read:', error);
+    }
+  };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Sidebar */}
       <CSider 
         userId={userId} 
@@ -190,122 +262,215 @@ const CNotifications = ({ userId, role }) => {
         <CHeader />
 
         {/* Notifications Content */}
-        <div className="flex-1 overflow-auto bg-gray-200 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            {/* Notifications Header */}
-            <div className="flex flex-col justify-between items-center mb-6 overflow-hidden gap-2">
-              <h1 className="text-2xl font-bold text-teal-600">Notifications</h1>
-              <div className="flex gap-2 flex-wrap">
-                {/* Filter buttons here */}
-                <button
-                  onClick={() => setFilter('all')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-full ${filter === 'all' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilter('Messages')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Messages' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  Messages
-                </button>
-                <button
-                  onClick={() => setFilter('Payments')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Payments' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  Payments
-                </button>
-                <button
-                  onClick={() => setFilter('Projects')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Projects' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  Projects
-                </button>
-                <button
-                  onClick={() => setFilter('Connections')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Connections' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  Connections
-                </button>
-                <button
-                  onClick={() => setFilter('System')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'System' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  System
-                </button>
-                <button
-                  onClick={() => setFilter('Events')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Events' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  Events
-                </button>
-                <button
-                  onClick={() => setFilter('Collaborations')}
-                  className={`p-2 py-1 text-xs sm:p-3 sm:py-1 sm:text-sm md:p-3 md:py-2 md:text-base rounded-lg ${filter === 'Collaborations' ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  Collaborations
-                </button>
-              </div>
-            </div>
+        <div className="flex-1 overflow-auto bg-gray-100 p-4">
+          <div className="w-full min-w-[320px] max-w-[1200px] mx-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+            >
+              {/* Enhanced Header Section */}
+              <div className="bg-gradient-to-r from-teal-500/10 to-charcolBlue/10 p-6 border-b border-gray-100">
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold text-charcolBlue">Notifications</h1>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all duration-300"
+                      onClick={() => setFilter('all')}
+                    >
+                      Clear All
+                    </motion.button>
+                  </div>
 
-            {/* Notifications List */}
-            <div className="space-y-4">
-              {filteredNotifications.map((notification) => (
-                <div key={notification.id} className={`p-4 rounded-lg ${notification.is_read ? 'bg-gray-50' : 'bg-teal-50'}`}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-md font-semibold text-teal-600">
-                        {notification.type === 'Events' ? (
-                          <span
-                            className="cursor-pointer hover:underline"
-                            onClick={() => handleEventClick(notification.related_model_id)}
-                          >
-                            {notification.title}
-                          </span>
-                        ) : (
-                          <span>
-                          
-                          {notification.title}
-                          </span>
-                        )}
-                      </h3>
-                      <div
-                        className="text-sm text-gray-600"
-                        dangerouslySetInnerHTML={{
-                          __html: notification.notification_text, // Safely render HTML content
-                        }}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(notification.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex space-x-2">
-                      {!notification.is_read && (
-                        <button
-                          onClick={() => markAsRead(notification.id)}
-                          className="text-sm text-teal-600 hover:text-teal-700"
-                        >
-                          Mark as Read
-                        </button>
-                      )}
-                      <button
-                        onClick={() => deleteNotification(notification.id)}
-                        className="text-sm text-red-600 hover:text-red-700"
+                  {/* Connection Requests Button - Only show if there are unread connection requests */}
+                  {hasUnreadConnectionRequests && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="w-full"
+                    >
+                      <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={markAllConnectionRequestsAsRead}
+                        className="w-full p-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl 
+                                  hover:from-teal-600 hover:to-teal-700 transition-all duration-300 
+                                  flex items-center justify-center gap-3 shadow-sm"
                       >
-                        Delete
-                      </button>
-                    </div>
+                        <TeamOutlined className="text-xl" />
+                        <span className="font-medium">View All Connection Requests</span>
+                        <Badge 
+                          count={notifications.filter(
+                            notif => notif.type === 'Connections' && 
+                            !notif.is_read && 
+                            notif.notification_text.toLowerCase().includes('received a connection request')
+                          ).length}
+                          className="ml-2"
+                        />
+                      </motion.button>
+                    </motion.div>
+                  )}
+
+                  {/* Enhanced Filter Buttons */}
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    {filterCategories.map((category) => (
+                      <motion.button
+                        key={category.key}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setFilter(category.key)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300
+                          ${filter === category.key 
+                            ? 'bg-teal-500 text-white shadow-md' 
+                            : 'bg-white border border-gray-200 text-gray-600 hover:border-teal-500 hover:text-teal-500'
+                          }`}
+                      >
+                        {category.icon}
+                        <span>{category.label}</span>
+                      </motion.button>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* No Notifications Message */}
-            {filteredNotifications.length === 0 && (
-              <div className="text-center py-6">
-                <p className="text-gray-600">No notifications found.</p>
               </div>
-            )}
+
+              {/* Notifications List with Enhanced Styling */}
+              <div className="p-6 space-y-4">
+                <AnimatePresence>
+                  {filteredNotifications.map((notification, index) => (
+                    <motion.div
+                      key={notification.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`p-6 rounded-xl border ${
+                        notification.is_read 
+                          ? 'bg-white border-gray-100' 
+                          : 'bg-teal-50 border-teal-100'
+                      } hover:shadow-md transition-all duration-300`}
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        {/* Notification Icon */}
+                        <div className={`p-3 rounded-full ${
+                          notification.is_read ? 'bg-gray-100' : 'bg-teal-100'
+                        }`}>
+                          {filterCategories.find(cat => cat.key === notification.type)?.icon}
+                        </div>
+
+                        {/* Notification Content */}
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-charcolBlue mb-2">
+                            {notification.type === 'Events' ? (
+                              <span
+                                className="cursor-pointer hover:text-teal-600 transition-colors"
+                                onClick={() => handleEventClick(notification.related_model_id)}
+                              >
+                                {notification.title}
+                              </span>
+                            ) : (
+                              notification.title
+                            )}
+                          </h3>
+                          <div
+                            className="text-gray-600"
+                            dangerouslySetInnerHTML={{
+                              __html: notification.notification_text,
+                            }}
+                          />
+                          <div className="flex items-center justify-between mt-3">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <CalendarOutlined />
+                              {new Date(notification.created_at).toLocaleString()}
+                            </div>
+                            
+                            {/* Specialized Action Buttons Based on Notification Type */}
+                            <div className="flex gap-2">
+                              {isConnectionRequest(notification) && !notification.is_read && (
+                                <motion.button
+                                  initial={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.95 }}
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={async () => {
+                                    try {
+                                      // Mark this specific notification as read
+                                      await markAsRead(notification.id);
+                                      // Then navigate to the connections requests page
+                                      navigate('/client/connections_requests');
+                                    } catch (error) {
+                                      console.error('Error handling notification:', error);
+                                    }
+                                  }}
+                                  className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all duration-300 text-sm"
+                                >
+                                  <TeamOutlined />
+                                  View Request
+                                </motion.button>
+                              )}
+                              {notification.type === 'Connections' && !isConnectionRequest(notification) && (
+                                <motion.button
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => navigate('/client/connections')}
+                                  className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all duration-300 text-sm"
+                                >
+                                  <TeamOutlined />
+                                  View Connections
+                                </motion.button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-2">
+                          {!notification.is_read && (
+                            <Tooltip title="Mark as Read">
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => markAsRead(notification.id)}
+                                className="p-2 rounded-full bg-teal-100 text-teal-600 hover:bg-teal-200"
+                              >
+                                <CheckCircleOutlined />
+                              </motion.button>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Delete">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => deleteNotification(notification.id)}
+                              className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200"
+                            >
+                              <DeleteOutlined />
+                            </motion.button>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Empty State */}
+                {filteredNotifications.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center justify-center py-12"
+                  >
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description={
+                        <span className="text-gray-500">No notifications found</span>
+                      }
+                    />
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>

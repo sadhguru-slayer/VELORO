@@ -43,13 +43,27 @@ class IsprofiledDetails(APIView):
 
     def get(self,request):
         got_user = request.user
+        if got_user.role == 'client':
+            profile_picture = ClientProfile.objects.get(user=got_user).profile_picture
+        else:
+            profile_picture = FreelancerProfile.objects.get(user=got_user).profile_picture
         is_profiled = got_user.is_profiled
         role = got_user.role
+        usename = got_user.username
+        email = got_user.email
+        if is_profiled:
+            profile_picture = profile_picture.url
+        else:
+            profile_picture = None
+        
         result = {
             "user":{
              "id":got_user.id,   
             "is_profiled": is_profiled,
-            "role": role
+            "role": role,
+            "username": usename,
+            "email": email,
+            "profile_picture": profile_picture
             }
         }
         return Response(result,status=200)
@@ -67,7 +81,11 @@ class LoginView(APIView):
 
         # Step 2: Validate email and password
         if not username or not password:
-            return Response({"error": "Username and Password are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    "error": "Username and Password are required."
+                }
+                , status=status.HTTP_400_BAD_REQUEST)
         
         # Step 3: Authenticate the user
         user = authenticate(request, username=username, password=password)

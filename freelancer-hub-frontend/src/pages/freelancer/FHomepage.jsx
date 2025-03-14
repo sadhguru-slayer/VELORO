@@ -161,229 +161,596 @@ const FHomepage = () => {
     }
   };
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <FSider dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} handleProfileMenu={handleProfileMenu}/>
+      <FSider 
+        dropdown={true} 
+        collapsed={true} 
+        handleMenuClick={handleMenuClick} 
+        handleProfileMenu={handleProfileMenu} 
+      />
       
       {/* Main Content Area */}
-      <div className="bg-gray-100 flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-24">
+      <div className="flex-1 flex flex-col bg-gray-100 ml-16 overflow-hidden">
+        
         {/* Header */}
         <FHeader />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col gap-4 overflow-auto">
-          <div className="flex w-full flex-col md:p-6 sm:p-4 p-4">
+        {/* Scrollable Content Container */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
             {/* Welcome Banner */}
-            <div className="h-[60vh] md:max-h-[70vh] sm:h-[60vh] lg:h-[80vh] max-h-[auto] border shadow-sm bg-gradient-to-br from-blue-800 to-violet-600 text-white border-gray-300 p-6 rounded-lg flex justify-center flex-col">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold">
-                Welcome back, Sadguru!
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl min-h-[60vh]">
+              {/* Gradient Background with Animation */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700
+                animate-gradient-slow">
+                {/* Decorative Elements */}
+                <div className="absolute inset-0">
+                  <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full 
+                    filter blur-3xl mix-blend-overlay -translate-x-1/2 -translate-y-1/2 opacity-20">
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400 rounded-full 
+                    filter blur-3xl mix-blend-overlay translate-x-1/2 translate-y-1/2 opacity-20">
+                  </div>
+                </div>
+              </div>
+            
+              {/* Content Container */}
+              <div className="relative h-full flex flex-col items-center justify-center p-8">
+                {/* Welcome Message */}
+                <div className="space-y-8 max-w-4xl mx-auto">
+                  <div className="space-y-4">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white
+                      tracking-tight leading-tight">
+                      Welcome back,
+                      <span className="block mt-2 bg-gradient-to-r from-purple-200 to-pink-100 
+                        bg-clip-text text-transparent">
+                        Sadguru!
+                      </span>
               </h1>
-              <p className="text-lg sm:text-xl md:text-2xl italic mt-2 opacity-80">
-                'Strive for progress, not perfection.'
-              </p>
+                  </div>
+            
+                  {/* Quote */}
+                  <div className="max-w-2xl mx-auto">
+                    <p className="text-lg sm:text-xl md:text-2xl text-purple-100 font-light
+                      italic ">
+                      "Strive for progress, not perfection."
+                    </p>
+                  </div>
+            
+                  {/* Stats */}
+                  <div className="flex flex-wrap justify-center gap-8 mt-8">
+                    <div className="text-center px-4">
+                      <p className="text-3xl font-bold text-white mb-1">12</p>
+                      <p className="text-sm text-purple-200">Active Projects</p>
+                    </div>
+                    <div className="text-center px-4">
+                      <p className="text-3xl font-bold text-white mb-1">95%</p>
+                      <p className="text-sm text-purple-200">Success Rate</p>
+                    </div>
+                    <div className="text-center px-4">
+                      <p className="text-3xl font-bold text-white mb-1">₹50k+</p>
+                      <p className="text-sm text-purple-200">Earnings</p>
+                    </div>
+                  </div>
+                </div>
+            
+                {/* Decorative Dots Grid */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="h-full w-full grid grid-cols-8 gap-4 opacity-20">
+                    {[...Array(32)].map((_, i) => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-white"></div>
+                    ))}
+                  </div>
+                </div>
             </div>
           </div>
+            
+            {/* Add this to your global CSS */}
+            
 
           {/* Skill-Based Projects */}
-          
-          <div className="h-max relative flex flex-col justify-center gap-4 p-6 py-12 bg-gray-300 ">
-          <h2 className="text-2xl text-center sm:text-xl md:text-2xl lg:text-3xl font-bold text-charcolBlue capitalize">
+            <section className="relative bg-gradient-to-br from-gray-50 to-purple-100 rounded-2xl shadow-lg">
+              <div className="p-8">
+                <h2 className="text-3xl font-bold text-center mb-8">
+                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
               Projects Based on Your Skills
+                  </span>
             </h2>
-      <button onClick={scrollLeft} className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white p-2 shadow-lg rounded-full z-10">
-        &lt;
+
+                {/* Left Scroll Button */}
+                <button 
+                  onClick={scrollLeft} 
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 
+                    bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
+                    transition-all duration-300 hover:scale-110 backdrop-blur-sm
+                    border border-gray-100 group"
+                >
+                  <svg 
+                    className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
       </button>
-      <div ref={containerRef} className="flex cursor-auto overflow-x-auto scroll-smooth space-x-4 p-4">
+
+                {/* Project Cards Container */}
+                <div 
+                  ref={containerRef} 
+                  className="flex space-x-6 overflow-x-auto scroll-smooth scrollbar-hide px-2"
+                  style={{ 
+                    scrollbarWidth: 'none',
+                    '-ms-overflow-style': 'none',
+                  }}
+                >
         {skillBasedProjects.map((record, index) => (
           <div
             key={index}
-            className="flex-none w-[12rem] sm:w-[14rem] md:w-[16rem] lg:w-[20rem] card p-4 sm:p-6 bg-white shadow-md hover:shadow-lg transition-all duration-300 rounded-lg"
-          >
-            <h3 className="text-xl sm:text-2xl font-semibold">{record.name}</h3>
-            <p className="text-sm sm:text-base text-gray-600">{record.description}</p>
-            <p className="text-xs sm:text-sm text-gray-500">{record.time}</p>
+                      className="flex-none w-[280px] p-6 bg-white rounded-xl
+                        shadow-md hover:shadow-xl transition-all duration-300
+                        border border-gray-100 hover:border-violet-200
+                        transform hover:-translate-y-1 group"
+                    >
+                      {/* Project Status Badge */}
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="px-3 py-1 bg-violet-100 text-violet-600 rounded-full text-xs font-medium">
+                          {record.time}
+                        </span>
+                      </div>
+
+                      {/* Project Title */}
+                      <h3 className="text-xl font-semibold text-gray-800 group-hover:text-violet-600 
+                        transition-colors duration-300 line-clamp-2 min-h-[56px]">
+                        {record.name}
+                      </h3>
+
+                      {/* Project Description */}
+                      <p className="text-gray-600 mt-2 text-sm line-clamp-3 min-h-[60px]">
+                        {record.description}
+                      </p>
+
+                      {/* Action Button */}
             <button
               onClick={() =>
                 navigate(`/freelancer/browse-projects/project-view/${record.id}`, {
                   state: { record },
                 })
               }
-              className="button mt-4 sm:mt-6"
+                        className="mt-4 w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-lg
+                          hover:bg-violet-600 hover:text-white transition-all duration-300
+                          font-medium border border-gray-200 hover:border-violet-600
+                          flex items-center justify-center gap-2 group-hover:shadow-md"
             >
               View Details
+                        <svg 
+                          className="w-4 h-4" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
             </button>
           </div>
         ))}
       </div>
-      <button onClick={scrollRight} className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white p-2 shadow-lg rounded-full z-10">
-        &gt;
+
+                {/* Right Scroll Button */}
+                <button 
+                  onClick={scrollRight} 
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 
+                    bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
+                    transition-all duration-300 hover:scale-110 backdrop-blur-sm
+                    border border-gray-100 group"
+                >
+                  <svg 
+                    className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
       </button>
     </div>
+            </section>
 
-
-          {/* Dashboard Cards */}
-          <div className="flex w-full h-full md:max-h-[100vh] sm:h-[70vh] md:h-[80vh] lg:h-[100vh] max-h-auto flex-col p-2 sm:p-2 md:p-4 gap-3 justify-center">
-          <h2 className="text-3xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-charcolBlue uppercase text-center">
+            {/* Swift Action Cards */}
+            <section className="relative  rounded-2xl shadow-lg">
+              <div className="p-8">
+                <h2 className="text-3xl font-bold text-center mb-8">
+                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
             Swift Action
+                  </span>
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-8">
-            {/* My Projects */}
-            <div className="card rounded-lg p-4 sm:p-5 md:p-6 lg:p-6 bg-white shadow-sm">
-              <h2 className="text-lg sm:text-lg md:text-xl lg:text-2xl font-semibold text-violet-500 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* My Projects Card */}
+                  <div className="group ">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
+                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
+                      border border-gray-100 hover:border-violet-200
+                      transform hover:-translate-y-1 transition-all duration-300">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
                 My Projects
-              </h2>
-              <p className="text-gray-700 mb-4 text-sm sm:text-xs md:text-md lg:text-lg">
-                View and manage your active projects.
-              </p>
+                        </h3>
+                        <span className="p-2 bg-violet-100 rounded-lg">
+                          <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-6">View and manage your active projects.</p>
               <button
                 onClick={() => handleNavigate("projects")}
-                className="button float-right mt-4 sm:mt-6 text-mutedGold bg-charcolBlue px-4 sm:px-3 md:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-base"
+                        className="w-full py-3 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 
+                          hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl
+                          transform hover:scale-[1.02] transition-all duration-300
+                          shadow-lg hover:shadow-violet-500/25 font-medium
+                          flex items-center justify-center gap-2 group"
               >
                 Go to Projects
+                        <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
               </button>
+                    </div>
             </div>
         
-            {/* Browse Projects */}
-            <div className="card rounded-lg p-4 sm:p-5 md:p-6 lg:p-6 bg-white shadow-sm">
-              <h2 className="text-lg sm:text-lg md:text-xl lg:text-2xl font-semibold text-violet-500 mb-4">
+                  {/* Browse Projects Card */}
+                  <div className="group ">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
+                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
+                      border border-gray-100 hover:border-violet-200
+                      transform hover:-translate-y-1 transition-all duration-300">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
                 Browse Projects
-              </h2>
-              <p className="text-gray-700 mb-4 text-sm sm:text-xs md:text-md lg:text-lg">
-                Explore new projects and start bidding.
-              </p>
+                        </h3>
+                        <span className="p-2 bg-violet-100 rounded-lg">
+                          <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-6">Explore new projects and start bidding.</p>
               <button
                 onClick={() => navigate("/freelancer/browse-projects")}
-                className="button float-right mt-4 sm:mt-6 text-mutedGold bg-charcolBlue px-4 sm:px-3 md:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-base"
+                        className="w-full py-3 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 
+                          hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl
+                          transform hover:scale-[1.02] transition-all duration-300
+                          shadow-lg hover:shadow-violet-500/25 font-medium
+                          flex items-center justify-center gap-2 group"
               >
                 Browse Now
+                        <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
               </button>
+                    </div>
             </div>
         
-            {/* Notifications */}
-            <div className="card rounded-lg p-4 sm:p-5 md:p-6 lg:p-6 bg-white shadow-sm">
-              <h2 className="text-lg sm:text-lg md:text-xl lg:text-2xl font-semibold text-violet-500 mb-4">
+                  {/* Notifications Card */}
+                  <div className="group ">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
+                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
+                      border border-gray-100 hover:border-violet-200
+                      transform hover:-translate-y-1 transition-all duration-300">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
                 Notifications
-              </h2>
-              <p className="text-gray-700 mb-4 text-sm sm:text-xs md:text-md lg:text-lg">
-                Stay updated with project updates.
-              </p>
-              <button className="button float-right mt-4 sm:mt-6 text-mutedGold bg-charcolBlue px-4 sm:px-3 md:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-base">
+                        </h3>
+                        <span className="p-2 bg-violet-100 rounded-lg">
+                          <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-6">Stay updated with project updates.</p>
+                      <button className="w-full py-3 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 
+                        hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl
+                        transform hover:scale-[1.02] transition-all duration-300
+                        shadow-lg hover:shadow-violet-500/25 font-medium
+                        flex items-center justify-center gap-2 group">
                 View Notifications
+                        <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
               </button>
+                    </div>
             </div>
         
-            {/* Earnings */}
-            <div className="card rounded-lg p-4 sm:p-5 md:p-6 lg:p-6 bg-white shadow-sm">
-              <h2 className="text-lg sm:text-lg md:text-xl lg:text-2xl font-semibold text-violet-500 mb-4">
+                  {/* Earnings Card */}
+                  <div className="group ">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
+                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
+                      border border-gray-100 hover:border-violet-200
+                      transform hover:-translate-y-1 transition-all duration-300">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
                 Earnings
-              </h2>
-              <p className="text-gray-700 mb-4 text-sm sm:text-xs md:text-md lg:text-lg">
-                Check your earnings and pending invoices.
-              </p>
+                        </h3>
+                        <span className="p-2 bg-violet-100 rounded-lg">
+                          <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-6">Check your earnings and pending invoices.</p>
               <button
                 onClick={() => handleNavigate("earnings")}
-                className="button float-right mt-4 sm:mt-6 text-mutedGold bg-charcolBlue px-4 sm:px-3 md:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-base"
-              >
+                        className="w-full py-3 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 
+                          hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl
+                          transform hover:scale-[1.02] transition-all duration-300
+                          shadow-lg hover:shadow-violet-500/25 font-medium
+                          flex items-center justify-center gap-2 group">
                 View Earnings
+                        <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
               </button>
             </div>
           </div>
         </div>
+              </div>
+            </section>
 
-          {/* Recent Activity Section */}
-          <div className="flex w-full flex-col p-6 bg-gray-200">
-  <h2 className="text-xl sm:text-xl md:text-2xl lg:text-3xl font-semibold text-violet-500 text-center uppercase mb-6">
+            {/* Recent Activity */}
+            <section className="relative bg-white rounded-2xl shadow-lg">
+              <div className="p-8">
+                <h2 className="text-3xl font-bold text-center mb-8">
+                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
     Recent Activity
+                  </span>
   </h2>
-  <ul  className="bg-white border shadow-sm rounded-lg p-6 space-y-4">
-    <li className="flex justify-between items-center py-3 border-b border-gray-300 hover:bg-gray-100 transition-all duration-300">
-      <span className="text-sm sm:text-base text-gray-700">Submitted a proposal for "E-commerce Website".</span>
-      <span className="text-xs sm:text-sm text-gray-500">2 hours ago</span>
+
+                <ul className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200 divide-y divide-gray-200/50">
+                  {/* Activity Item 1 */}
+                  <li className="group ">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-500/0 to-indigo-500/0 group-hover:from-violet-500/5 group-hover:to-indigo-500/5 transition-all duration-300 rounded-t-xl"></div>
+                    <div className=" p-6 flex justify-between items-center gap-4 group-hover:transform group-hover:translate-x-2 transition-transform duration-300">
+                      <div className="flex items-center gap-4">
+                        <span className="flex-shrink-0 w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                          </svg>
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-gray-800 font-medium">Submitted a proposal</span>
+                          <span className="text-violet-600 text-sm">"E-commerce Website"</span>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-600 text-xs font-medium whitespace-nowrap">
+                        2 hours ago
+                      </span>
+                    </div>
     </li>
-    <li className="flex justify-between items-center py-3 border-b border-gray-300 hover:bg-gray-100 transition-all duration-300">
-      <span className="text-sm sm:text-base text-gray-700">Accepted a project: "Logo Design".</span>
-      <span className="text-xs sm:text-sm text-gray-500">1 day ago</span>
+
+                  {/* Activity Item 2 */}
+                  <li className="group ">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-500/0 to-indigo-500/0 group-hover:from-violet-500/5 group-hover:to-indigo-500/5 transition-all duration-300"></div>
+                    <div className=" p-6 flex justify-between items-center gap-4 group-hover:transform group-hover:translate-x-2 transition-transform duration-300">
+                      <div className="flex items-center gap-4">
+                        <span className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-gray-800 font-medium">Accepted a project</span>
+                          <span className="text-violet-600 text-sm">"Logo Design"</span>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-600 text-xs font-medium whitespace-nowrap">
+                        1 day ago
+                      </span>
+                    </div>
     </li>
-    <li className="flex justify-between items-center py-3 border-b border-gray-300 hover:bg-gray-100 transition-all duration-300">
-      <span className="text-sm sm:text-base text-gray-700">Profile updated.</span>
-      <span className="text-xs sm:text-sm text-gray-500">3 days ago</span>
+
+                  {/* Activity Item 3 */}
+                  <li className="group ">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-500/0 to-indigo-500/0 group-hover:from-violet-500/5 group-hover:to-indigo-500/5 transition-all duration-300 rounded-b-xl"></div>
+                    <div className=" p-6 flex justify-between items-center gap-4 group-hover:transform group-hover:translate-x-2 transition-transform duration-300">
+                      <div className="flex items-center gap-4">
+                        <span className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                          </svg>
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-gray-800 font-medium">Profile updated</span>
+                          <span className="text-violet-600 text-sm">Personal information changed</span>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-600 text-xs font-medium whitespace-nowrap">
+                        3 days ago
+                      </span>
+                    </div>
     </li>
   </ul>
+
+                {/* Optional: View All Button */}
+                <div className="mt-6 text-center">
+                  <button className="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-xl 
+                    border border-violet-200 text-violet-600 hover:bg-violet-50 
+                    transition-all duration-300 group font-medium">
+                    View All Activities
+                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" 
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                  </button>
+                </div>
 </div>
+            </section>
 
           {/* Stats Overview */}
-          <div className="flex w-full h-full flex-col p-6 mb-5">
-            <h2 className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl text-violet-500 font-semibold uppercase text-center">
+            <section className="relative rounded-2xl">
+              <div className="">
+                <h2 className="text-3xl font-bold text-center mb-8">
+                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
               Stats Overview
+                  </span>
             </h2>
-            <div className="w-full  mt-8 flex flex-col gap-6 md:gap-8">
-              <div className="flex gap-6 w-full">
-                {/* Active Projects */}
-                <div className="w-full p-4 bg-white rounded-lg shadow-sm">
-                  <h3 className="text-gray-800 font-semibold">Active Projects</h3>
-                  <p className="text-6xl font-extrabold bg-gradient-to-br from-violet-500 via-violet-300 to-charcolBlue text-transparent bg-clip-text">
+                
+                {/* Stats Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                  {/* Active Projects Card */}
+                  <div className="group  flex flex-col justify-between h-full">
+                    <div className=" inset-0 bg-gradient-to-r from-violet-300 to-indigo-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
+                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
+                      border border-gray-100 hover:border-violet-200
+                      transform hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">Active Projects</h3>
+                        <span className="p-2 bg-violet-100 rounded-lg">
+                          <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-6xl font-extrabold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
                     {statData.activeProjects}
                   </p>
+                      {/* Add extra content here to fill space if needed */}
+                      <div className="mt-6 text-gray-500 text-sm">Overview of ongoing projects.</div>
+                    </div>
                 </div>
 
-                {/* Completed Projects */}
-                <div className="w-full p-4 bg-white rounded-lg shadow-sm">
-                  <h3 className="text-gray-800 font-semibold">Completed Projects</h3>
-                  <p className="text-6xl font-extrabold bg-gradient-to-br from-violet-500 via-violet-300 to-charcolBlue text-transparent bg-clip-text">
+                  {/* Completed Projects Card */}
+                  <div className="group  flex flex-col justify-between h-full">
+                    <div className=" inset-0 bg-gradient-to-r from-teal-300 to-green-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
+                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
+                      border border-gray-100 hover:border-violet-200
+                      transform hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">Completed Projects</h3>
+                        <span className="p-2 bg-green-100 rounded-lg">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-6xl font-extrabold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
                     {statData.completedProjects}
                   </p>
+                      {/* Add extra content here to fill space if needed */}
+                      <div className="mt-6 text-gray-500 text-sm">Projects completed successfully.</div>
+                    </div>
+                  </div>
+
+                  {/* New Card: "In Progress" or any other stat */}
+                  <div className="group  flex flex-col justify-between h-full">
+                    <div className=" inset-0 bg-gradient-to-r from-yellow-300 to-orange-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
+                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
+                      border border-gray-100 hover:border-yellow-200
+                      transform hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">In Progress</h3>
+                        <span className="p-2 bg-yellow-100 rounded-lg">
+                          <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-6xl font-extrabold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                        {statData.inProgressProjects ? statData.inProgressProjects : 30}
+                      </p>
+                      <div className="mt-6 text-gray-500 text-sm">Ongoing projects in the pipeline.</div>
+                    </div>
                 </div>
               </div>
 
-              <div className="flex gap-6 flex-wrap sm:flex-wrap md:flex-nowrap w-full mb-6">
-                {/* Success Rate */}
-                <div className="bg-white w-[30%] flex-shrink-0 p-4 flex flex-col items-center rounded-lg justify-center">
-                  <h3 className="text-gray-800 font-semibold">Success Rate</h3>
-                  <div className="h-auto w-auto flex justify-center">
+                {/* Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Success Rate Chart */}
+                  <div className="bg-white rounded-xl shadow-lg p-6 h-[400px]">
+                    <div className=" h-48">
                     <Pie
                       data={successRateData}
                       options={{
                         responsive: true,
-                        plugins: { legend: { position: "top" } },
+                          plugins: { 
+                            legend: { 
+                              position: "bottom",
+                              labels: {
+                                padding: 20,
+                                font: {
+                                  size: 12,
+                                  weight: 'medium'
+                                }
+                              }
+                            } 
+                          },
+                          animation: {
+                            duration: 2000
+                          }
                       }}
                     />
                   </div>
-                  <p className="text-xl text-gray-600 mt-2">{statData.successRate}%</p>
+                    <p className="text-center text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mt-4">
+                      {statData.successRate}%
+                    </p>
                 </div>
 
-                {/* Monthly Earnings */}
-                <div className="bg-white w-[70%] p-4 flex flex-col flex-grow-0 items-center rounded-lg justify-center">
-                  <h3 className="text-gray-800 font-semibold">Monthly Earnings</h3>
-                  <div className="h-[75%] w-[100%] flex justify-center">
+                  {/* Monthly Earnings Chart */}
+                  <div className="bg-white rounded-xl shadow-lg p-6 h-[400px]">
+                    <div className=" h-64">
                     <Bar
                       data={projectData}
                       options={{
                         responsive: true,
-                        plugins: { legend: { position: "top" } },
+                          plugins: { 
+                            legend: { 
+                              position: "top",
+                              labels: {
+                                padding: 20,
+                                font: {
+                                  size: 12,
+                                  weight: 'medium'
+                                }
+                              }
+                            } 
+                          },
+                          animation: {
+                            duration: 2000
+                          },
+                          scales: {
+                            y: {
+                              grid: {
+                                color: 'rgba(107, 114, 128, 0.1)'
+                              }
+                            },
+                            x: {
+                              grid: {
+                                display: false
+                              }
+                            }
+                          }
                       }}
                     />
                   </div>
-                  <p className="text-xl text-gray-600 mt-2">₹{statData.earnings}</p>
+                    <p className="text-center text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mt-6">
+                      ₹{statData.earnings}
+                    </p>
                 </div>
               </div>
             </div>
-            
-            {/* Announcements */}
-            <div className="flex w-full flex-col justify-center">
-            <div className=" bg-white border border-gray-300 p-4 rounded-lg shadow">
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Announcements</h2>
-              <p className="text-gray-600 mt-2">
-                Platform updates and new features will appear here.
-              </p>
+            </section>
+          </div>
             </div>
           </div>
             </div>
 
-          
-        </div>
-      </div>
-    </div>
   );
 };
 
 export default FHomepage;
+
+

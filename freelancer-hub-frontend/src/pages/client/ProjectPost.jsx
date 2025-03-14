@@ -11,8 +11,12 @@ import Select from "react-select";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import Datepicker from "tailwind-datepicker-react";
 import axios from "axios";
-import { message } from 'antd';
+import { message, Modal } from 'antd';
 import Cookies from 'js-cookie';
+import { motion } from 'framer-motion';
+import { Switch } from '@headlessui/react';
+import { TrashIcon } from '@heroicons/react/24/outline';
+import { useMediaQuery } from 'react-responsive';
 
 const label = { inputProps: { "aria-label": "Checkbox" } };
 
@@ -75,7 +79,15 @@ const dateOptions = {
   },
 };
 
-const ProjectPost = ({userId, role,MAX_TASKS=3}) => {
+// Add this custom configuration for message
+message.config({
+  top: 60, // Distance from top
+  duration: 3, // Display duration in seconds
+  maxCount: 3, // Max number of messages shown at once
+});
+
+const ProjectPost = ({userId, role, MAX_TASKS=3}) => {
+  const isMobile = useMediaQuery({ maxWidth: 767 });
   const [show, setShow] = useState(false);
   const [isCollaborative, setIsCollaborative] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState("");
@@ -88,7 +100,7 @@ const ProjectPost = ({userId, role,MAX_TASKS=3}) => {
   const [taskDateErrors, setTaskDateErrors] = useState([]);
   const [taskBudgetErrors, setTaskBudgetErrors] = useState([]);
   const [errorsResolved, setErrorResolved] = useState(true);
-
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [formValues, setFormValues] = useState({
     title: "",
@@ -417,15 +429,17 @@ useEffect(() => {
     e.preventDefault();
 
     const isBudgetValid = validateTaskBudget();
-  const areDeadlinesValid = validateTaskDeadlines();
+    const areDeadlinesValid = validateTaskDeadlines();
 
-  if (!isBudgetValid || !areDeadlinesValid) {
-    console.log("Validation failed. Please fix the errors.");
-    return; // Prevent form submission
-  }
+    if (!isBudgetValid || !areDeadlinesValid) {
+      message.error({
+        content: "Please fix the validation errors before submitting.",
+        className: 'custom-message error',
+      });
+      return;
+    }
   
     try {
-      // Make the POST request
       const response = await axios.post(
         "http://127.0.0.1:8000/api/post_project/",
         formValues,
@@ -433,25 +447,32 @@ useEffect(() => {
           headers: getAuthHeaders(),
         }
       );
+      
       if (response.status >= 200 && response.status < 300) {
-        message.success("Project Posted")
-        setFormValues({
-          tasks: [],
-          title: '',
-          description: '',
-          budget: 0,
-          deadline: new Date(),
-          domain: '',
-          is_collaborative: false,
-          skills_required: [],
-        });
-        window.location.reload();
+        setShowSuccessModal(true);
       }
-
     } catch (error) {
-      // Handle errors (e.g., network issues, bad responses)
+      message.error({
+        content: "Failed to post project. Please try again.",
+        className: 'custom-message error',
+      });
       console.error("Error submitting form:", error);
     }
+  };
+
+  const handleModalConfirm = () => {
+    setShowSuccessModal(false);
+    setFormValues({
+      tasks: [],
+      title: '',
+      description: '',
+      budget: 0,
+      deadline: new Date(),
+      domain: '',
+      is_collaborative: false,
+      skills_required: [],
+    });
+    navigate('/client/dashboard');
   };
 
   const handleSkillChange = (selectedSkills) => {
@@ -515,300 +536,595 @@ useEffect(() => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-    <CSider
-      userId={userId}
-      role={role}
-      dropdown={true}
-      collapsed={true}
-      handleMenuClick={handleMenuClick}
-      handleProfileMenu={handleProfileMenu}
-    />
+      <CSider
+        userId={userId}
+        role={role}
+        dropdown={true}
+        collapsed={true}
+        handleMenuClick={handleMenuClick}
+        handleProfileMenu={handleProfileMenu}
+      />
   
-    <div
-      className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22 bg-gray-100"
-    >
-      {/* Header */}
-      <CHeader />
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-200 p-6">
-        {/* Content Section */}
-        {loading ? (
-          <IndividualLoadingComponent />
-        ) : (
-          <>
-            <div className="create_project_section w-full h-auto bg-white shadow-md rounded-lg p-6">
-              <div className="flex justify-center items-center w-full py-4 rounded-lg bg-white">
-                {!postProject ? (
-                  <div
-                    className="flex flex-col items-center cursor-pointer "
-                    onClick={handleAddProjectClick}
-                  >
-                    <IoMdAdd className="text-gray-500 text-9xl" />
-                    <p className="text-gray-700 text-lg font-medium mt-2">
-                      Post a project? Click here
+      <div className={`
+        flex-1 flex flex-col overflow-hidden
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-16'}
+      `}>
+        <CHeader />
+        
+        <div className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
+          {loading ? (
+            <IndividualLoadingComponent />
+          ) : (
+            <div className="max-w-5xl mx-auto">
+              {!postProject ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-2xl shadow-sm p-8 cursor-pointer hover:shadow-md transition-all duration-300"
+                  onClick={handleAddProjectClick}
+                >
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-20 h-20 rounded-full bg-teal-50 flex items-center justify-center">
+                      <IoMdAdd className="text-teal-500 text-4xl" />
+                    </div>
+                    <p className="text-gray-700 text-lg font-medium">
+                      Create a New Project
+                    </p>
+                    <p className="text-gray-500 text-sm text-center max-w-md">
+                      Start by creating a project and find the perfect freelancer for your needs
                     </p>
                   </div>
-                ) : (
-                  <form
-                    className="w-[80%] mx-auto"
-                    onSubmit={formSubmit}
-                  >
-                    <h2 className="text-xl text-gray-900 font-bold my-5">
-                      Project Details
-                    </h2>
-                    {/* Project Title */}
-                    <div className="relative z-0 w-full mb-5 group">
-                      <input
-                        type="text"
-                        name="title"
-                        id="title"
-                        className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                        placeholder=" "
-                        value={formValues.title}
-                        onChange={formOnchange}
-                        required
-                      />
-                      <label
-                        htmlFor="title"
-                        className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600"
-                      >
-                        Project Title
-                      </label>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-2xl shadow-sm p-8"
+                >
+                  <form onSubmit={formSubmit} className="space-y-8">
+                    {/* Project Header */}
+                    <div className="border-b border-gray-200 pb-6">
+                      <h1 className="text-2xl font-bold text-gray-900">Create New Project</h1>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Fill in the details below to post your project and find the perfect freelancer.
+                      </p>
                     </div>
-  
-                    {/* Project Description */}
-                    <div className="relative z-0 w-full mb-5 group">
-                      <Editor
-                        placeholder="Project Description"
-                        onTextChange={(e) =>
-                          setFormValues({
-                            ...formValues,
-                            description: e.htmlValue,
-                          })
-                        }
-                        style={{ height: "15rem" }}
-                      />
-                    </div>
-  
-                    {/* Project Budget */}
-                    <div className="relative z-0 w-full mb-5 group">
-                      <input
-                        type="number"
-                        name="budget"
-                        id="budget"
-                        className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                        placeholder=" "
-                        value={formValues.budget}
-                        onChange={formOnchange}
-                        required
-                      />
-                      <label
-                        htmlFor="budget"
-                        className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600"
-                      >
-                        Project Budget
-                      </label>
-                    </div>
-  
-                    {/* Deadline Date Picker */}
-                    <div className="cursor-pointer relative z-1 w-full mb-5 mt-2 group md:gap-6">
-                      <Datepicker
-                        options={dateOptions}
-                        selected={new Date(formValues.deadline)}
-                        onChange={handleDeadlineChange}
-                        show={show}
-                        setShow={handleClose}
-                      />
-                    </div>
-  
-                    {/* Domain Selection */}
-                    <div className="relative z-0 w-full mb-5 flex flex-col gap-3 group">
-                      <Select
-                        name="domain"
-                        options={domain}
-                        onChange={domainChange}
-                        value={selectedDomain}
-                        className="basic-multi-select"
-                        classNamePrefix="select"
-                        placeholder="Select a Domain"
-                      />
-                    </div>
-  
-                    {/* Collaborative Checkbox */}
-                    <div className="relative z-0 w-full mb-5 flex flex-col gap-3 group">
-                      <div className="flex items-center gap-5">
-                        <label htmlFor="is_collaborative" className="text-gray-500">
-                          Collaborative
+
+                    {/* Basic Project Details */}
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Project Title
                         </label>
-                        <Checkbox
-                          name="is_collaborative"
-                          id="is_collaborative"
-                          value={isCollaborative}
-                          {...label}
-                          color="#009688"
-                          onChange={() => {
-                            const newValue = !isCollaborative;
-                            setIsCollaborative(newValue);
-                            formOnchange({
-                              target: {
-                                name: "is_collaborative",
-                                value: newValue,
-                              },
-                            });
-                          }}
+                        <input
+                          type="text"
+                          name="title"
+                          value={formValues.title}
+                          onChange={formOnchange}
+                          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+                          placeholder="Enter a clear title for your project"
+                          required
                         />
                       </div>
-                    </div>
-  
-                    {/* Task Management */}
-                    {!isCollaborative ? (
-                      <div className="relative z-auto w-full mb-5 flex flex-col gap-3 group">
-                        <div className="relative z-auto w-full mb-5 group">
-                          <Select
-                            isMulti
-                            required={false}
-                            name="skills_required"
-                            options={filteredOptions}
-                            value={formValues.skills_required}
-                            onChange={handleSkillChange}
-                            className="basic-multi-select"
-                            classNamePrefix="select"
-                            placeholder="Select Skills"
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Project Description
+                        </label>
+                        <div className="rounded-lg border border-gray-300 overflow-hidden">
+                          <Editor
+                            value={formValues.description}
+                            onTextChange={(e) =>
+                              setFormValues({
+                                ...formValues,
+                                description: e.htmlValue,
+                              })
+                            }
+                            style={{ height: "200px" }}
                           />
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Project Budget (₹)
+                          </label>
+                          <input
+                            type="number"
+                            name="budget"
+                            value={formValues.budget}
+                            onChange={formOnchange}
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+                            placeholder="Enter project budget"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Project Deadline
+                          </label>
+                          <div className="relative">
+                            <Datepicker
+                              options={{
+                                ...dateOptions,
+                                theme: {
+                                  ...dateOptions.theme,
+                                  input: "w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200",
+                                },
+                              }}
+                              selected={new Date(formValues.deadline)}
+                              onChange={handleDeadlineChange}
+                              show={show}
+                              setShow={handleClose}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Project Domain
+                        </label>
+                        <Select
+                          options={domain}
+                          value={selectedDomain}
+                          onChange={domainChange}
+                          placeholder="Select project domain"
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              minHeight: '44px',
+                              borderRadius: '0.5rem',
+                              borderColor: '#e5e7eb',
+                              '&:hover': {
+                                borderColor: '#14b8a6',
+                              },
+                            }),
+                          }}
+                        />
+                      </div>
+
+                      {/* Collaborative Toggle */}
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">Collaborative Project</h3>
+                          <p className="text-sm text-gray-500">Enable this for multi-task projects</p>
+                        </div>
+                        <Switch
+                          checked={isCollaborative}
+                          onChange={(checked) => {
+                            setIsCollaborative(checked);
+                            formOnchange({
+                              target: {
+                                name: "is_collaborative",
+                                value: checked,
+                              },
+                            });
+                          }}
+                          className={`${
+                            isCollaborative ? 'bg-teal-500' : 'bg-gray-200'
+                          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2`}
+                        >
+                          <span
+                            className={`${
+                              isCollaborative ? 'translate-x-6' : 'translate-x-1'
+                            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                          />
+                        </Switch>
+                      </div>
+                    </div>
+
+                    {/* Skills or Tasks Section */}
+                    {!isCollaborative ? (
+                      <div className="space-y-4">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Required Skills
+                        </label>
+                        <Select
+                          isMulti
+                          options={filteredOptions}
+                          value={formValues.skills_required}
+                          onChange={handleSkillChange}
+                          placeholder="Select required skills"
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                        />
+                      </div>
                     ) : (
-                      <div className="tasks_section flex flex-col gap-3">
-                        <h2 className="text-lg font-bold">
-                          Divide Tasks Based on {capitalize(selectedDomain)}
-                        </h2>
-                        {formValues.tasks.map((task, index) => (
-                          <div key={index} className="task-card border p-4 rounded-md shadow-sm mb-5">
-                            <h2 className="text-md font-bold pl-4">Task {index + 1}</h2>
-                            <div className="flex flex-col gap-4">
-                              {/* Task Name */}
-                              <input
-                                type="text"
-                                name={`task_${index + 1}_name`}
-                                className="block py-2.5 px-2.5 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none"
-                                placeholder="Task name"
-                                value={task.title}
-                                onChange={(e) =>
-                                  handleTaskChange(index, "title", e.target.value)
-                                }
-                                required
-                              />
-                              
-                              {/* Task Description */}
-                              <Editor
-                                placeholder="Task Description"
-                                value={task.description}
-                                onTextChange={(e) =>
-                                  handleTaskChange(index, "description", e.htmlValue)
-                                }
-                                style={{ height: "12rem" }}
-                              />
-                        
-                              {/* Task Skills */}
-                              <Select
-                                isMulti
-                                name={`task_${index + 1}_skills`}
-                                options={filteredOptions}
-                                value={task.skills_required_for_task}
-                                onChange={(e) =>
-                                  handleTaskChange(index, "skills_required_for_task", e)
-                                }
-                                className="basic-multi-select"
-                                classNamePrefix="skills_required_for_task"
-                                placeholder={`Select Skills for Task ${index + 1}`}
-                              />
-                        
-                              {/* Task Deadline */}
-                              <Datepicker
-                                options={dateOptions}
-                                selected={new Date(task.deadline)} 
-                                onChange={(date) => handleTasksDeadlineChange(date, index)}
-                                show={taskShow[index]}
-                                setShow={(show) => {
-                                  show ? handleShowDatePicker(index) : handleHideDatePicker(index);
-                                }}
-                                dateFormat="yyyy-MM-dd"
-                              />
-                              {/* Show task deadline error */}
-                              {taskDateErrors[index] && (
-                                <div className="error-message text-red-500">{taskDateErrors[index]}</div>
-                              )}
-                        
-                              {/* Task Budget */}
-                              <input
-                                type="number"
-                                name={`task_${index + 1}_budget`}
-                                className="block p-2.5 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none"
-                                placeholder="Task Budget"
-                                value={task.budget}
-                                onChange={(e) =>
-                                  handleTaskChange(index, "budget", e.target.value)
-                                }
-                                required
-                              />
-                              {/* Show task budget error */}
-                              {taskBudgetErrors[index] && (
-                                <div className="error-message text-red-500">
-                                  {taskBudgetErrors[index]}
-                                </div>
-                              )}
-                              
-                        
-                              {/* Delete Task Button */}
-                              <button
-                                onClick={() => handleDeleteTask(index)}
-                                className="text-red-500 mt-2"
-                              >
-                                Delete Task
-                              </button>
-                            </div>
-                          </div>
-                        ))}              
-                        {/* Add Task Button */}
-                        {formValues.tasks.length < MAX_TASKS && (
-                          <div className="border rounded-md w-full py-3 flex justify-center items-center flex-col">
-                            <button
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Project Tasks ({formValues.tasks.length}/{MAX_TASKS})
+                          </h3>
+                          {formValues.tasks.length < MAX_TASKS && (
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              type="button"
                               onClick={handleAddTask}
-                              className="border p-4 py-2 rounded-md text-md bg-teal-400 text-white"
+                              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
                             >
+                              <IoMdAdd className="-ml-1 mr-2 h-5 w-5" />
                               Add Task
-                            </button>
-                          </div>
-                        )}                        
+                            </motion.button>
+                          )}
+                        </div>
+
+                        <div className="space-y-4">
+                          {formValues.tasks.map((task, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="task-card bg-white rounded-lg border border-gray-200 overflow-visible"
+                            >
+                              <div className="p-6 space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <h4 className="text-lg font-medium text-gray-900">
+                                    Task {index + 1}
+                                  </h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTask(index)}
+                                    className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                                  >
+                                    <TrashIcon className="h-5 w-5" />
+                                  </button>
+                                </div>
+
+                                <input
+                                  type="text"
+                                  value={task.title}
+                                  onChange={(e) => handleTaskChange(index, "title", e.target.value)}
+                                  placeholder="Task Title"
+                                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                  required
+                                />
+
+                                <div className="rounded-lg border border-gray-300 overflow-hidden">
+                                  <Editor
+                                    value={task.description}
+                                    onTextChange={(e) =>
+                                      handleTaskChange(index, "description", e.htmlValue)
+                                    }
+                                    style={{ height: "150px" }}
+                                  />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      Task Budget
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={task.budget}
+                                      onChange={(e) =>
+                                        handleTaskChange(index, "budget", e.target.value)
+                                      }
+                                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                      required
+                                    />
+                                    {taskBudgetErrors[index] && (
+                                      <p className="mt-1 text-sm text-red-500">
+                                        {taskBudgetErrors[index]}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      Task Deadline
+                                    </label>
+                                    <Datepicker
+                                      options={dateOptions}
+                                      selected={task.deadline ? new Date(task.deadline) : null}
+                                      onChange={(date) => handleTasksDeadlineChange(date, index)}
+                                      show={taskShow[index]}
+                                      setShow={(show) => {
+                                        show
+                                          ? handleShowDatePicker(index)
+                                          : handleHideDatePicker(index);
+                                      }}
+                                    />
+                                    {taskDateErrors[index] && (
+                                      <p className="mt-1 text-sm text-red-500">
+                                        {taskDateErrors[index]}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <Select
+                                  isMulti
+                                  options={filteredOptions}
+                                  value={task.skills_required_for_task}
+                                  onChange={(e) =>
+                                    handleTaskChange(index, "skills_required_for_task", e)
+                                  }
+                                  placeholder="Select required skills for this task"
+                                  className="react-select-container z-50"
+                                  classNamePrefix="react-select"
+                                />
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
                       </div>
                     )}
-  
+
                     {/* Submit Button */}
-                    <div className="mt-4 flex justify-center">
-                    {!errorsResolved ? (
-                      <button onClick={()=>message.error("There are few errors please resolve")}
-                      className="bg-teal-500 text-white py-2 px-6 rounded-md hover:bg-teal-400"
-                      
-                      >Submit Project</button>
-                    ):(
-                      <button
+                    <div className="flex justify-end pt-6 border-t border-gray-200">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         type="submit"
-                        className="bg-teal-500 text-white py-2 px-6 rounded-md hover:bg-teal-400"
+                        disabled={!errorsResolved}
+                        className={`px-6 py-3 rounded-lg text-white font-medium ${
+                          errorsResolved
+                            ? 'bg-teal-500 hover:bg-teal-600'
+                            : 'bg-gray-400 cursor-not-allowed'
+                        }`}
                       >
-                        Submit Project
-                      </button>
-                    )}
+                        Post Project
+                      </motion.button>
                     </div>
                   </form>
-                )}
-              </div>
+                </motion.div>
+              )}
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Add custom styles */}
+      <style jsx global>{`
+        /* Base styles for form elements */
+        .form-container {
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Select styles */
+        .react-select-container {
+          position: relative;
+          z-index: 40;
+        }
+
+        .react-select__menu {
+          z-index: 50 !important;
+        }
+
+        /* Date picker styles */
+        .tailwind-datepicker-container,
+        div[role="dialog"] {
+          z-index: 50 !important;
+        }
+
+        /* Task section specific z-index handling */
+        .task-card {
+          position: relative;
+          margin-bottom: 2rem; /* Add more space between tasks */
+        }
+
+        /* Ensure last task's select is visible */
+        .task-card:last-child {
+          margin-bottom: 3rem; /* Extra space for the last task */
+        }
+
+        .task-card .react-select-container {
+          z-index: 40;
+        }
+
+        /* Progressive z-index for stacked tasks */
+        .task-card:nth-child(1) { z-index: 40; }
+        .task-card:nth-child(2) { z-index: 39; }
+        .task-card:nth-child(3) { z-index: 38; }
+
+        /* Modal and message z-index */
+        .ant-modal {
+          z-index: 1001 !important;
+        }
+        
+        .ant-modal-mask {
+          z-index: 1000 !important;
+        }
+        
+        .ant-message {
+          z-index: 1002 !important;
+        }
+
+        /* Editor z-index */
+        .p-editor-container {
+          position: relative;
+          z-index: 30;
+        }
+        
+        .p-editor-toolbar {
+          z-index: 31;
+        }
+
+        /* Existing styles */
+        .react-select-container .react-select__control {
+          border-radius: 0.5rem;
+          border-color: #e5e7eb;
+          min-height: 44px;
+        }
+
+        .react-select-container .react-select__control:hover {
+          border-color: #14b8a6;
+        }
+
+        .react-select-container .react-select__control--is-focused {
+          border-color: #14b8a6;
+          box-shadow: 0 0 0 1px #14b8a6;
+        }
+
+        .react-select-container .react-select__option--is-selected {
+          background-color: #14b8a6;
+        }
+
+        .react-select-container .react-select__option:hover {
+          background-color: #99f6e4;
+        }
+
+        /* Date picker additional styles */
+        .tailwind-datepicker input {
+          z-index: 40;
+        }
+
+        .tailwind-datepicker-container {
+          margin-bottom: 1rem;
+        }
+
+        /* Editor container styles */
+        .p-editor-container .p-editor-toolbar {
+          border-top-left-radius: 0.5rem;
+          border-top-right-radius: 0.5rem;
+        }
+
+        .p-editor-container .p-editor-content {
+          border-bottom-left-radius: 0.5rem;
+          border-bottom-right-radius: 0.5rem;
+        }
+
+        /* Custom Modal Styles */
+        .custom-modal .ant-modal-content {
+          border-radius: 1rem;
+          padding: 0;
+        }
+
+        .custom-modal .ant-modal-header {
+          border-radius: 1rem 1rem 0 0;
+          padding: 1.5rem;
+          background: white;
+          border-bottom: none;
+        }
+
+        .custom-modal .ant-modal-body {
+          padding: 0 1.5rem;
+        }
+
+        .custom-modal .ant-modal-footer {
+          padding: 1.5rem;
+          border-top: 1px solid #e5e7eb;
+          border-radius: 0 0 1rem 1rem;
+        }
+
+        .custom-modal .ant-btn {
+          border-radius: 0.5rem;
+          height: 2.5rem;
+          padding: 0 1.25rem;
+          font-weight: 500;
+        }
+
+        .custom-modal .ant-btn-primary {
+          background-color: #14b8a6;
+          border-color: #14b8a6;
+        }
+
+        .custom-modal .ant-btn-primary:hover {
+          background-color: #0d9488;
+          border-color: #0d9488;
+        }
+
+        .custom-modal .ant-btn-default {
+          border-color: #e5e7eb;
+          color: #6b7280;
+        }
+
+        .custom-modal .ant-btn-default:hover {
+          color: #374151;
+          border-color: #9ca3af;
+        }
+
+        /* Custom Message Styles */
+        .custom-message {
+          border-radius: 0.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .custom-message.success {
+          background-color: #d1fae5;
+          border: 1px solid #059669;
+        }
+
+        .custom-message.error {
+          background-color: #fee2e2;
+          border: 1px solid #dc2626;
+        }
+
+        .custom-message .ant-message-notice-content {
+          border-radius: 0.5rem;
+          padding: 0.75rem 1rem;
+        }
+
+        /* Message icons */
+        .ant-message-success .anticon {
+          color: #059669;
+        }
+
+        .ant-message-error .anticon {
+          color: #dc2626;
+        }
+
+        /* Z-index fixes */
+        .ant-message {
+          z-index: 1002 !important;
+        }
+
+        .ant-modal-wrap {
+          z-index: 1001 !important;
+        }
+
+        .ant-modal-mask {
+          z-index: 1000 !important;
+        }
+      `}</style>
+
+      {/* Customized Modal */}
+      <Modal
+        title={
+          <div className="text-lg font-semibold text-gray-900 pb-3 border-b">
+            Project Posted Successfully
+          </div>
+        }
+        open={showSuccessModal}
+        onOk={handleModalConfirm}
+        onCancel={handleModalConfirm}
+        okText="Go to Dashboard"
+        cancelText="Close"
+        className="custom-modal"
+        centered
+        maskClosable={false}
+        closeIcon={
+          <span className="text-gray-400 hover:text-gray-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </span>
+        }
+      >
+        <div className="py-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
+              <svg className="w-6 h-6 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-gray-700">
+                Your project has been posted successfully! You can view and manage it from your dashboard.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
-  </div>
-  
   );
 };
 

@@ -8,7 +8,23 @@ import { GrConnect } from "react-icons/gr";
 import { BiSolidMessageRounded } from "react-icons/bi";
 import { FaUserClock } from "react-icons/fa6";
 import { FaTimes,FaCheck } from "react-icons/fa";
-
+import { motion } from "framer-motion";
+import { FaUserPlus, FaRegBell, FaBell } from "react-icons/fa";
+import { 
+  UserOutlined, 
+  EnvironmentOutlined, 
+  LinkOutlined,
+  ProjectOutlined,
+  StarOutlined,
+  TeamOutlined,
+  CalendarOutlined,
+  MailOutlined,
+  CheckCircleOutlined,
+  EyeOutlined,
+  DashboardOutlined,
+} from '@ant-design/icons';
+import { Tooltip, Progress, Tabs, Card, Statistic, Tag, Avatar } from "antd";
+const { TabPane } = Tabs;
 
 const OtherProfile = ({userId, role,editable}) => {
     const navigate = useNavigate();
@@ -26,6 +42,13 @@ const OtherProfile = ({userId, role,editable}) => {
     const pageSize = 5;
     const paginatedData = projects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     const [loading, setLoading] = useState(true);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [activeTab, setActiveTab] = useState('1');
+    const [projectStats, setProjectStats] = useState({
+      completed: 0,
+      ongoing: 0,
+      total: 0
+    });
   
     const handlePaginationChange = (page) => {
       setCurrentPage(page);
@@ -66,6 +89,18 @@ const OtherProfile = ({userId, role,editable}) => {
       };
       fetchProfileDetails();
     }, [userId]);
+
+    useEffect(() => {
+      if (projects.length > 0) {
+        const stats = projects.reduce((acc, project) => {
+          if (project.status === 'completed') acc.completed++;
+          if (project.status === 'ongoing') acc.ongoing++;
+          acc.total++;
+          return acc;
+        }, { completed: 0, ongoing: 0, total: 0 });
+        setProjectStats(stats);
+      }
+    }, [projects]);
 
     const handleConnect = async (user_id)=>{
       try {
@@ -131,201 +166,361 @@ const OtherProfile = ({userId, role,editable}) => {
           console.error('Error rejecting connection:', error);
         }
       };
-    
+
+    const handleFollow = async () => {
+      try {
+        const token = Cookies.get('accessToken');
+        if (!token) return;
+        
+        setIsFollowing(!isFollowing);
+        
+        message.success(isFollowing ? 'Unfollowed successfully' : 'Following now');
+      } catch (error) {
+        console.error('Error following user:', error);
+        setIsFollowing(!isFollowing);
+        message.error('Failed to update follow status');
+      }
+    };
+
   return (
-    <div className="flex flex-col items-start space-y-6 w-full max-w-[80rem] min-h-full h-fit">
-  {/* Profile Overview */}
-  <div className="bg-white p-6 rounded-lg shadow-md w-full">
-  <div className="flex flex-col sm:flex-row md:flex-row items-center space-x-6">
-  <img
-    src={clientInfo.profile_picture ? `http://127.0.0.1:8000${clientInfo.profile_picture}` : "https://www.w3schools.com/howto/img_avatar.png"}
-    alt="Profile"
-    className="w-20 h-20 sm:w-22 sm:h-22 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-26 xl:h-26 rounded-full object-cover"
-  />
-  
-  <div className="flex justify-start w-full sm:flex-col md:flex-col flex-wrap">
-    <div className="text-xs sm:text-[12px] md:text-xs lg:text-sm text-teal-500 font-[7px] flex flex-col items-start sm:items-start md:justify-center lg:justify-center space-y-2">
-      <h2 className="text-2xl font-bold text-teal-600">{clientInfo.name}</h2>
-      <span className="text-teal-500 text-xs sm:text-xs md:text-sm">{clientInfo.role}</span>
-      <p className="text-gray-600 text-xs sm:text-xs md:text-sm">{clientInfo.email}</p>
-      {clientInfo.bio && <p className="text-gray-600 text-sm my-3 font-medium">{clientInfo.bio}</p>}
-    </div>
+    <div className="w-full min-h-fit max-w-[1200px] min-w-[320px]  mx-auto p-6 space-y-4">
+      {/* Profile Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-lg shadow-md overflow-hidden"
+      >
+        {/* Cover Photo */}
+        <div className="h-40 bg-gradient-to-r from-charcolBlue to-teal-500 relative">
+          <div className="absolute -bottom-12 left-6 flex items-end space-x-6">
+            <img 
+              src={clientInfo.profile_picture ? `http://127.0.0.1:8000${clientInfo.profile_picture}` : "https://www.w3schools.com/howto/img_avatar.png"} 
+              alt="Profile" 
+              className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-md"
+            />
+          </div>
+        </div>
 
-    
-
-    <div className="mt-4 flex flex-col justify-end items-end sm:items-start md:items-start w-full font-medium">
-    <div className="mt-2 text-gray-500 text-xs sm:text-xs md:text-sm ">
-      <p className='underline'>📍 {clientInfo.location}</p>
-      <p onClick={() => navigate('/client/connections/')} className="cursor-pointer hover:text-teal-700">🔗 {connectionCount} Connections</p>
-    </div>
-    
-    <div className="mt-4 flex space-x-4 flex-wrap justify-start">
-      {!isConnected && connection_status === 'notset' && (
-        <button
-          onClick={() => handleConnect(userId)}
-          className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-500 transition duration-300 flex gap-2 items-center text-[12px] sm:text-base md:text-sm"
-        >
-          <GrConnect /> Connect
-        </button>
-      )}
-
-      {(connection_status === 'pending' || connection_status === 'rejected') && (
-        <button
-          onClick={() => message.error(`Please wait  
-            ${connection_status === 'rejected' ? 'till next week to make' : `until ${clientInfo.name} accepts`} your request`)}
-          className="bg-gray-300 text-gray-500 py-2 px-6 rounded-lg transition duration-300 flex gap-2 disabled cursor-no-drop text-[12px] sm:text-base md:text-sm"
-        >
-          <FaUserClock className='text-lg' /> Pending
-        </button>
-      )}
-
-      {(connection_status === 'not_accepted') && (
-        <span className='flex gap-2'>
-          <button
-            onClick={() => handleAccept(connection_id)}
-            className="bg-teal-700 text-white hover:bg-teal-600 hover:text-gray-100 py-2 px-6 rounded-lg transition duration-300 flex gap-2 items-center cursor-pointer text-[12px] sm:text-base md:text-sm"
-          >
-            <FaCheck /> Accept
-          </button>
-
-          <button
-            onClick={() => handleReject(connection_id)}
-            className="bg-gray-100 text-black hover:bg-gray-200 hover:text-gray-900 py-2 px-6 rounded-lg transition duration-300 flex gap-2 items-center cursor-pointer text-[12px] sm:text-base md:text-sm"
-          >
-            <FaTimes /> Reject
-          </button>
-        </span>
-      )}
-
-      {isConnected && connection_status === 'accepted' && (
-        <button
-          onClick={() => message.success("Message will be set shortly")}
-          className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-500 transition duration-300 flex gap-2 items-center text-[12px] sm:text-base md:text-sm"
-        >
-          <BiSolidMessageRounded /> Message
-        </button>
-      )}
-    </div>
-    </div>
-  </div>
-</div>
-
-  </div>
-
-  {/* Projects */}
-  <div className="bg-white p-6 rounded-lg shadow-md w-full">
-    <h3 className="text-xl font-semibold mb-4 text-teal-600">Projects</h3>
-
-    {/* Desktop View */}
-    <div className="hidden md:block">
-      <Table
-        dataSource={paginatedData}
-        columns={[
-          {
-            title: "Project Title",
-            dataIndex: "title",
-            key: "title",
-          },
-          {
-            title: "Action",
-            key: "action",
-            render: (text, project) => (
-              <span
-                onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
-                className="text-teal-600 hover:text-teal-500 transition duration-300"
-              >
-                View Project
-              </span>
-            ),
-          },
-        ]}
-        pagination={false}
-        rowKey="id"
-      />
-    </div>
-
-    {/* Mobile View */}
-    <div className="block md:hidden">
-      {paginatedData.map((project, index) => (
-        <div key={project.id} className="mb-4 border border-gray-200 rounded-lg">
-          <button
-            onClick={() => setOpenDropdown(openDropdown === index ? null : index)}
-            className="w-full p-3 text-left bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none"
-          >
-            {project.title}
-          </button>
-          {openDropdown === index && (
-            <div className="p-3 bg-white flex flex-wrap justify-center items-center gap-1">
-              <p><strong>Deadline:</strong> {project.deadline}</p>
-              <p><strong>Status:</strong> {project.status}</p>
-              <div className="flex space-x-2 mt-2">
-                <Button
-                  className="bg-charcolBlue text-teal-400 hover:text-teal-500"
-                  onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`, { state: { project } })}
-                >
-                  View Details
-                </Button>
+        {/* Profile Info */}
+        <div className="pt-16 px-6 pb-6">
+          <div className="flex justify-between items-start flex-wrap gap-4">
+            <div className="max-w-xl">
+              <h1 className="text-xl font-semibold text-charcolBlue">{clientInfo.name}</h1>
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center text-gray-600">
+                  <MailOutlined className="mr-2 text-teal-500" />
+                  {clientInfo.email}
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <EnvironmentOutlined className="mr-2 text-teal-500" />
+                  {clientInfo.location}
+                </div>
+                <div className="flex items-center text-gray-600 cursor-pointer hover:text-teal-500 transition-colors" 
+                     onClick={() => navigate('/client/connections/')}>
+                  <LinkOutlined className="mr-2 text-teal-500" />
+                  {connectionCount} Connections
+                </div>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Follow Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleFollow}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all duration-300"
+              >
+                {isFollowing ? <FaBell className="text-teal-600" /> : <FaRegBell />}
+                <span>{isFollowing ? 'Following' : 'Follow'}</span>
+              </motion.button>
+
+              {/* Connection Buttons */}
+              {!isConnected && connection_status === 'notset' && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleConnect(userId)}
+                  className="flex items-center gap-2 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-all duration-300"
+                >
+                  <UserOutlined />
+                  <span>Connect</span>
+                </motion.button>
+              )}
+
+              {(connection_status === 'pending' || connection_status === 'rejected') && (
+                <Tooltip title={
+                  connection_status === 'rejected' 
+                    ? 'You can send another request next week' 
+                    : `Waiting for ${clientInfo.name} to accept your request`
+                }>
+                  <motion.button className="flex items-center gap-2 px-6 py-2 bg-gray-100 text-gray-500 rounded-lg cursor-not-allowed">
+                    <FaUserClock />
+                    <span>Pending</span>
+                  </motion.button>
+                </Tooltip>
+              )}
+
+              {connection_status === 'not_accepted' && (
+                <div className="flex gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleAccept(connection_id)}
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500"
+                  >
+                    <CheckCircleOutlined />
+                    Accept
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleReject(connection_id)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  >
+                    <FaTimes />
+                    Reject
+                  </motion.button>
+                </div>
+              )}
+
+              {isConnected && connection_status === 'accepted' && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => message.success("Message feature coming soon")}
+                  className="flex items-center gap-2 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500"
+                >
+                  <BiSolidMessageRounded />
+                  Message
+                </motion.button>
+              )}
+            </div>
+          </div>
+
+          {clientInfo.bio && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <h3 className="text-sm font-medium text-charcolBlue mb-2">About</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{clientInfo.bio}</p>
             </div>
           )}
         </div>
-      ))}
-    </div>
+      </motion.div>
 
-    {/* Pagination */}
-    <div className="mt-4 flex justify-end">
-      <Pagination
-        current={currentPage}
-        pageSize={pageSize}
-        total={projects.length} // Total projects count
-        onChange={handlePaginationChange}
-        showSizeChanger={false}
-      />
-    </div>
-  </div>
-
-  {/* Reviews */}
-  <div className="bg-white p-6 rounded-lg shadow-md w-full">
-    <h3 className="text-xl font-semibold mb-4 text-teal-600">Reviews & Ratings</h3>
-    {reviewsList.length > 0 ? (
-      <div className="space-y-4">
-        {reviewsList.map((review) => (
-          <div key={review.id} className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-gray-600">{review.from_freelancer_username}</span>
-            </div>
-            <div className="flex flex-col">
-              <p className="text-sm font-medium">{review.from_freelancer_username}</p>
-              <div className="flex items-center space-x-1">
-                {[...Array(review.rating)].map((_, i) => (
-                  <span key={i} className="text-yellow-500">★</span>
-                ))}
-              </div>
-              <p className="text-gray-600 text-sm">{review.feedback}</p>
-            </div>
-          </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            title: "Total Projects",
+            value: projectStats.total,
+            icon: <ProjectOutlined />,
+            color: '#0d9488'
+          },
+          {
+            title: "Average Rating",
+            value: averageRating,
+            icon: <StarOutlined />,
+            suffix: "/5",
+            color: '#eab308'
+          },
+          {
+            title: "Connections",
+            value: connectionCount,
+            icon: <TeamOutlined />,
+            color: '#3b82f6'
+          },
+          {
+            title: "Success Rate",
+            value: (projectStats.completed / projectStats.total * 100) || 0,
+            icon: <CheckCircleOutlined />,
+            suffix: "%",
+            color: '#22c55e'
+          }
+        ].map((stat, index) => (
+          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+            <Statistic 
+              title={
+                <span className="text-charcolBlue font-medium flex items-center gap-2">
+                  {stat.icon}
+                  {stat.title}
+                </span>
+              }
+              value={stat.value}
+              precision={stat.suffix === "/5" ? 1 : stat.suffix === "%" ? 1 : 0}
+              suffix={stat.suffix}
+              valueStyle={{ color: stat.color }}
+            />
+          </Card>
         ))}
       </div>
-    ) : (
-      <div className="w-full text-center text-gray-400 font-semibold p-4">
-        No reviews yet
+
+      {/* Main Content Tabs */}
+      <Card className="rounded-lg shadow-md">
+        <Tabs 
+          activeKey={activeTab} 
+          onChange={setActiveTab}
+          className="custom-tabs"
+        >
+          {/* Projects Tab */}
+          <TabPane 
+            tab={<span><ProjectOutlined />Projects</span>} 
+            key="1"
+          >
+            {/* Projects Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-800">Projects</h3>
+              </div>
+              
+              {/* Projects Table */}
+              <div className="hidden md:block">
+                <Table
+                  dataSource={paginatedData}
+                  columns={[
+                    {
+                      title: "Project Title",
+                      dataIndex: "title",
+                      key: "title",
+                      render: (text) => (
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900">{text}</span>
+                        </div>
+                      )
+                    },
+                    {
+                      title: "Action",
+                      key: "action",
+                      render: (_, project) => (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
+                          className="text-teal-600 hover:text-teal-500 font-medium"
+                        >
+                          View Project
+                        </motion.button>
+                      )
+                    }
+                  ]}
+                  pagination={false}
+                  rowKey="id"
+                />
+              </div>
+
+              {/* Mobile Projects List */}
+              <div className="md:hidden space-y-4">
+                {paginatedData.map((project) => (
+                  <motion.div
+                    key={project.id}
+                    whileHover={{ scale: 1.01 }}
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                  >
+                    <h4 className="font-medium text-gray-900">{project.title}</h4>
+                    <button
+                      onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
+                      className="mt-2 text-teal-600 hover:text-teal-500 font-medium"
+                    >
+                      View Project
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className="mt-4 flex justify-end">
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={projects.length}
+                  onChange={handlePaginationChange}
+                  showSizeChanger={false}
+                />
+              </div>
+            </div>
+          </TabPane>
+
+          {/* Reviews Tab */}
+          <TabPane 
+            tab={<span><StarOutlined />Reviews</span>} 
+            key="2"
+          >
+            {/* Reviews Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md w-full">
+              <h3 className="text-xl font-semibold mb-4 text-teal-600">Reviews & Ratings</h3>
+              {reviewsList.length > 0 ? (
+                <div className="space-y-4">
+                  {reviewsList.map((review) => (
+                    <div key={review.id} className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-gray-600">{review.from_freelancer_username}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium">{review.from_freelancer_username}</p>
+                        <div className="flex items-center space-x-1">
+                          {[...Array(review.rating)].map((_, i) => (
+                            <span key={i} className="text-yellow-500">★</span>
+                          ))}
+                        </div>
+                        <p className="text-gray-600 text-sm">{review.feedback}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full text-center text-gray-400 font-semibold p-4">
+                  No reviews yet
+                </div>
+              )}
+            </div>
+          </TabPane>
+        </Tabs>
+      </Card>
+
+      {/* Call-to-Action Buttons */}
+      <div className="mt-6 flex flex-col sm:flex-row justify-between w-full space-y-4 sm:space-y-0">
+        <Link to="/client/dashboard">
+          <button className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-500 transition duration-300 w-full sm:w-auto">
+            Go to Dashboard
+          </button>
+        </Link>
+        <button className="bg-teal-500 text-white py-2 px-6 rounded-lg hover:bg-teal-600 transition duration-300 w-full sm:w-auto">
+          Hire Freelancers
+        </button>
       </div>
-    )}
-  </div>
 
-  {/* Call-to-Action Buttons */}
-  <div className="mt-6 flex flex-col sm:flex-row justify-between w-full space-y-4 sm:space-y-0">
-    <Link to="/client/dashboard">
-      <button className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-500 transition duration-300 w-full sm:w-auto">
-        Go to Dashboard
-      </button>
-    </Link>
-    <button className="bg-teal-500 text-white py-2 px-6 rounded-lg hover:bg-teal-600 transition duration-300 w-full sm:w-auto">
-      Hire Freelancers
-    </button>
-  </div>
-</div>
+      {/* Add the same styles as AuthProfile */}
+      <style jsx>{`
+        .custom-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+          color: #0d9488;
+        }
+        
+        .custom-tabs .ant-tabs-ink-bar {
+          background: #0d9488;
+        }
 
+        .custom-table .ant-table-thead > tr > th {
+          background-color: #f8fafc;
+          color: #1e293b;
+          font-weight: 500;
+        }
+        
+        .custom-table .ant-table-tbody > tr:hover > td {
+          background-color: #f1f5f9;
+        }
+
+        .ant-progress-bg {
+          background-color: #0d9488;
+        }
+
+        .ant-btn-primary:hover {
+          background-color: #0d9488 !important;
+        }
+
+        .ant-progress-success-bg {
+          background-color: #22c55e;
+        }
+      `}</style>
+    </div>
   )
 }
 

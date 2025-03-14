@@ -1,10 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import CSider from '../../components/client/CSider';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import CHeader from '../../components/client/CHeader';
 import IndividualLoadingComponent from '../../components/IndividualLoadingComponent';
-import { Modal, Button, Input, Select, Tabs, Pagination, Card } from 'antd';
-import { FaEye } from 'react-icons/fa';
+import { Modal, Button, Input, Select, Tabs, Pagination, Card, Tag, Tooltip } from 'antd';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FaEye, 
+  FaCalendarAlt, 
+  FaUserCircle, 
+  FaClock,
+  FaDollarSign,
+  FaCheckCircle,
+  FaSearch
+} from 'react-icons/fa';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -31,18 +40,49 @@ const ViewBids = ({userId, role}) => {
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return { color: 'orange', bg: 'bg-orange-50', text: 'text-orange-600' };
+      case 'ongoing':
+        return { color: 'blue', bg: 'bg-blue-50', text: 'text-blue-600' };
+      case 'completed':
+        return { color: 'green', bg: 'bg-green-50', text: 'text-green-600' };
+      default:
+        return { color: 'gray', bg: 'bg-gray-50', text: 'text-gray-600' };
+    }
+  };
+
   useEffect(() => {
-    // Mock data
     const mockProjects = [
       { 
         id: 1, 
         name: 'Website Redesign', 
         deadline: '2024-12-31', 
-        status: 'Ongoing', 
+        status: 'Ongoing',
+        budget: 2000,
+        totalBids: 5,
+        description: 'Complete website redesign with modern UI/UX features',
         client: 'ABC Corp', 
         bids: [
-          { freelancer: 'John Doe', price: 1200, days: 15, description: 'Redesign the website with modern UI/UX features.' },
-          { freelancer: 'Jane Smith', price: 1000, days: 12, description: 'Revamp the site with a fresh look and feel.' },
+          { 
+            freelancer: 'John Doe',
+            avatar: 'https://ui-avatars.com/api/?name=John+Doe',
+            rating: 4.8,
+            price: 1200,
+            days: 15,
+            description: 'Redesign the website with modern UI/UX features.',
+            completedProjects: 25
+          },
+          { 
+            freelancer: 'Jane Smith',
+            avatar: 'https://ui-avatars.com/api/?name=Jane+Smith',
+            rating: 4.9,
+            price: 1000,
+            days: 12,
+            description: 'Revamp the site with a fresh look and feel.',
+            completedProjects: 32
+          },
         ]
       },
       { 
@@ -94,23 +134,25 @@ const ViewBids = ({userId, role}) => {
     setFilteredProjects(mockProjects);
   }, []);
 
-  const handleFilter = (value) => {
+  const handleFilter = useCallback((value) => {
     setStatusFilter(value);
     setFilteredProjects(
       projects.filter(project => 
-        project.status.toLowerCase().includes(value.toLowerCase())
+        project.status.toLowerCase().includes(value.toLowerCase()) &&
+        project.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
-  };
+  }, [projects, searchTerm]);
 
-  const handleSearch = (value) => {
+  const handleSearch = useCallback((value) => {
     setSearchTerm(value);
     setFilteredProjects(
       projects.filter(project => 
-        project.name.toLowerCase().includes(value.toLowerCase())
+        project.name.toLowerCase().includes(value.toLowerCase()) &&
+        project.status.toLowerCase().includes(statusFilter.toLowerCase())
       )
     );
-  };
+  }, [projects, statusFilter]);
 
   const [activeProfileComponent, setActiveProfileComponent] = useState('');
 
@@ -172,170 +214,216 @@ const ViewBids = ({userId, role}) => {
 
       <div className="bg-gray-100 flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
         <CHeader />
-        <div className="flex-1 overflow-auto bg-gray-200 p-3">
+        <div className="flex-1 overflow-auto bg-gray-50 p-6">
           {loading ? (
             <IndividualLoadingComponent />
           ) : (
-            
-            <Card>
-            <h2 className="text-xl font-semibold mb-4">Projects</h2>
-              <div className="filters mb-6 flex gap-4">
-                <Search
-                  placeholder="Search projects"
-                  allowClear
-                  onSearch={handleSearch}
-                  className="w-72"
-                />
-                <Select
-                  placeholder="Filter by status"
-                  className="w-48"
-                  value={statusFilter}
-                  onChange={handleFilter}
-                  allowClear
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-semibold text-gray-800">Project Bids</h2>
+                <Button
+                  type="primary"
+                  className="bg-teal-500 hover:bg-teal-600"
+                  onClick={() => navigate('/client/post-project')}
                 >
-                  <Option value="Ongoing">Ongoing</Option>
-                  <Option value="Pending">Pending</Option>
-                  <Option value="Completed">Completed</Option>
-                </Select>
+                  Post New Project
+                </Button>
               </div>
 
-              {/* Desktop View */}
-              <div className="hidden md:block">
-                <table className="w-full border-collapse border border-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      {columns.map(column => (
-                        <th key={column.key} className="p-3 text-left">
-                          {column.title}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map(record => (
-                      <tr key={record.id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="p-3">{record.name}</td>
-                        <td className="p-3">{record.deadline}</td>
-                        <td className="p-3">{record.status}</td>
-                        <td className="p-3">
-                          <div className="flex space-x-2">
-                            <Button
-                              className="text-charcolBlue"
-                              icon={<FaEye />}
-                              onClick={() => setSelectedProject(record)}
-                            >
-                              Preview
-                            </Button>
-                            <Button
-                              className="bg-charcolBlue text-teal-400 hover:text-teal-500"
-                              onClick={() => navigate(`/client/view-bids/posted-project/${record.id}`, { state: { record } })}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Card className="shadow-sm">
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                  <Search
+                    placeholder="Search projects"
+                    allowClear
+                    prefix={<FaSearch className="text-gray-400" />}
+                    onSearch={handleSearch}
+                    className="w-full md:w-72"
+                  />
+                  <Select
+                    placeholder="Filter by status"
+                    className="w-full md:w-48"
+                    value={statusFilter}
+                    onChange={handleFilter}
+                    allowClear
+                  >
+                    <Option value="Ongoing">Ongoing</Option>
+                    <Option value="Pending">Pending</Option>
+                    <Option value="Completed">Completed</Option>
+                  </Select>
+                </div>
 
-              {/* Mobile View */}
-              <div className="block md:hidden">
-                {paginatedData.map((record, index) => (
-                  <div key={record.id} className="mb-4 border border-gray-200 rounded-md">
-                    <button
-                      onClick={() => toggleDropdown(index)}
-                      className="w-full p-3 text-left bg-gray-100 hover:bg-gray-200 rounded-md flex justify-between items-center"
+                <AnimatePresence>
+                  {paginatedData.map((project, index) => (
+                    <motion.div
+                      key={project.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2, delay: index * 0.1 }}
+                      className="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                     >
-                      <span>{record.name}</span>
-                      
-                    </button>
-                    {openDropdown === index && (
-                      <div className="p-3 bg-white space-y-2">
-                        <p><strong>Deadline:</strong> {record.deadline}</p>
-                        <p><strong>Status:</strong> {record.status}</p>
-                        <div className="flex gap-2 mt-2 justify-center flex-wrap">
-                          <Button
-                            className="text-charcolBlue"
-                            icon={<FaEye />}
-                            onClick={() => setSelectedProject(record)}
+                      <div className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                              {project.name}
+                            </h3>
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <FaCalendarAlt className="text-teal-500" />
+                                <span>Deadline: {project.deadline}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <FaDollarSign className="text-teal-500" />
+                                <span>Budget: ${project.budget}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <FaUserCircle className="text-teal-500" />
+                                <span>Total Bids: {project.totalBids}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <Tag 
+                            color={getStatusColor(project.status).color}
+                            className={`${getStatusColor(project.status).bg} ${getStatusColor(project.status).text} border-0 font-medium`}
                           >
-                            Preview
+                            {project.status}
+                          </Tag>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3 mt-4">
+                          <Button
+                            type="default"
+                            icon={<FaEye />}
+                            onClick={() => setSelectedProject(project)}
+                            className="flex items-center gap-2"
+                          >
+                            Preview Bids
                           </Button>
                           <Button
-                            className="bg-charcolBlue text-teal-400 hover:text-teal-500"
-                            onClick={() => navigate(`/client/view-bids/posted-project/${record.id}`, { state: { record } })}
+                            type="primary"
+                            className="bg-teal-500 hover:bg-teal-600 flex items-center gap-2"
+                            onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`, { state: { project } })}
                           >
                             View Details
                           </Button>
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
 
-              <Pagination
-                current={currentPage}
-                pageSize={pageSize}
-                total={filteredProjects.length}
-                onChange={page => setCurrentPage(page)}
-                className="mt-4 flex justify-end"
-              />
+                <div className="mt-6 flex justify-end">
+                  <Pagination
+                    current={currentPage}
+                    pageSize={pageSize}
+                    total={filteredProjects.length}
+                    onChange={page => setCurrentPage(page)}
+                    className="text-center"
+                  />
+                </div>
+              </Card>
 
               <Modal
-                title="Project Details"
+                title={
+                  <div className="flex items-center gap-3 pb-3 border-b">
+                    <FaCheckCircle className="text-teal-500 text-xl" />
+                    <span className="text-xl font-semibold">Project Bids</span>
+                  </div>
+                }
                 open={!!selectedProject}
                 onCancel={() => setSelectedProject(null)}
-                footer={[
-                  <Button key="close" onClick={() => setSelectedProject(null)}>
-                    Close
-                  </Button>,
-                ]}
+                footer={null}
                 width={800}
+                className="custom-modal"
               >
                 {selectedProject && (
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold">{selectedProject.name}</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <p><strong>Deadline:</strong> {selectedProject.deadline}</p>
-                      <p><strong>Status:</strong> {selectedProject.status}</p>
-                      <p><strong>Client:</strong> {selectedProject.client}</p>
+                  <div className="space-y-6 py-4">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {selectedProject.name}
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <FaCalendarAlt className="text-teal-500" />
+                          <span>Deadline: {selectedProject.deadline}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <FaDollarSign className="text-teal-500" />
+                          <span>Budget: ${selectedProject.budget}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FaCheckCircle className="text-teal-500" />
+                          <span>Status: </span>
+                          <Tag color={getStatusColor(selectedProject.status).color}>
+                            {selectedProject.status}
+                          </Tag>
+                        </div>
+                      </div>
+
+                      <div className="mt-6">
+                        <h4 className="text-lg font-semibold mb-4">Submitted Bids</h4>
+                        <div className="space-y-4">
+                          {selectedProject.bids.map((bid, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-4">
+                                  <img
+                                    src={bid.avatar}
+                                    alt={bid.freelancer}
+                                    className="w-12 h-12 rounded-full"
+                                  />
+                                  <div>
+                                    <h5 className="font-semibold">{bid.freelancer}</h5>
+                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                      <span>⭐ {bid.rating}</span>
+                                      <span>•</span>
+                                      <span>{bid.completedProjects} projects completed</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-semibold text-teal-600">${bid.price}</div>
+                                  <div className="text-sm text-gray-600">{bid.days} days</div>
+                                </div>
+                              </div>
+                              <p className="mt-3 text-gray-600">{bid.description}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <Tabs defaultActiveKey="1">
-                      <TabPane tab="Bids" key="1">
-                        <table className="w-full mt-4">
-                          <thead className="bg-gray-100">
-                            <tr>
-                              {bidColumns.map(column => (
-                                <th key={column.key} className="p-2 text-left">
-                                  {column.title}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedProject.bids.map(bid => (
-                              <tr key={bid.freelancer} className="border-b">
-                                <td className="p-2">{bid.freelancer}</td>
-                                <td className="p-2">{bid.price}</td>
-                                <td className="p-2">{bid.days}</td>
-                                <td className="p-2">{bid.description}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </TabPane>
-                    </Tabs>
                   </div>
                 )}
               </Modal>
-            
-            </Card>
+            </motion.div>
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .custom-modal .ant-modal-content {
+          border-radius: 1rem;
+          overflow: hidden;
+        }
+        .custom-modal .ant-modal-header {
+          border-bottom: none;
+        }
+        .custom-modal .ant-modal-body {
+          padding: 24px;
+        }
+      `}</style>
     </div>
   );
 };

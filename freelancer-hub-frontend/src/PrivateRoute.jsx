@@ -143,10 +143,10 @@ const PrivateRoute = ({ element: Component, ...rest }) => {
   if (!isAuthenticated) {
     // Show profile for unauthenticated users
     if (location.pathname.includes('/freelancer/profile/')) {
-      return <FProfile {...rest} userId={routeId} />;
+      return <FProfile {...rest} userId={routeId} isAuthenticated={isAuthenticated} isEditable={isEditable}/>;
     }
     if (location.pathname.includes('/client/profile/')) {
-      return <CProfile  {...rest} userId={routeId} />;
+      return <CProfile  {...rest} userId={routeId} isAuthenticated={isAuthenticated} isEditable={isEditable}/>;
     }
 
     return <Navigate to="/login" />;
@@ -157,15 +157,15 @@ const PrivateRoute = ({ element: Component, ...rest }) => {
     let Id = routeId === undefined ? userId : routeId;
     if (role === 'client' && location.pathname.includes('/freelancer/profile/')) {
       // If the user is a client and visiting the freelancer profile route, redirect to client profile
-      return <CProfile {...rest} userId={Id} role={role} editable={isEditable} />;
+      return <CProfile {...rest} userId={Id} role={role} isAuthenticated={isAuthenticated} isEditable={isEditable} />;
     }
     if (role === 'freelancer' && location.pathname.includes('/client/profile/')) {
       // If the user is a freelancer and visiting the client profile route, redirect to freelancer profile
-      return <FProfile {...rest} userId={Id} role={role} editable={isEditable} />;
+      return <FProfile {...rest} userId={Id} role={role} isAuthenticated={isAuthenticated} isEditable={isEditable} />;
     }
 
     // Otherwise render the intended component (CProfile for client or FProfile for freelancer)
-    return <Component {...rest} userId={Id} role={role} editable={isEditable} />;
+    return <Component {...rest} userId={Id} role={role} isAuthenticated={isAuthenticated} isEditable={isEditable} />;
   }
 
   return <Navigate to="/login" />;

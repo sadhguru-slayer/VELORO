@@ -14,8 +14,9 @@ import Collaboration from "./profile/Collaboration";
 import Collaborations from "./profile/Collaboration";
 import NotAuthProfile from "./profile/NotAuthProfile";
 import OtherProfile from "./profile/OtherProfile";
+import { motion } from "framer-motion";
 
-const CProfile = ({ userId, role, editable }) => {
+const CProfile = ({ userId, role, isEditable }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -104,48 +105,112 @@ const CProfile = ({ userId, role, editable }) => {
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+  console.log(isAuthenticated,isEditable,userId)
+  const renderProfile = () => {
+    if (!isAuthenticated && !isEditable) {
+      // Case 1: Not authenticated, not isEditable - Show NonAuth with minimal header
+      return (
+        <div className="min-h-screen bg-gray-50">
+          {/* Header with gradient background */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-teal-600/5 to-blue-600/5 pointer-events-none" />
+            <CHeader 
+              isAuthenticated={isAuthenticated} 
+              isEditable={isEditable}
+              userId={userId}
+            />
+          </div>
 
-  return (
-    <div className="flex h-screen bg-white">
-      {/* Sidebar */}
-      <CSider
-        userId={userId}
-        role={role}
-        dropdown={true}
-        collapsed={true}
-        handleMenuClick={handleMenuClick}
-        abcds={activeComponent}
-        handleProfileMenu={handleProfileMenu}
-        activeProfileComponent={activeProfileComponent}
-      />
+          {/* Main content with subtle animation */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className=""
+          >
+           
+            {/* Profile content with card style */}
+              <NotAuthProfile 
+                userId={userId} 
+                role={role} 
+                isEditable={isEditable} 
+              />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
-        {/* Header */}
-        <CHeader />
+            {/* Optional: Footer info */}
+            <div className="mt-8 text-center text-sm text-gray-500">
+              <p>Want to see more? 
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/login')}
+                  className="ml-2 text-teal-600 hover:text-teal-700 font-medium"
+                >
+                  Sign in to connect
+                </motion.button>
+              </p>
+            </div>
+          </motion.div>
 
-        {/* Profile Content */}
-        <div className="flex-1 overflow-auto bg-gray-100 p-4 flex justify-center w-full">
-          {authLoading ? ( // Check if authentication check is still loading
-            <div>Loading...</div>
-          ) : individualLoading ? (
-            <IndividualLoadingComponent />
-          ) : (
-            <>
+          {/* Background decoration */}
+          <div className="fixed inset-0 -z-10 overflow-hidden">
+            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-teal-500/10 to-blue-500/10 rounded-full filter blur-[100px]" />
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-l from-teal-500/10 to-blue-500/10 rounded-full filter blur-[100px]" />
+          </div>
+        </div>
+      );
+    } else if (isAuthenticated && !isEditable) {
+      // Case 2: Authenticated but not isEditable - Show OtherProfile with header/sider
+      return (
+        <div className="flex h-screen bg-white">
+          <CSider
+            userId={userId}
+            role={role}
+            dropdown={true}
+            collapsed={true}
+            handleMenuClick={handleMenuClick}
+            abcds={activeComponent}
+            handleProfileMenu={handleProfileMenu}
+            activeProfileComponent={activeProfileComponent}
+          />
+          <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
+            <CHeader 
+              isAuthenticated={isAuthenticated} 
+              isEditable={isEditable}
+              userId={userId}
+            />
+            <div className="flex-1 overflow-auto bg-gray-100 p-4 flex justify-center w-full">
               {activeProfileComponent === "view_profile" && (
-                <>
-                  {isAuthenticated ? (
-                    editable ? (
-                      <AuthProfile userId={userId} role={role} editable={editable} />
-                    ) : (
-                      <OtherProfile userId={userId} role={role} editable={editable} />
-                    )
-                  ) : (
-                    <NotAuthProfile userId={userId} role={role} editable={editable} />
-                  )}
-                </>
+                <OtherProfile userId={userId} role={role} isEditable={isEditable} />
               )}
-
+              {/* Other profile components... */}
+            </div>
+          </div>
+        </div>
+      );
+    } else if (isAuthenticated && isEditable) {
+      // Case 3: Authenticated and isEditable - Show AuthProfile with header/sider
+      return (
+        <div className="flex h-screen bg-white">
+          <CSider
+            userId={userId}
+            role={role}
+            dropdown={true}
+            collapsed={true}
+            handleMenuClick={handleMenuClick}
+            abcds={activeComponent}
+            handleProfileMenu={handleProfileMenu}
+            activeProfileComponent={activeProfileComponent}
+          />
+          <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
+            <CHeader 
+              isAuthenticated={isAuthenticated} 
+              isEditable={isEditable}
+              userId={userId}
+            />
+            <div className="flex-1 overflow-auto bg-gray-100 p-4 flex justify-center w-full">
+              {activeProfileComponent === "view_profile" && (
+                <AuthProfile userId={userId} role={role} isEditable={isEditable} />
+              )}
               {activeProfileComponent === "edit_profile" && (
                 <EditProfile userId={userId} role={role} />
               )}
@@ -155,11 +220,27 @@ const CProfile = ({ userId, role, editable }) => {
               {activeProfileComponent === "collaborations" && (
                 <Collaborations />
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      );
+    }
+  };
+
+  return (
+    <>
+      {authLoading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <IndividualLoadingComponent />
+        </div>
+      ) : individualLoading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <IndividualLoadingComponent />
+        </div>
+      ) : (
+        renderProfile()
+      )}
+    </>
   );
 };
 
