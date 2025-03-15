@@ -51,7 +51,7 @@ const clientRoutes = [
   },
   {
     path: "collaboration",
-    component: lazy(() => import('./pages/client/CCollaboration')),
+    component: lazy(() => import('./pages/client/profile/Collaboration')),
     allowedRoles: ['client']
   },
   {

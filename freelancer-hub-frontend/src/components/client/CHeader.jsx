@@ -160,10 +160,10 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
 
       Cookies.remove("accessToken");
       Cookies.remove("refreshToken");
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
-      navigate("/login");
+      navigate("/");
     }
   };
 
@@ -205,24 +205,25 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
       >
         {/* Search Input */}
         <div className="sticky top-0 p-4 bg-white border-b border-gray-200">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search projects, freelancers, or skills..."
-              className="w-full px-4 py-3 pl-10 pr-16 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              value={searchTerm}
-              onChange={handleSearch}
-              autoFocus
-            />
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <button
-              onClick={handleCloseSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1 text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-          </div>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search projects, freelancers, or skills..."
+            className="w-full px-4 py-3 pl-10 pr-16 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            value={searchTerm}
+            onChange={handleSearch}
+            autoFocus
+          />
+          <button
+            onClick={handleCloseSearch}
+            className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
+      </div>
+      
 
         {/* Search Results */}
         <div className="h-[calc(100vh-4rem)] z-10 overflow-y-auto pb-20">

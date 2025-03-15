@@ -24,6 +24,7 @@ import {
   DashboardOutlined,
 } from '@ant-design/icons';
 import { Tooltip, Progress, Tabs, Card, Statistic, Tag, Avatar } from "antd";
+import { useMediaQuery } from 'react-responsive';
 const { TabPane } = Tabs;
 
 const OtherProfile = ({userId, role,editable}) => {
@@ -49,6 +50,7 @@ const OtherProfile = ({userId, role,editable}) => {
       ongoing: 0,
       total: 0
     });
+    const isMobile = useMediaQuery({ maxWidth: 767 });
   
     const handlePaginationChange = (page) => {
       setCurrentPage(page);
@@ -183,7 +185,7 @@ const OtherProfile = ({userId, role,editable}) => {
     };
 
   return (
-    <div className="w-full min-h-fit max-w-[1200px] min-w-[320px]  mx-auto p-6 space-y-4">
+    <div className={`w-full min-h-fit max-w-[1200px] min-w-[320px] mx-auto p-6 space-y-4 ${isMobile ? 'ml-0' : 'ml-14'}min-h-full h-fit `}>
       {/* Profile Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

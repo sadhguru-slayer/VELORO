@@ -150,6 +150,12 @@ class Project(models.Model):
         """
         return Project.objects.filter(status='pending', client=self.client)
 
+    def get_upcoming_deadlines(self):
+        """
+        Returns all projects with deadlines within the next week.
+        """
+        return Project.objects.filter(deadline__lt=timezone.now() + timezone.timedelta(weeks=1)).order_by('deadline')
+
 # Task Model
 class Task(models.Model):
     STATUS_CHOICES = [
@@ -182,7 +188,6 @@ class Task(models.Model):
         if self.status == 'completed' and not self.is_payment_updated:
             self.completed_at = timezone.now()  # Mark the time when the task is completed
         super().save(*args, **kwargs)
-
 
 class Bid_By_Freelancer(models.Model):
     BUDGET_TYPE_CHOICES = [
@@ -337,7 +342,6 @@ class UserFeedback(models.Model):
         unique_together = ('from_user', 'to_user', 'feedback_type')  # Enforce one feedback per user pair and type
         ordering = ['-created_at']  # Order feedback by most recent
     
-
 
 class Notification(models.Model):
     TYPE_CHOICES = [

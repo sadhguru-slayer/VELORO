@@ -155,9 +155,9 @@ const CConnectionRequests = ({userId, role}) => {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
+      <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-14 md:ml-14">
         {/* Header */}
-        <CHeader />
+        <CHeader userId={userId}/>
 
         {/* Connections Content */}
         <div className="flex-1 overflow-auto p-4">

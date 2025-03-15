@@ -236,7 +236,7 @@ const Collaborations = () => {
   }
 
   return (
-    <div className="w-full max-w-[1200px] min-w-[320px] min-h-fit mx-auto p-6 space-y-6">
+    <div className="w-full max-w-[1200px] min-w-[320px] mx-auto p-6 space-y-6 min-h-full h-fit ">
       {/* Simplified Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

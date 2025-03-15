@@ -12,7 +12,6 @@ import {
   Row,
   Col,
   Tooltip,
-  
 } from "antd";
 import { 
   UploadOutlined, 
@@ -25,14 +24,14 @@ import {
   SaveOutlined,
   ArrowLeftOutlined
 } from "@ant-design/icons"; 
-import { LuBuilding2 } from "react-icons/lu";// If this icon exists in a later version of the library.
-
+import { LuBuilding2 } from "react-icons/lu";
 import { motion } from "framer-motion";
 import Cookies from "js-cookie";
+import { useMediaQuery } from "react-responsive";
 
 const { Panel } = Collapse;
 
-const EditProfile = ({userId,role}) => {
+const EditProfile = ({ userId, role, isSiderCollapsed }) => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [clientInfo, setClientInfo] = useState({
@@ -54,18 +53,16 @@ const EditProfile = ({userId,role}) => {
 
   const [showingProfilePicture, setShowingProfilePicture] = useState(null);
   const [file, setFile] = useState(null);
+  const isMobile = useMediaQuery({ maxWidth: 767 });
 
   useEffect(() => {
     const fetchProfileDetails = async () => {
       const accessToken = Cookies.get("accessToken");
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/client/get_profile_data',
-          {
-              params: { userId: userId }, // Passing userId as query parameter
-              headers: {
-                Authorization: `Bearer ${accessToken}`, // Passing the access token as Authorization header
-              },
-            });
+        const response = await axios.get('http://127.0.0.1:8000/api/client/get_profile_data', {
+          params: { userId: userId },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
         const data = response.data.client_profile;
         setClientInfo({
           name: data.name,
@@ -90,7 +87,7 @@ const EditProfile = ({userId,role}) => {
       }
     };
     fetchProfileDetails();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (clientInfo.name) {
@@ -108,8 +105,6 @@ const EditProfile = ({userId,role}) => {
 
   const handleFormSubmit = async (values) => {
     const accessToken = Cookies.get("accessToken");
-  
-    // Creating FormData to append the file and other form fields
     const formData = new FormData();
     formData.append("bio", values.bio || "");
     formData.append("location", values.location || "");
@@ -120,12 +115,11 @@ const EditProfile = ({userId,role}) => {
     formData.append("company_name", values.companyName || "");
     formData.append("company_website", values.companyWebsite || "");
     formData.append("company_registration_number", values.companyRegistrationNumber || "");
-  
-    // Append the selected file to FormData
+
     if (file) {
-      formData.append("profile_picture", file); // Append the selected file
+      formData.append("profile_picture", file);
     }
-  
+
     try {
       const response = await axios.put(
         "http://127.0.0.1:8000/api/client/update_profile/",
@@ -133,7 +127,7 @@ const EditProfile = ({userId,role}) => {
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "multipart/form-data", // Ensure that the request is treated as a multipart form
+            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -144,14 +138,9 @@ const EditProfile = ({userId,role}) => {
       message.error("Failed to update profile");
     }
   };
-  
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-[1200px] min-w-[320px] mx-auto p-6 space-y-8 min-h-fit"
-    >
+    <div className={`w-full max-w-[1200px] min-w-[320px] mx-auto p-6 space-y-8  min-h-full h-fit`}>
       {/* Enhanced Header with Gradient Background */}
       <div className="relative bg-gradient-to-r from-teal-500/10 to-charcolBlue/10 rounded-2xl p-6 mb-8">
         <div className="flex justify-between items-center">
@@ -162,7 +151,7 @@ const EditProfile = ({userId,role}) => {
           <motion.div whileHover={{ scale: 1.02 }}>
             <Button
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate('/client/profile')}
+              onClick={() => navigate(`/client/profile/${userId}`)}
               className="border-teal-500 text-teal-500 hover:text-teal-600 hover:border-teal-600 rounded-lg h-10"
             >
               Back to Profile
@@ -203,14 +192,12 @@ const EditProfile = ({userId,role}) => {
                 </Tooltip>
               </motion.div>
               <input
-  id="fileInput"
-  type="file"
-  className="hidden" // You can also use `display: none` with a class
-  style={{ display: "none" }} // Add this to ensure it's hidden
-  onChange={handleFileChange}
-  accept="image/*"
-/>
-
+                id="fileInput"
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                accept="image/*"
+              />
             </div>
             <p className="text-gray-500 text-sm">Click the button to upload a new profile picture</p>
           </div>
@@ -230,8 +217,8 @@ const EditProfile = ({userId,role}) => {
               </div>
             </div>
             <div className="p-6">
-              <Row gutter={24}>
-                <Col span={12}>
+              <Row gutter={24} className={isMobile ? "flex-col" : ""}>
+                <Col span={24}>
                   <Form.Item
                     label="Name"
                     name="name"
@@ -244,7 +231,7 @@ const EditProfile = ({userId,role}) => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={24}>
                   <Form.Item
                     label="Email"
                     name="email"
@@ -298,8 +285,8 @@ const EditProfile = ({userId,role}) => {
               </div>
             </div>
             <div className="p-6">
-              <Row gutter={24}>
-                <Col span={12}>
+              <Row gutter={24} className={isMobile ? "flex-col" : ""}>
+                <Col span={24}>
                   <Form.Item 
                     label="Bank Name" 
                     name="bankName"
@@ -311,7 +298,7 @@ const EditProfile = ({userId,role}) => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={24}>
                   <Form.Item 
                     label="Account Number" 
                     name="bankAccountNumber"
@@ -323,7 +310,7 @@ const EditProfile = ({userId,role}) => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={24}>
                   <Form.Item 
                     label="IFSC Code" 
                     name="bankIfsc"
@@ -335,7 +322,7 @@ const EditProfile = ({userId,role}) => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={24}>
                   <Form.Item
                     label="Bank Verification Status"
                     name="bankVerified"
@@ -360,8 +347,8 @@ const EditProfile = ({userId,role}) => {
               </div>
             </div>
             <div className="p-6">
-              <Row gutter={24}>
-                <Col span={12}>
+              <Row gutter={24} className={isMobile ? "flex-col" : ""}>
+                <Col span={24}>
                   <Form.Item 
                     label="Company Name" 
                     name="companyName"
@@ -373,7 +360,7 @@ const EditProfile = ({userId,role}) => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col span={24}>
                   <Form.Item 
                     label="Company Website" 
                     name="companyWebsite"
@@ -476,7 +463,7 @@ const EditProfile = ({userId,role}) => {
           transform: translateY(-1px);
         }
       `}</style>
-    </motion.div>
+    </div>
   );
 };
 

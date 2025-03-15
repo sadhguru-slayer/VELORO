@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Cookies from 'js-cookie';
@@ -16,9 +16,11 @@ import {
   StarOutlined,
   CheckCircleOutlined,
   ThunderboltOutlined,
-  TrophyOutlined
+  TrophyOutlined,
 } from '@ant-design/icons';
 import { useMediaQuery } from 'react-responsive';
+import { FaStar, FaRegStar, FaStarHalfAlt } from "react-icons/fa";
+
 
 // Chart.js imports
 import {
@@ -43,82 +45,17 @@ ChartJS.register(
   Legend
 );
 
-// Dummy data for features not in DashboardOverview
-const dummyTrendingSkills = [
-  { name: 'React.js', demand: 85 },
-  { name: 'Python', demand: 78 },
-  { name: 'UI/UX Design', demand: 72 },
-  { name: 'Node.js', demand: 68 },
-  { name: 'Machine Learning', demand: 65 }
-];
-
-const dummyTopFreelancers = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    specialization: 'Full Stack Developer',
-    rating: 4.9,
-    reviews: 124,
-    avatar: `https://ui-avatars.com/api/?name=Sarah+Johnson&background=random`
-  },
-  {
-    id: 2,
-    name: 'Michael Chen',
-    specialization: 'UI/UX Designer',
-    rating: 4.8,
-    reviews: 98,
-    avatar: `https://ui-avatars.com/api/?name=Michael+Chen&background=random`
-  },
-  {
-    id: 3,
-    name: 'Emma Wilson',
-    specialization: 'Mobile Developer',
-    rating: 4.9,
-    reviews: 156,
-    avatar: `https://ui-avatars.com/api/?name=Emma+Wilson&background=random`
-  },
-  {
-    id: 4,
-    name: 'Alex Kumar',
-    specialization: 'DevOps Engineer',
-    rating: 4.7,
-    reviews: 89,
-    avatar: `https://ui-avatars.com/api/?name=Alex+Kumar&background=random`
-  }
-];
-
-const recentSuccess = [
-  {
-    id: 1,
-    title: 'E-commerce Platform Redesign',
-    description: 'Complete overhaul of UI/UX with 40% increase in conversion rate',
-    freelancer: 'Sarah Johnson',
-    budget: '45,000'
-  },
-  {
-    id: 2,
-    title: 'Custom CRM Development',
-    description: 'Scalable solution with advanced reporting features',
-    freelancer: 'Michael Chen',
-    budget: '75,000'
-  },
-  {
-    id: 3,
-    title: 'Mobile App Development',
-    description: 'Cross-platform app with 100k+ downloads',
-    freelancer: 'Emma Wilson',
-    budget: '60,000'
-  }
-];
 
 const CHomepage = ({ userId, role }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [clientData, setClientData] = useState({
-    username: '',
     activeProjects: 0,
     totalSpent: 0,
-    pendingTasks: 0
+    pendingTasks: 0,
+    trendingSkills: [],
+    topFreelancers: [],
+    recentSuccess: []
   });
   const [spendingTrend, setSpendingTrend] = useState({
     labels: [],
@@ -158,14 +95,14 @@ const CHomepage = ({ userId, role }) => {
       try {
         const accessToken = Cookies.get('accessToken');
         
-        // Fetch dashboard overview data from existing endpoint
-        const dashboardResponse = await axios.get('http://127.0.0.1:8000/api/client/dashboard_overview', {
+        // Fetch homepage data from the new endpoint
+        const response = await axios.get('http://127.0.0.1:8000/api/client/homepage/', {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
         });
 
-        // Fetch spending data from existing endpoint
+        // Fetch spending data for investment analysis
         const spendingResponse = await axios.get('http://127.0.0.1:8000/api/client/spending_data/', {
           params: { time_frame: 'monthly' },
           headers: {
@@ -173,14 +110,26 @@ const CHomepage = ({ userId, role }) => {
           }
         });
 
+        // Log the responses to debug
+        // Update clientData with new structure
         setClientData({
-          username: dashboardResponse.data.client_username.username,
-          activeProjects: dashboardResponse.data.active_projects,
-          totalSpent: dashboardResponse.data.total_spent,
-          pendingTasks: dashboardResponse.data.pending_tasks
+          activeProjects: response.data.active_projects,
+          totalSpent: response.data.total_spent || 0, // Ensure it defaults to 0 if undefined
+          pendingTasks: response.data.pending_tasks,
+          trendingSkills: response.data.trending_skills || [],
+          topFreelancers: response.data.top_freelancers || [],
+          recentSuccess: response.data.success_stories.map(story => ({
+            title: story.title,
+            description: story.description, // Use dangerouslySetInnerHTML for HTML content
+            budget: story.budget,
+            freelancers: story.freelancers // Include freelancers in the success stories
+          })) || []
         });
 
         setSpendingTrend(spendingResponse.data);
+
+        console.log(response.data)
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching homepage data:', error);
@@ -190,7 +139,8 @@ const CHomepage = ({ userId, role }) => {
     };
 
     fetchHomePageData();
-  }, []);
+  }, [user]);
+
 
   const handleProfileMenu = (profileComponent) => {
     
@@ -203,6 +153,19 @@ const CHomepage = ({ userId, role }) => {
       navigate("/client/dashboard", { state: { component } });
     }
   };
+
+  const renderStars = (rating) => (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => {
+        if (star <= rating) {
+          return <FaStar key={star} className="text-yellow-400" />;
+        } else if (star - 0.5 <= rating) {
+          return <FaStarHalfAlt key={star} className="text-yellow-400" />;
+        }
+        return <FaRegStar key={star} className="text-yellow-400" />;
+      })}
+    </div>
+  );
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -217,9 +180,9 @@ const CHomepage = ({ userId, role }) => {
     
       <div className={`
         flex-1 flex flex-col overflow-hidden
-        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-16'}
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}
       `}>
-        <CHeader user={user} />
+        <CHeader userId={userId}/>
         <div className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
           {/* Hero Section - Made responsive */}
           <motion.div
@@ -231,7 +194,7 @@ const CHomepage = ({ userId, role }) => {
             <div className="relative z-5 flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="w-full md:max-w-2xl">
                 <h1 className="text-2xl md:text-4xl font-bold text-white mb-3 md:mb-4">
-                  Welcome back, {clientData.username}! 👋
+                  Welcome back, {user?.username}! 👋
               </h1>
                 <p className="text-base md:text-xl text-teal-50 mb-6 md:mb-8 leading-relaxed">
                   Your workspace is ready. Start exploring talented freelancers and bring your ideas to life.
@@ -466,7 +429,7 @@ const CHomepage = ({ userId, role }) => {
                 }}
               >
                 <div className="h-full overflow-y-auto pr-2 skills-container">
-                  {dummyTrendingSkills.length === 0 ? (
+                  {clientData.trendingSkills.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-gray-400">
                       <Empty 
                         description="No trending skills available" 
@@ -475,7 +438,7 @@ const CHomepage = ({ userId, role }) => {
                 </div>
                   ) : (
                     <div className="space-y-3">
-                      {dummyTrendingSkills.map((skill, index) => (
+                      {clientData?.trendingSkills.map((skill, index) => (
                         <motion.div 
                           key={index} 
                           initial={{ opacity: 0, y: 20 }}
@@ -530,7 +493,7 @@ const CHomepage = ({ userId, role }) => {
             className="mb-6 md:mb-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
           >
             <Row gutter={[12, 12]}>
-              {dummyTopFreelancers.map((freelancer, index) => (
+              {clientData.topFreelancers.map((freelancer, index) => (
                 <Col xs={12} sm={12} lg={6} key={freelancer.id}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -541,7 +504,7 @@ const CHomepage = ({ userId, role }) => {
                     <div className="flex flex-col items-center text-center">
                       <Avatar 
                         size={window.innerWidth < 640 ? 50 : 80}
-                        src={freelancer.avatar}
+                        src={freelancer.avatar ? `http://localhost:8000${freelancer.avatar}` : 'default-avatar-url'}
                         className="mb-2 sm:mb-4 ring-2 ring-teal-500 ring-offset-2"
                       />
                       <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
@@ -551,13 +514,11 @@ const CHomepage = ({ userId, role }) => {
                         {freelancer.specialization}
                       </p>
                       <div className="flex items-center gap-1 sm:gap-2 bg-teal-50 px-2 sm:px-3 py-1 rounded-full">
-                        <StarOutlined className="text-yellow-500 text-xs sm:text-sm" />
+                        {renderStars(freelancer.rating)}
                         <span className="text-teal-700 font-medium text-xs sm:text-sm">
                           {freelancer.rating}
                         </span>
-                        <span className="text-gray-400 text-xs">
-                          ({freelancer.reviews})
-                        </span>
+                        
             </div>
           </div>
                   </motion.div>
@@ -577,7 +538,7 @@ const CHomepage = ({ userId, role }) => {
             className="rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
           >
             <Timeline mode={window.innerWidth < 768 ? "left" : "alternate"}>
-              {recentSuccess.map((story, index) => (
+              {clientData.recentSuccess.map((story, index) => (
                 <Timeline.Item 
                   key={story.id}
                   color="green"
@@ -590,10 +551,18 @@ const CHomepage = ({ userId, role }) => {
                     className="bg-white p-6 rounded-xl shadow-sm"
                   >
                     <h4 className="font-semibold text-gray-900 mb-2">{story.title}</h4>
-                    <p className="text-gray-600 mb-3">{story.description}</p>
+                    <p className="text-gray-600 mb-3" dangerouslySetInnerHTML={{ __html: story.description }} />
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-teal-600 font-medium">
-                        By {story.freelancer}
+                        By {story.freelancers.map(freelancer => (
+                          <Link 
+                            key={freelancer.id} 
+                            to={`/client/profile/${freelancer.id}`} 
+                            className="hover:underline"
+                          >
+                            {freelancer.username}
+                          </Link>
+                        )).reduce((prev, curr) => [prev, ', ', curr])}
                       </span>
                       <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full">
                         ₹{story.budget}

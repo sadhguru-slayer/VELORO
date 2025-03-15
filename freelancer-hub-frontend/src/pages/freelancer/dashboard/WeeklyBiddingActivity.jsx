@@ -1,19 +1,27 @@
-import React, { useState } from "react";
-import { Card, Col, Row, Statistic, Table, Tooltip, Pagination } from "antd";
-import { Line } from "react-chartjs-2"; // Assuming you have chart.js installed
-import { SearchOutlined } from "@ant-design/icons";
-import { faker } from "@faker-js/faker"; // For generating random data
-import { ResponsiveTable } from "responsive-table-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Card, Col, Row, Statistic, Table, Tooltip, Pagination, Progress, Badge, Timeline, Tag } from "antd";
+import { Chart as ChartJS } from 'chart.js/auto';
+import { Line, Radar } from "react-chartjs-2";
+import { SearchOutlined, WarningOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { faker } from "@faker-js/faker";
+import { motion } from "framer-motion";
 
 const WeeklyBiddingActivity = () => {
-  // Random data for chart and activity log
+  const lineChartRef = useRef(null);
+  const radarChartRef = useRef(null);
+
+  // Enhanced random data generation
   const generateRandomData = () => {
     let data = [];
     for (let i = 0; i < 7; i++) {
       data.push({
         date: `Day ${i + 1}`,
-        bidsPlaced: faker.number.int({ min: 1, max: 15 }), // Use number.int() instead of datatype.number()
-        bidsReceived: faker.number.int({ min: 5, max: 20 }), // Use number.int() instead of datatype.number()
+        bidsPlaced: faker.number.int({ min: 1, max: 15 }),
+        bidsAccepted: faker.number.int({ min: 1, max: 10 }),
+        bidsRejected: faker.number.int({ min: 0, max: 5 }),
+        averageBidAmount: faker.number.int({ min: 15000, max: 50000 }),
+        disputesRaised: faker.number.int({ min: 0, max: 2 }),
+        clientSatisfaction: faker.number.int({ min: 70, max: 100 })
       });
     }
     return data;
@@ -21,243 +29,294 @@ const WeeklyBiddingActivity = () => {
 
   const activityData = generateRandomData();
 
+  // Enhanced chart data
   const weeklyOverviewData = {
-    labels: activityData.map((item) => item.date),
+    labels: activityData.map(item => item.date),
     datasets: [
       {
         label: "Bids Placed",
-        data: activityData.map((item) => item.bidsPlaced),
-        borderColor: "rgba(75, 192, 192, 1)",
-        fill: false,
+        data: activityData.map(item => item.bidsPlaced),
+        borderColor: "#8B5CF6",
+        backgroundColor: "rgba(139, 92, 246, 0.2)",
+        fill: true,
       },
       {
-        label: "Bids Received",
-        data: activityData.map((item) => item.bidsReceived),
-        borderColor: "rgba(153, 102, 255, 1)",
-        fill: false,
+        label: "Bids Accepted",
+        data: activityData.map(item => item.bidsAccepted),
+        borderColor: "#10B981",
+        backgroundColor: "rgba(16, 185, 129, 0.2)",
+        fill: true,
       },
-    ],
+      {
+        label: "Client Satisfaction",
+        data: activityData.map(item => item.clientSatisfaction),
+        borderColor: "#F59E0B",
+        backgroundColor: "rgba(245, 158, 11, 0.2)",
+        fill: true,
+      }
+    ]
   };
 
-  // Freelancer and client stats
-  const freelancerStats = {
-    successRate: "75%",
-    averageBid: "₹20,000",
-    competitorAverage: "₹18,000",
+  // Radar chart data for skills performance
+  const skillsPerformanceData = {
+    labels: ["Technical Skills", "Communication", "Delivery Time", "Quality", "Problem Solving", "Collaboration"],
+    datasets: [{
+      label: "Your Performance",
+      data: [85, 90, 78, 88, 82, 95],
+      backgroundColor: "rgba(139, 92, 246, 0.2)",
+      borderColor: "#8B5CF6",
+      pointBackgroundColor: "#8B5CF6",
+    }]
   };
 
-  const clientStats = {
-    averageBidsPerProject: 12,
-    averageTimeToSelect: "3 days",
+  // Enhanced stats
+  const performanceMetrics = {
+    weeklyStats: {
+      totalBids: activityData.reduce((sum, day) => sum + day.bidsPlaced, 0),
+      acceptanceRate: "68%",
+      averageResponse: "4.2 hours",
+      disputeResolutionRate: "95%"
+    },
+    riskMetrics: {
+      activeDisputes: 2,
+      pendingResolutions: 1,
+      averageResolutionTime: "48 hours",
+      riskLevel: "Low"
+    },
+    revenueInsights: {
+      weeklyEarnings: "₹125,000",
+      growth: "+12%",
+      projectedEarnings: "₹500,000",
+      topEarningSkills: ["React", "Node.js", "AWS"]
+    }
   };
 
-  // Activity Log
-  const activityLogData = [
-    { key: 1, action: "Bid Placed", date: "2024-12-16" },
-    { key: 2, action: "Bid Revised", date: "2024-12-15" },
-    { key: 3, action: "Bid Accepted", date: "2024-12-14" },
-    { key: 4, action: "Bid Placed", date: "2024-12-13" },
-    { key: 5, action: "Bid Rejected", date: "2024-12-12" },
+  // Dispute tracking
+  const disputes = [
+    {
+      id: 1,
+      project: "E-commerce Platform",
+      issue: "Delivery Delay",
+      status: "Resolved",
+      resolution: "Timeline extended with mutual agreement",
+      date: "2024-03-15"
+    },
+    {
+      id: 2,
+      project: "Mobile App Development",
+      issue: "Scope Change",
+      status: "In Progress",
+      resolution: "Under negotiation",
+      date: "2024-03-14"
+    }
   ];
-  const columns = [
-    { title: "Action", dataIndex: "action", key: "action" },
-    { title: "Date", dataIndex: "date", key: "date" },
-  ];
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 3; // Number of items per page
 
-  // Toggle dropdown for mobile view
-  const toggleDropdown = (index) => {
-    setOpenDropdown(openDropdown === index ? null : index);
-  };
+  useEffect(() => {
+    // Cleanup function to destroy charts when component unmounts
+    return () => {
+      if (lineChartRef.current) {
+        lineChartRef.current.destroy();
+      }
+      if (radarChartRef.current) {
+        radarChartRef.current.destroy();
+      }
+    };
+  }, []);
 
-  const paginatedData = activityLogData.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
   return (
-    <div className="p-3 py-6 bg-gray-100 rounded-lg shadow-sm hover:shadow-md">
-      <h2 className="text-2xl font-semibold mb-6">Weekly Bidding Activity</h2>
+    <div className="p-6 space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h2 className="text-2xl font-bold text-violet-900 mb-2">Weekly Activity Analytics</h2>
+        <p className="text-gray-600">Comprehensive insights into your bidding performance and client interactions</p>
+      </motion.div>
 
-      {/* Weekly Overview Chart */}
-      <Card title="Weekly Bidding Overview" bordered={false} className="mb-6">
-        <div className="relative h-64">
-          {" "}
-          {/* Set a fixed height for the chart */}
-          <Line
-            data={weeklyOverviewData}
-            options={{
-              responsive: true,
+      {/* Performance Overview Cards */}
+      <Row gutter={[16, 16]} className="mb-8">
+        <Col xs={24} sm={12} lg={6}>
+          <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+            <Card className="h-full bg-gradient-to-br from-violet-50 to-white border-violet-100">
+              <Statistic
+                title="Weekly Bids"
+                value={performanceMetrics.weeklyStats.totalBids}
+                prefix={<Badge status="processing" />}
+                valueStyle={{ color: "#8B5CF6" }}
+              />
+              <p className="text-sm text-violet-600 mt-2">
+                Acceptance Rate: {performanceMetrics.weeklyStats.acceptanceRate}
+              </p>
+            </Card>
+          </motion.div>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+            <Card className="h-full bg-gradient-to-br from-green-50 to-white border-green-100">
+              <Statistic
+                title="Revenue Growth"
+                value={performanceMetrics.revenueInsights.growth}
+                valueStyle={{ color: "#10B981" }}
+                prefix={<CheckCircleOutlined />}
+              />
+              <p className="text-sm text-green-600 mt-2">
+                Weekly: {performanceMetrics.revenueInsights.weeklyEarnings}
+              </p>
+            </Card>
+          </motion.div>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+            <Card className="h-full bg-gradient-to-br from-yellow-50 to-white border-yellow-100">
+              <Statistic
+                title="Response Time"
+                value={performanceMetrics.weeklyStats.averageResponse}
+                valueStyle={{ color: "#F59E0B" }}
+                prefix={<ClockCircleOutlined />}
+              />
+              <p className="text-sm text-yellow-600 mt-2">
+                Industry Avg: 6.5 hours
+              </p>
+            </Card>
+          </motion.div>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+            <Card className="h-full bg-gradient-to-br from-red-50 to-white border-red-100">
+              <Statistic
+                title="Active Disputes"
+                value={performanceMetrics.riskMetrics.activeDisputes}
+                valueStyle={{ color: performanceMetrics.riskMetrics.activeDisputes > 3 ? "#EF4444" : "#8B5CF6" }}
+                prefix={<ExclamationCircleOutlined />}
+              />
+              <p className="text-sm text-violet-600 mt-2">
+                Resolution Rate: {performanceMetrics.weeklyStats.disputeResolutionRate}
+              </p>
+            </Card>
+          </motion.div>
+        </Col>
+      </Row>
 
-              maintainAspectRatio: false, // Allow the chart to fill the container
-
-              scales: {
-                y: {
-                  beginAtZero: true,
-                },
-              },
-
-              plugins: {
-                legend: {
-                  display: true,
-
-                  position: "top",
-                },
-              },
-            }}
-          />
-        </div>
-      </Card>
-
-      <div className="container mx-auto">
-        <div className="flex flex-wrap -mx-2">
-          <div className="w-full md:w-1/2 px-2">
-            <div className="bg-white shadow-md rounded-lg p-4 mb-6">
-              <h2 className="text-lg sm:text-xl md:text-xl font-semibold text-charcolBlue mb-4">
-                Freelancer Stats
-              </h2>
-
-              <div className="flex flex-col">
-                <div className="mb-4">
-                  <h3 className="text-sm sm:text-lg text-violet-500">
-                    Success Rate
-                  </h3>
-                  <p className="text-lg sm:text-2xl font-bold text-charcolBlue">
-                    {freelancerStats.successRate}%
-                  </p>
-                </div>
-
-                <div className="mb-4">
-                  <h3 className="text-sm sm:text-lg text-violet-500">
-                    Average Bid Amount
-                  </h3>
-                  <p className="text-lg sm:text-2xl font-bold text-charcolBlue">
-                    ${freelancerStats.averageBid}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm sm:text-lg text-violet-500">
-                    Competitor Average Bid
-                  </h3>
-                  <p className="text-lg sm:text-2xl font-bold text-charcolBlue">
-                    ${freelancerStats.competitorAverage}
-                  </p>
-                </div>
-              </div>
+      {/* Main Analytics Section */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Card title="Weekly Performance Trends" className="mb-6">
+            <div className="h-80">
+              <Line
+                ref={lineChartRef}
+                id="weeklyPerformanceChart"
+                data={weeklyOverviewData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "top"
+                    },
+                    tooltip: {
+                      mode: "index",
+                      intersect: false
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      grid: {
+                        color: "rgba(0, 0, 0, 0.05)"
+                      }
+                    }
+                  }
+                }}
+              />
             </div>
-          </div>
-
-          <div className="w-full md:w-1/2 px-2">
-            <div className="bg-white shadow-md rounded-lg p-4 mb-6">
-              <h2 className="text-lg sm:text-xl md:text-xl font-semibold text-charcolBlue mb-4">
-                Client Stats
-              </h2>
-
-              <div className="flex flex-col">
-                <div className="mb-4">
-                  <h3 className="text-sm sm:text-lg text-violet-500">
-                    Avg Bids Per Project
-                  </h3>
-                  <p className="text-lg sm:text-2xl font-bold text-charcolBlue">
-                    {clientStats.averageBidsPerProject}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm sm:text-lg text-violet-500">
-                    Avg Time to Select Freelancer
-                  </h3>
-                  <p className="text-lg sm:text-2xl font-bold text-charcolBlue">
-                    {clientStats.averageTimeToSelect} days
-                  </p>
-                </div>
-              </div>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Skills Performance" className="mb-6">
+            <div className="h-80">
+              <Radar
+                ref={radarChartRef}
+                id="skillsPerformanceChart"
+                data={skillsPerformanceData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    r: {
+                      beginAtZero: true,
+                      max: 100
+                    }
+                  }
+                }}
+              />
             </div>
-          </div>
-        </div>
-      </div>
+          </Card>
+        </Col>
+      </Row>
 
-      {/* Performance Insights */}
-      <Card title="Performance Insights" bordered={false} className="mb-6">
-        <div className="text-gray-700">
-          <Tooltip title="Your bid amount is higher than the average for similar projects. Consider lowering your bid for better chances.">
-            <span>
-              Your bid amount is higher than the average for similar projects.
-            </span>
-          </Tooltip>
-        </div>
-      </Card>
-
-      {/* Activity Log */}
-      <Card title="Activity Log" bordered={false}>
-        {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <table className="w-full border-collapse border border-gray-200">
-            <thead>
-              <tr className="bg-gray-100">
-                {columns.map((column) => (
-                  <th key={column.key} className="p-3 text-left">
-                    {column.title}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedData.map((row) => (
-                <tr
-                  key={row.key}
-                  className="border-b border-gray-200 hover:bg-gray-50"
-                >
-                  {columns.map((column) => (
-                    <td key={column.key} className="p-3">
-                      {row[column.dataIndex]}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Dropdown View */}
-        <div className="block md:hidden">
-          {paginatedData.map((row, index) => (
-            <div
-              key={row.key}
-              className="mb-4 border border-gray-200 rounded-lg"
+      {/* Dispute Tracking */}
+      <Card title="Dispute Resolution Center" className="mb-6">
+        <Timeline mode="left">
+          {disputes.map(dispute => (
+            <Timeline.Item
+              key={dispute.id}
+              color={dispute.status === "Resolved" ? "green" : "blue"}
+              label={dispute.date}
             >
-              <button
-                onClick={() => toggleDropdown(index)}
-                className="w-full p-3 text-left bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none"
-              >
-                {row[columns[0].dataIndex]}{" "}
-                {/* Use the first column as the dropdown title */}
-              </button>
-              {openDropdown === index && (
-                <div className="p-3 bg-white">
-                  {columns.slice(1).map((column) => (
-                    <p key={column.key}>
-                      <strong>{column.title}:</strong> {row[column.dataIndex]}
-                    </p>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-violet-900">{dispute.project}</h4>
+                <p className="text-gray-600 text-sm">{dispute.issue}</p>
+                <div className="mt-2">
+                  <Tag color={dispute.status === "Resolved" ? "success" : "processing"}>
+                    {dispute.status}
+                  </Tag>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">{dispute.resolution}</p>
+              </div>
+            </Timeline.Item>
+          ))}
+        </Timeline>
+      </Card>
+
+      {/* Risk Analysis */}
+      <Card title="Risk Analysis & Recommendations" className="mb-6">
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={8}>
+            <div className="p-4 bg-violet-50 rounded-lg">
+              <h4 className="text-violet-900 font-medium mb-2">Current Risk Level</h4>
+              <Progress
+                type="circle"
+                percent={75}
+                format={() => performanceMetrics.riskMetrics.riskLevel}
+                strokeColor={{
+                  "0%": "#8B5CF6",
+                  "100%": "#10B981"
+                }}
+              />
+            </div>
+          </Col>
+          <Col xs={24} md={16}>
+            <div className="space-y-4">
+              <div className="p-4 bg-violet-50 rounded-lg">
+                <h4 className="text-violet-900 font-medium mb-2">Recommendations</h4>
+                <ul className="list-disc list-inside text-gray-600">
+                  <li>Maintain response time below industry average</li>
+                  <li>Document project milestones clearly</li>
+                  <li>Regular progress updates to prevent disputes</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-violet-50 rounded-lg">
+                <h4 className="text-violet-900 font-medium mb-2">Top Earning Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {performanceMetrics.revenueInsights.topEarningSkills.map(skill => (
+                    <Tag key={skill} color="violet">{skill}</Tag>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
-          ))}
-        </div>
-
-        {/* Pagination */}
-        <div className="mt-4 flex justify-end">
-          <Pagination
-            current={currentPage}
-            pageSize={pageSize}
-            total={activityLogData.length}
-            onChange={(page) => setCurrentPage(page)}
-            showSizeChanger={false}
-          />
-        </div>
+          </Col>
+        </Row>
       </Card>
     </div>
   );

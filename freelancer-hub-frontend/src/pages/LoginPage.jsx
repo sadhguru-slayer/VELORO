@@ -45,7 +45,7 @@ const LoginPage = () => {
 
         // Step 3: Navigate based on profile status and role
        if (role === 'client') {
-          navigate('/client/dashboard');
+          navigate('/client/homepage');
         } else {
           navigate('/freelancer/homepage');
         }
@@ -102,7 +102,7 @@ const LoginPage = () => {
 
       // Redirect based on is_profiled and role
       if(role === 'client'){
-        navigate("/client/dashboard");
+        navigate("/client/homepage");
       }
       else {
         navigate("/freelancer/homepage");

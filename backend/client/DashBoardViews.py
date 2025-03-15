@@ -339,13 +339,13 @@ def get_nearest_deadlines(client):
     client=client, 
     deadline__gte=timezone.now(), 
     assigned_to__isnull=False
-    ).order_by('deadline').values('id', 'title', 'deadline')[:4]
+    ).order_by('deadline').values('id', 'title', 'deadline').distinct()[:4]
     tasks_with_deadlines = Task.objects.filter(
         project__client=client,
         deadline__gte=timezone.now(),
     assigned_to__isnull=False
 
-    ).order_by('deadline').values('id', 'title', 'deadline')[:4]
+    ).order_by('deadline').values('id', 'title', 'deadline').distinct()[:4]
     
     deadlines = []
 

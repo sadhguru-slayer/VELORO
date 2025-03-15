@@ -212,8 +212,8 @@ const ViewBids = ({userId, role}) => {
       <CSider userId={userId} 
       role={role} dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} handleProfileMenu={handleProfileMenu}/>
 
-      <div className="bg-gray-100 flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
-        <CHeader />
+      <div className="bg-gray-100 flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-14 md:ml-14 lg:ml-22">
+        <CHeader userId={userId}/>
         <div className="flex-1 overflow-auto bg-gray-50 p-6">
           {loading ? (
             <IndividualLoadingComponent />

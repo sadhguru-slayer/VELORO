@@ -216,11 +216,21 @@ const ProjectPost = ({userId, role, MAX_TASKS=3}) => {
       navigate("/client/dashboard", { state: { component } });
     }
   };
+  const [activeProfileComponent, setActiveProfileComponent] = useState('');
+  const [individualLoading, setIndividualLoading] = useState(false);
 
   const handleProfileMenu = (profileComponent) => {
-    if (location.pathname !== "/client/profile") {
-      navigate("/client/profile", { state: { profileComponent } });
+    if (location.pathname !== '/client/profile') {
+      navigate(`/client/profile/${userId}`, { state: { profileComponent } });
+    } else {
+      setActiveProfileComponent(profileComponent);
     }
+
+    setIndividualLoading(true);
+
+    setTimeout(() => {
+      setIndividualLoading(false);
+    }, 500);
   };
 
   const handleClose = (state) => {
@@ -543,13 +553,14 @@ useEffect(() => {
         collapsed={true}
         handleMenuClick={handleMenuClick}
         handleProfileMenu={handleProfileMenu}
+        activeProfileComponent={activeProfileComponent}
       />
   
       <div className={`
         flex-1 flex flex-col overflow-hidden
-        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-16'}
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}
       `}>
-        <CHeader />
+        <CHeader userId={userId}/>
         
         <div className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
           {loading ? (

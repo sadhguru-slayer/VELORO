@@ -15,10 +15,12 @@ import Collaborations from "./profile/Collaboration";
 import NotAuthProfile from "./profile/NotAuthProfile";
 import OtherProfile from "./profile/OtherProfile";
 import { motion } from "framer-motion";
+import { useMediaQuery } from "react-responsive";
 
 const CProfile = ({ userId, role, isEditable }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useMediaQuery({ maxWidth: 767 });
 
   const [individualLoading, setIndividualLoading] = useState(false);
   const [activeProfileComponent, setActiveProfileComponent] = useState("");
@@ -161,7 +163,7 @@ const CProfile = ({ userId, role, isEditable }) => {
     } else if (isAuthenticated && !isEditable) {
       // Case 2: Authenticated but not isEditable - Show OtherProfile with header/sider
       return (
-        <div className="flex h-screen bg-white">
+        <div className={`flex h-screen bg-white ${isMobile ? 'ml-0' : 'ml-14'}`}>
           <CSider
             userId={userId}
             role={role}
@@ -172,7 +174,7 @@ const CProfile = ({ userId, role, isEditable }) => {
             handleProfileMenu={handleProfileMenu}
             activeProfileComponent={activeProfileComponent}
           />
-          <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
+          <div className="flex-1 flex flex-col overflow-x-hidden">
             <CHeader 
               isAuthenticated={isAuthenticated} 
               isEditable={isEditable}
@@ -190,7 +192,7 @@ const CProfile = ({ userId, role, isEditable }) => {
     } else if (isAuthenticated && isEditable) {
       // Case 3: Authenticated and isEditable - Show AuthProfile with header/sider
       return (
-        <div className="flex h-screen bg-white">
+        <div className={`flex h-screen bg-white `}>
           <CSider
             userId={userId}
             role={role}
@@ -201,13 +203,13 @@ const CProfile = ({ userId, role, isEditable }) => {
             handleProfileMenu={handleProfileMenu}
             activeProfileComponent={activeProfileComponent}
           />
-          <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
+          <div className={`flex-1 flex flex-col overflow-x-hidden ${isMobile ? 'ml-0' : 'ml-14'}`}>
             <CHeader 
               isAuthenticated={isAuthenticated} 
               isEditable={isEditable}
               userId={userId}
             />
-            <div className="flex-1 overflow-auto bg-gray-100 p-4 flex justify-center w-full">
+            <div className="flex-1 overflow-auto bg-gray-50 flex justify-center min-h-fit min-w-fit pb-16">
               {activeProfileComponent === "view_profile" && (
                 <AuthProfile userId={userId} role={role} isEditable={isEditable} />
               )}

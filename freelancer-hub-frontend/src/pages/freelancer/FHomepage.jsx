@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import FHeader from "../../components/freelancer/FHeader";
 import FSider from "../../components/freelancer/FSider";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Pie } from "react-chartjs-2";
-import { Bar } from "react-chartjs-2";
+import { Pie, Bar } from "react-chartjs-2";
+import { useMediaQuery } from "react-responsive";
+import CountUp from 'react-countup';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -12,6 +14,7 @@ import {
   BarElement,
   CategoryScale,
   LinearScale,
+  Title,
 } from "chart.js";
 
 ChartJS.register(
@@ -20,7 +23,8 @@ ChartJS.register(
   Legend,
   BarElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
+  Title
 );
 
 const statData = {
@@ -28,6 +32,7 @@ const statData = {
   completedProjects: 20,
   successRate: 95,
   earnings: 50000,
+  inProgressProjects: 30,
 };
 
 const successRateData = {
@@ -59,8 +64,63 @@ const projectData = {
 };
 
 const FHomepage = () => {
+  const isMobile = useMediaQuery({ maxWidth: 767 });
   const navigate = useNavigate();
   const location = useLocation();
+  const [isLoading, setIsLoading] = useState(true);
+  const [chartData, setChartData] = useState(null);
+  const [showStatsOverview, setShowStatsOverview] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const position = window.pageYOffset;
+      setScrollPosition(position);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Simulate loading data with staggered timing
+    const loadData = async () => {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsLoading(false);
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setChartData({
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Monthly Earnings (₹)',
+            data: [30000, 45000, 35000, 50000, 42000, 60000],
+            backgroundColor: 'rgba(124, 58, 237, 0.5)',
+            borderColor: 'rgba(124, 58, 237, 1)',
+            borderWidth: 2,
+          }]
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setShowStatsOverview(true);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Scroll restoration
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleMenuClick = (component) => {
     if (location.pathname !== "/freelancer/dashboard") {
@@ -118,13 +178,36 @@ const FHomepage = () => {
     navigate("/freelancer/dashboard", { state: { component } });
   };
 
-
   const containerRef = useRef(null);
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(true);
   const [projectWidth, setProjectWidth] = useState(0);
 
-  // Function to calculate the width of a card
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (containerRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
+        setShowLeftButton(scrollLeft > 10);
+        setShowRightButton(scrollLeft < scrollWidth - clientWidth - 10);
+      }
+    };
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleVisibility);
+      // Initial check
+      handleVisibility();
+      
+      // Check after images/content loads
+      window.addEventListener('load', handleVisibility);
+      
+      return () => {
+        container.removeEventListener('scroll', handleVisibility);
+        window.removeEventListener('load', handleVisibility);
+      };
+    }
+  }, []);
+
   const calculateProjectWidth = () => {
     if (containerRef.current && containerRef.current.firstChild) {
       const card = containerRef.current.firstChild;
@@ -140,7 +223,6 @@ const FHomepage = () => {
     return () => window.removeEventListener("resize", calculateProjectWidth);
   }, []);
 
-
   const scrollLeft = () => {
     if (containerRef.current) {
       containerRef.current.scrollBy({ left: -projectWidth, behavior: "smooth" });
@@ -153,16 +235,13 @@ const FHomepage = () => {
     }
   };
 
-  const handleScroll = () => {
-    if (containerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
-      setShowLeftButton(scrollLeft > 0);
-      setShowRightButton(scrollLeft < scrollWidth - clientWidth);
-    }
+  const statsCardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
   };
+
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
       <FSider 
         dropdown={true} 
         collapsed={true} 
@@ -170,16 +249,23 @@ const FHomepage = () => {
         handleProfileMenu={handleProfileMenu} 
       />
       
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col bg-gray-100 ml-16 overflow-hidden">
-        
-        {/* Header */}
-        <FHeader />
+      <div className={`
+        flex-1 flex flex-col overflow-hidden
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}
+      `}>
 
-        {/* Scrollable Content Container */}
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <FHeader />
+        </motion.div>
+
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-            {/* Welcome Banner */}
+{/* Welcome banner */}
             <div className="relative overflow-hidden rounded-2xl shadow-2xl min-h-[60vh]">
               {/* Gradient Background with Animation */}
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700
@@ -245,36 +331,234 @@ const FHomepage = () => {
                 </div>
             </div>
           </div>
-            
-            {/* Add this to your global CSS */}
-            
+            {/* Performance Analytics Section */}
 
-          {/* Skill-Based Projects */}
-            <section className="relative bg-gradient-to-br from-gray-50 to-purple-100 rounded-2xl shadow-lg">
+            <motion.section 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="relative rounded-2xl"
+            >
+              <h2 className="text-3xl font-bold text-center mb-8">
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                  Performance Analytics
+                </span>
+              </h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {isLoading ? (
+                  // Loading skeletons
+                  Array(4).fill(0).map((_, i) => (
+                    <div key={i} className="bg-white rounded-2xl p-6 animate-pulse">
+                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                      <div className="h-12 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))
+                ) : (
+                  // Actual stats cards
+                  <>
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.1 }}
+                      className="bg-gradient-to-br from-violet-500 to-indigo-500 rounded-2xl p-6 text-white transform hover:scale-105 transition-all duration-300"
+                    >
+                      <h3 className="text-lg font-medium opacity-90">Total Earnings</h3>
+                      <div className="mt-4 text-4xl font-bold">
+                        <CountUp
+                          prefix="₹"
+                          end={statData.earnings}
+                          duration={2.5}
+                          separator=","
+                        />
+                      </div>
+                      <div className="mt-2 text-sm opacity-75">+12% from last month</div>
+                    </motion.div>
+
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.2 }}
+                      className="bg-gradient-to-br from-teal-500 to-green-500 rounded-2xl p-6 text-white transform hover:scale-105 transition-all duration-300"
+                    >
+                      <h3 className="text-lg font-medium opacity-90">Active Projects</h3>
+                      <div className="mt-4 text-4xl font-bold">
+                        <CountUp
+                          end={statData.activeProjects}
+                          duration={2.5}
+                        />
+                      </div>
+                      <div className="mt-2 text-sm opacity-75">+5% from last month</div>
+                    </motion.div>
+
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.3 }}
+                      className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white transform hover:scale-105 transition-all duration-300"
+                    >
+                      <h3 className="text-lg font-medium opacity-90">In Progress Projects</h3>
+                      <div className="mt-4 text-4xl font-bold">
+                        <CountUp
+                          end={statData.inProgressProjects}
+                          duration={2.5}
+                        />
+                      </div>
+                      <div className="mt-2 text-sm opacity-75">+10% from last month</div>
+                    </motion.div>
+
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.4 }}
+                      className="bg-gradient-to-br from-violet-500 to-indigo-500 rounded-2xl p-6 text-white transform hover:scale-105 transition-all duration-300"
+                    >
+                      <h3 className="text-lg font-medium opacity-90">Success Rate</h3>
+                      <div className="mt-4 text-4xl font-bold">
+                        <CountUp
+                          suffix="%"
+                          end={statData.successRate}
+                          duration={2.5}
+                        />
+                      </div>
+                      <div className="mt-2 text-sm opacity-75">+5% from last month</div>
+                    </motion.div>
+                  </>
+                )}
+              </div>
+
+              {/* Enhanced Charts Section */}
+              {/* Monthly Revenue Trend Chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+<motion.div
+  initial={{ opacity: 0, x: -20 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ delay: 0.3 }}
+  className="bg-white rounded-2xl shadow-lg p-6"
+>
+  <h3 className="text-xl font-semibold mb-6 text-gray-800">Monthly Revenue Trend</h3>
+  {chartData && (
+    <div className="relative w-full" style={{ height: '300px' }}>
+      <Bar
+        data={chartData}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(124, 58, 237, 0.8)',
+              titleFont: {
+                size: 14
+              },
+              bodyFont: {
+                size: 13
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(107, 114, 128, 0.1)'
+              }
+            }
+          }
+        }}
+        height={300}
+      />
+    </div>
+  )}
+</motion.div>
+
+{/* Success Rate Trend Chart */}
+<motion.div
+  initial={{ opacity: 0, x: 20 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ delay: 0.3 }}
+  className="bg-white rounded-2xl shadow-lg p-6"
+>
+  <h3 className="text-xl font-semibold mb-6 text-gray-800">Success Rate Trend</h3>
+  <div className="relative w-full" style={{ height: '300px' }}>
+    <Pie
+      data={successRateData}
+      options={{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              padding: 20,
+              font: {
+                size: 12,
+                weight: 'medium'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(124, 58, 237, 0.8)',
+            titleFont: {
+              size: 14
+            },
+            bodyFont: {
+              size: 13
+            }
+          }
+        }
+      }}
+      height={300}
+    />
+  </div>
+</motion.div>
+</div>
+            </motion.section>
+
+            {/* Skill-Based Projects */}
+            <motion.section 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="relative bg-gradient-to-br from-gray-50 to-purple-100 rounded-2xl shadow-lg overflow-hidden"
+            >
               <div className="p-8">
                 <h2 className="text-3xl font-bold text-center mb-8">
                   <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Projects Based on Your Skills
+                    Projects Based on Your Skills
                   </span>
-            </h2>
+                </h2>
 
                 {/* Left Scroll Button */}
-                <button 
-                  onClick={scrollLeft} 
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 
-                    bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
-                    transition-all duration-300 hover:scale-110 backdrop-blur-sm
-                    border border-gray-100 group"
-                >
-                  <svg 
-                    className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-      </button>
+                <AnimatePresence>
+                  {showLeftButton && (
+                    <motion.button
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      onClick={scrollLeft}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 
+                        bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
+                        transition-all duration-300 hover:scale-110 backdrop-blur-sm
+                        border border-gray-100 group"
+                    >
+                      <svg 
+                        className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
 
                 {/* Project Cards Container */}
                 <div 
@@ -285,9 +569,9 @@ const FHomepage = () => {
                     '-ms-overflow-style': 'none',
                   }}
                 >
-        {skillBasedProjects.map((record, index) => (
-          <div
-            key={index}
+                  {skillBasedProjects.map((record, index) => (
+                    <div
+                      key={index}
                       className="flex-none w-[280px] p-6 bg-white rounded-xl
                         shadow-md hover:shadow-xl transition-all duration-300
                         border border-gray-100 hover:border-violet-200
@@ -312,59 +596,66 @@ const FHomepage = () => {
                       </p>
 
                       {/* Action Button */}
-            <button
-              onClick={() =>
-                navigate(`/freelancer/browse-projects/project-view/${record.id}`, {
-                  state: { record },
-                })
-              }
+                      <button
+                        onClick={() =>
+                          navigate(`/freelancer/browse-projects/project-view/${record.id}`, {
+                            state: { record },
+                          })
+                        }
                         className="mt-4 w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-lg
                           hover:bg-violet-600 hover:text-white transition-all duration-300
                           font-medium border border-gray-200 hover:border-violet-600
                           flex items-center justify-center gap-2 group-hover:shadow-md"
-            >
-              View Details
+                      >
+                        View Details
                         <svg 
                           className="w-4 h-4" 
                           fill="none" 
                           stroke="currentColor" 
                           viewBox="0 0 24 24"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                         </svg>
-            </button>
-          </div>
-        ))}
-      </div>
+                      </button>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Right Scroll Button */}
-                <button 
-                  onClick={scrollRight} 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 
-                    bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
-                    transition-all duration-300 hover:scale-110 backdrop-blur-sm
-                    border border-gray-100 group"
-                >
-                  <svg 
-                    className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-      </button>
-    </div>
-            </section>
+                <AnimatePresence>
+                  {showRightButton && (
+                    <motion.button
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      onClick={scrollRight}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 
+                        bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
+                        transition-all duration-300 hover:scale-110 backdrop-blur-sm
+                        border border-gray-100 group"
+                    >
+                      <svg 
+                        className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.section>
 
             {/* Swift Action Cards */}
             <section className="relative  rounded-2xl shadow-lg">
               <div className="p-8">
                 <h2 className="text-3xl font-bold text-center mb-8">
                   <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            Swift Action
+                    Swift Action
                   </span>
-          </h2>
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* My Projects Card */}
                   <div className="group ">
@@ -374,7 +665,7 @@ const FHomepage = () => {
                       transform hover:-translate-y-1 transition-all duration-300">
                       <div className="flex items-start justify-between mb-4">
                         <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                My Projects
+                          My Projects
                         </h3>
                         <span className="p-2 bg-violet-100 rounded-lg">
                           <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,23 +674,23 @@ const FHomepage = () => {
                         </span>
                       </div>
                       <p className="text-gray-600 mb-6">View and manage your active projects.</p>
-              <button
-                onClick={() => handleNavigate("projects")}
+                      <button
+                        onClick={() => handleNavigate("projects")}
                         className="w-full py-3 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 
                           hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl
                           transform hover:scale-[1.02] transition-all duration-300
                           shadow-lg hover:shadow-violet-500/25 font-medium
                           flex items-center justify-center gap-2 group"
-              >
-                Go to Projects
+                      >
+                        Go to Projects
                         <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
-              </button>
+                      </button>
                     </div>
-            </div>
-        
+                  </div>
+
                   {/* Browse Projects Card */}
                   <div className="group ">
                     <div className=" inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
@@ -408,7 +699,7 @@ const FHomepage = () => {
                       transform hover:-translate-y-1 transition-all duration-300">
                       <div className="flex items-start justify-between mb-4">
                         <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                Browse Projects
+                          Browse Projects
                         </h3>
                         <span className="p-2 bg-violet-100 rounded-lg">
                           <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,23 +708,23 @@ const FHomepage = () => {
                         </span>
                       </div>
                       <p className="text-gray-600 mb-6">Explore new projects and start bidding.</p>
-              <button
-                onClick={() => navigate("/freelancer/browse-projects")}
+                      <button
+                        onClick={() => navigate("/freelancer/browse-projects")}
                         className="w-full py-3 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 
                           hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl
                           transform hover:scale-[1.02] transition-all duration-300
                           shadow-lg hover:shadow-violet-500/25 font-medium
                           flex items-center justify-center gap-2 group"
-              >
-                Browse Now
+                      >
+                        Browse Now
                         <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
-              </button>
+                      </button>
                     </div>
-            </div>
-        
+                  </div>
+
                   {/* Notifications Card */}
                   <div className="group ">
                     <div className=" inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
@@ -442,7 +733,7 @@ const FHomepage = () => {
                       transform hover:-translate-y-1 transition-all duration-300">
                       <div className="flex items-start justify-between mb-4">
                         <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                Notifications
+                          Notifications
                         </h3>
                         <span className="p-2 bg-violet-100 rounded-lg">
                           <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,15 +747,15 @@ const FHomepage = () => {
                         transform hover:scale-[1.02] transition-all duration-300
                         shadow-lg hover:shadow-violet-500/25 font-medium
                         flex items-center justify-center gap-2 group">
-                View Notifications
+                        View Notifications
                         <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
-              </button>
+                      </button>
                     </div>
-            </div>
-        
+                  </div>
+
                   {/* Earnings Card */}
                   <div className="group ">
                     <div className=" inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
@@ -473,7 +764,7 @@ const FHomepage = () => {
                       transform hover:-translate-y-1 transition-all duration-300">
                       <div className="flex items-start justify-between mb-4">
                         <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                Earnings
+                          Earnings
                         </h3>
                         <span className="p-2 bg-violet-100 rounded-lg">
                           <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -482,22 +773,23 @@ const FHomepage = () => {
                         </span>
                       </div>
                       <p className="text-gray-600 mb-6">Check your earnings and pending invoices.</p>
-              <button
-                onClick={() => handleNavigate("earnings")}
+                      <button
+                        onClick={() => handleNavigate("earnings")}
                         className="w-full py-3 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 
                           hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl
                           transform hover:scale-[1.02] transition-all duration-300
                           shadow-lg hover:shadow-violet-500/25 font-medium
-                          flex items-center justify-center gap-2 group">
-                View Earnings
+                          flex items-center justify-center gap-2 group"
+                      >
+                        View Earnings
                         <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" 
                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                         </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -506,9 +798,9 @@ const FHomepage = () => {
               <div className="p-8">
                 <h2 className="text-3xl font-bold text-center mb-8">
                   <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-    Recent Activity
+                    Recent Activity
                   </span>
-  </h2>
+                </h2>
 
                 <ul className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg border border-gray-200 divide-y divide-gray-200/50">
                   {/* Activity Item 1 */}
@@ -530,7 +822,7 @@ const FHomepage = () => {
                         2 hours ago
                       </span>
                     </div>
-    </li>
+                  </li>
 
                   {/* Activity Item 2 */}
                   <li className="group ">
@@ -551,7 +843,7 @@ const FHomepage = () => {
                         1 day ago
                       </span>
                     </div>
-    </li>
+                  </li>
 
                   {/* Activity Item 3 */}
                   <li className="group ">
@@ -572,8 +864,8 @@ const FHomepage = () => {
                         3 days ago
                       </span>
                     </div>
-    </li>
-  </ul>
+                  </li>
+                </ul>
 
                 {/* Optional: View All Button */}
                 <div className="mt-6 text-center">
@@ -587,170 +879,15 @@ const FHomepage = () => {
                     </svg>
                   </button>
                 </div>
-</div>
+              </div>
             </section>
 
-          {/* Stats Overview */}
-            <section className="relative rounded-2xl">
-              <div className="">
-                <h2 className="text-3xl font-bold text-center mb-8">
-                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Stats Overview
-                  </span>
-            </h2>
-                
-                {/* Stats Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                  {/* Active Projects Card */}
-                  <div className="group  flex flex-col justify-between h-full">
-                    <div className=" inset-0 bg-gradient-to-r from-violet-300 to-indigo-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
-                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
-                      border border-gray-100 hover:border-violet-200
-                      transform hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
-                      <div className="flex items-start justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">Active Projects</h3>
-                        <span className="p-2 bg-violet-100 rounded-lg">
-                          <svg className="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                          </svg>
-                        </span>
-                      </div>
-                      <p className="text-6xl font-extrabold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                    {statData.activeProjects}
-                  </p>
-                      {/* Add extra content here to fill space if needed */}
-                      <div className="mt-6 text-gray-500 text-sm">Overview of ongoing projects.</div>
-                    </div>
-                </div>
-
-                  {/* Completed Projects Card */}
-                  <div className="group  flex flex-col justify-between h-full">
-                    <div className=" inset-0 bg-gradient-to-r from-teal-300 to-green-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
-                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
-                      border border-gray-100 hover:border-violet-200
-                      transform hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
-                      <div className="flex items-start justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">Completed Projects</h3>
-                        <span className="p-2 bg-green-100 rounded-lg">
-                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                          </svg>
-                        </span>
-                      </div>
-                      <p className="text-6xl font-extrabold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
-                    {statData.completedProjects}
-                  </p>
-                      {/* Add extra content here to fill space if needed */}
-                      <div className="mt-6 text-gray-500 text-sm">Projects completed successfully.</div>
-                    </div>
-                  </div>
-
-                  {/* New Card: "In Progress" or any other stat */}
-                  <div className="group  flex flex-col justify-between h-full">
-                    <div className=" inset-0 bg-gradient-to-r from-yellow-300 to-orange-300 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500"></div>
-                    <div className=" p-6 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg 
-                      border border-gray-100 hover:border-yellow-200
-                      transform hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
-                      <div className="flex items-start justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">In Progress</h3>
-                        <span className="p-2 bg-yellow-100 rounded-lg">
-                          <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                          </svg>
-                        </span>
-                      </div>
-                      <p className="text-6xl font-extrabold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-                        {statData.inProgressProjects ? statData.inProgressProjects : 30}
-                      </p>
-                      <div className="mt-6 text-gray-500 text-sm">Ongoing projects in the pipeline.</div>
-                    </div>
-                </div>
-              </div>
-
-                {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Success Rate Chart */}
-                  <div className="bg-white rounded-xl shadow-lg p-6 h-[400px]">
-                    <div className=" h-48">
-                    <Pie
-                      data={successRateData}
-                      options={{
-                        responsive: true,
-                          plugins: { 
-                            legend: { 
-                              position: "bottom",
-                              labels: {
-                                padding: 20,
-                                font: {
-                                  size: 12,
-                                  weight: 'medium'
-                                }
-                              }
-                            } 
-                          },
-                          animation: {
-                            duration: 2000
-                          }
-                      }}
-                    />
-                  </div>
-                    <p className="text-center text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mt-4">
-                      {statData.successRate}%
-                    </p>
-                </div>
-
-                  {/* Monthly Earnings Chart */}
-                  <div className="bg-white rounded-xl shadow-lg p-6 h-[400px]">
-                    <div className=" h-64">
-                    <Bar
-                      data={projectData}
-                      options={{
-                        responsive: true,
-                          plugins: { 
-                            legend: { 
-                              position: "top",
-                              labels: {
-                                padding: 20,
-                                font: {
-                                  size: 12,
-                                  weight: 'medium'
-                                }
-                              }
-                            } 
-                          },
-                          animation: {
-                            duration: 2000
-                          },
-                          scales: {
-                            y: {
-                              grid: {
-                                color: 'rgba(107, 114, 128, 0.1)'
-                              }
-                            },
-                            x: {
-                              grid: {
-                                display: false
-                              }
-                            }
-                          }
-                      }}
-                    />
-                  </div>
-                    <p className="text-center text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mt-6">
-                      ₹{statData.earnings}
-                    </p>
-                </div>
-              </div>
-            </div>
-            </section>
+           
           </div>
-            </div>
-          </div>
-            </div>
-
+        </div>
+      </div>
+    </div>
   );
 };
 
 export default FHomepage;
-
-

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useMediaQuery } from 'react-responsive';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge, Empty, Tooltip, Spin } from 'antd';
 import CHeader from '../../components/client/CHeader';
@@ -30,6 +32,7 @@ const CNotifications = ({ userId, role }) => {
   const [loading, setLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const token = Cookies.get('accessToken'); 
+  const isMobile = useMediaQuery({ maxWidth: 767 });
   
   // Filter categories with icons
   const filterCategories = [
@@ -243,7 +246,7 @@ const CNotifications = ({ userId, role }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className={`flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 `}>
       {/* Sidebar */}
       <CSider 
         userId={userId} 
@@ -257,27 +260,26 @@ const CNotifications = ({ userId, role }) => {
       />
     
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-16 md:ml-16 lg:ml-22">
-        {/* Header */}
-        <CHeader />
+      <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'ml-0' : 'ml-14'}`}>  {/* Header */}
+        <CHeader userId={userId}/>
 
         {/* Notifications Content */}
-        <div className="flex-1 overflow-auto bg-gray-100 p-4">
+        <div className={`flex-1 overflow-auto bg-gray-50 ${isMobile ? 'p-2' : 'p-4'}`}>
           <div className="w-full min-w-[320px] max-w-[1200px] mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+              className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${isMobile ? 'text-sm' : 'text-base'}`}
             >
               {/* Enhanced Header Section */}
-              <div className="bg-gradient-to-r from-teal-500/10 to-charcolBlue/10 p-6 border-b border-gray-100">
-                <div className="flex flex-col gap-6">
+              <div className={`bg-gradient-to-r from-teal-500/10 to-charcolBlue/10 p-4 ${isMobile ? 'text-sm' : 'p-6'}`}>
+                <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-charcolBlue">Notifications</h1>
+                    <h1 className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'} text-charcolBlue`}>Notifications</h1>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all duration-300"
+                      className={`px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all duration-300 ${isMobile ? 'text-sm' : ''}`}
                       onClick={() => setFilter('all')}
                     >
                       Clear All
@@ -325,7 +327,7 @@ const CNotifications = ({ userId, role }) => {
                           ${filter === category.key 
                             ? 'bg-teal-500 text-white shadow-md' 
                             : 'bg-white border border-gray-200 text-gray-600 hover:border-teal-500 hover:text-teal-500'
-                          }`}
+                          } ${isMobile ? 'text-sm' : ''}`}
                       >
                         {category.icon}
                         <span>{category.label}</span>
@@ -336,7 +338,7 @@ const CNotifications = ({ userId, role }) => {
               </div>
 
               {/* Notifications List with Enhanced Styling */}
-              <div className="p-6 space-y-4">
+              <div className={`p-4 space-y-4 ${isMobile ? 'text-sm' : 'p-6'}`}>
                 <AnimatePresence>
                   {filteredNotifications.map((notification, index) => (
                     <motion.div
@@ -345,7 +347,7 @@ const CNotifications = ({ userId, role }) => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ delay: index * 0.1 }}
-                      className={`p-6 rounded-xl border ${
+                      className={`p-4 rounded-xl border ${
                         notification.is_read 
                           ? 'bg-white border-gray-100' 
                           : 'bg-teal-50 border-teal-100'
@@ -354,14 +356,14 @@ const CNotifications = ({ userId, role }) => {
                       <div className="flex justify-between items-start gap-4">
                         {/* Notification Icon */}
                         <div className={`p-3 rounded-full ${
-                          notification.is_read ? 'bg-gray-100' : 'bg-teal-100'
+                          notification.is_read ? 'bg-gray-50' : 'bg-teal-100'
                         }`}>
                           {filterCategories.find(cat => cat.key === notification.type)?.icon}
                         </div>
 
                         {/* Notification Content */}
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-charcolBlue mb-2">
+                          <h3 className={`font-semibold mb-2 ${isMobile ? 'text-base' : 'text-lg'}`}>
                             {notification.type === 'Events' ? (
                               <span
                                 className="cursor-pointer hover:text-teal-600 transition-colors"

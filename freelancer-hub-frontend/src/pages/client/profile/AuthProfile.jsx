@@ -16,17 +16,23 @@ import {
   EyeOutlined,
   UserAddOutlined,
   DashboardOutlined,
-
 } from '@ant-design/icons';
 import { Tag,Avatar } from 'antd'; 
 import { Timeline } from 'antd';
 import { motion } from 'framer-motion';
 import Cookies from 'js-cookie';
 import axios from 'axios';
+import { useMediaQuery } from 'react-responsive';
+
+import { Modal } from 'antd';
+import { FaEye, FaCheckCircle, FaBriefcase } from 'react-icons/fa';
+
+import { AnimatePresence } from 'framer-motion';
+
 
 const { TabPane } = Tabs;
 
-const AuthProfile = ({userId, role, editable}) => {  
+const AuthProfile = ({userId, role, editable, isSiderCollapsed}) => {  
     const navigate = useNavigate();
     const location = useLocation();
     const [clientInfo, setClientInfo] = useState({});
@@ -38,6 +44,8 @@ const AuthProfile = ({userId, role, editable}) => {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 5;
     const paginatedData = projects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const [showDetails, setShowDetails] = useState(false); // To toggle the modal visibility
+    const [selectedProject, setSelectedProject] = useState(null); // To store the selected project
   
     const handlePaginationChange = (page) => {
       setCurrentPage(page);
@@ -52,6 +60,8 @@ const AuthProfile = ({userId, role, editable}) => {
       ongoing: 0,
       total: 0
     });
+
+    const isMobile = useMediaQuery({ maxWidth: 767 });
 
     useEffect(() => {
       // This ensures that we wait for userId and accessToken to be available
@@ -107,9 +117,30 @@ const AuthProfile = ({userId, role, editable}) => {
         setProjectStats(stats);
       }
     }, [projects]);
-
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'completed':
+          return { color: 'green', label: 'Completed' }; // Green for completed
+        case 'ongoing':
+          return { color: 'yellow', label: 'Ongoing' }; // Yellow for ongoing
+        case 'pending':
+          return { color: 'red', label: 'Pending' }; // Red for pending
+        default:
+          return { color: 'gray', label: 'Unknown' }; // Gray for undefined status
+      }
+    };
+    
+    const openDetails = (project) => {
+      setSelectedProject(project);
+      setShowDetails(true);
+    };
+    
+    const closeDetails = () => {
+      setShowDetails(false);
+    };
+    
   return (
-    <div className="w-full min-h-fit max-w-[1200px] min-w-[320px] mx-auto p-4 space-y-4">
+    <div className={`w-full  max-w-[1200px] min-w-[320px] min-h-full h-fit mx-auto p-4 space-y-4`}>
       {/* Profile Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -261,52 +292,106 @@ const AuthProfile = ({userId, role, editable}) => {
               </div>
 
               {/* Projects Table */}
-              <Table
-                dataSource={paginatedData}
-                columns={[
-                  {
-                    title: "Project Title",
-                    dataIndex: "title",
-                    key: "title",
-                    render: (text, project) => (
-                      <div className="flex items-center space-x-2">
-                        <ProjectOutlined />
-                        <span>{text}</span>
+              {!isMobile && (
+                <Table
+                  dataSource={paginatedData}
+                  columns={[
+                    {
+                      title: "Project Title",
+                      dataIndex: "title",
+                      key: "title",
+                      render: (text, project) => (
+                        <div className="flex items-center space-x-2">
+                          <ProjectOutlined />
+                          <span>{text}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      title: "Status",
+                      dataIndex: "status",
+                      key: "status",
+                      render: (status) => (
+                        <Tag color={getStatusColor(status).color}>{status}</Tag>
+                      ),
+                    },
+                    {
+                      title: "Action",
+                      key: "action",
+                      render: (_, project) => (
+                        <Button 
+                          type="link" 
+                          onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
+                          icon={<EyeOutlined />}
+                        >
+                          View Details
+                        </Button>
+                      ),
+                    }
+                  ]}
+                  pagination={false}
+                  rowKey="id"
+                  className="custom-table"
+                />
+              )}
+        
+              {/* Card layout for small screens */}
+              {isMobile && (
+                <div className="block md:hidden space-y-4">
+                <AnimatePresence>
+                {paginatedData.map((record, index) => (
+                  <motion.div
+                    key={record.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                  >
+                    <div
+                      className="p-4 cursor-pointer"
+                      onClick={() => setOpenDropdown(openDropdown === index ? null : index)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-medium text-gray-900">{record.title}</h3>
+                        <Tag color={getStatusColor(record.status).color}>
+                          {getStatusColor(record.status).label}
+                        </Tag>
                       </div>
-                    )
-                  },
-                  {
-                    title: "Status",
-                    dataIndex: "status",
-                    key: "status",
-                    render: (status) => (
-                      <Tag color={
-                        status === 'completed' ? 'success' :
-                        status === 'ongoing' ? 'processing' :
-                        'default'
-                      }>
-                        {status}
-                      </Tag>
-                    )
-                  },
-                  {
-                    title: "Action",
-                    key: "action",
-                    render: (_, project) => (
-                      <Button 
-                        type="link" 
-                        onClick={() => navigate(`/client/view-bids/posted-project/${project.id}`)}
-                        icon={<EyeOutlined />}
-                      >
-                        View Details
-                      </Button>
-                    )
-                  }
-                ]}
-                pagination={false}
-                rowKey="id"
-                className="custom-table"
-              />
+                    </div>
+        
+                    <AnimatePresence>
+                      {openDropdown === index && (
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: 'auto' }}
+                          exit={{ height: 0 }}
+                          className="border-t border-gray-200 overflow-hidden"
+                        >
+                          <div className="p-4 space-y-4">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <CalendarOutlined />
+                              <span>{record.deadline}</span>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="primary"
+                                className="bg-teal-500 hover:bg-teal-600"
+                                onClick={() => navigate(`/client/view-bids/posted-project/${record.id}`, { state: { record } })}
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </AnimatePresence> </div>
+              )}
+
+
+
               
               <div className="flex justify-end mt-4">
                 <Pagination
@@ -319,6 +404,28 @@ const AuthProfile = ({userId, role, editable}) => {
               </div>
             </div>
           </TabPane>
+          <style jsx>{`
+            .custom-modal .ant-modal-header {
+              background-color: #f1f5f9;
+            }
+          
+            .custom-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+              color: #0d9488;
+            }
+          
+            .custom-tabs .ant-tabs-ink-bar {
+              background: #0d9488;
+            }
+          
+            .ant-progress-bg {
+              background-color: #0d9488;
+            }
+          
+            .ant-btn-primary:hover {
+              background-color: #0d9488 !important;
+            }
+          `}</style>
+          
 
           <TabPane 
             tab={<span><StarOutlined />Reviews</span>} 

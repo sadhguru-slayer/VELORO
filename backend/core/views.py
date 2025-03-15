@@ -31,6 +31,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()  # This will point to your custom User model if defined
 
@@ -610,8 +611,7 @@ from django.core.exceptions import ObjectDoesNotExist
 class NotifyFreelancerView(View):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, object_id):
-        
+    def post(self, request, object_id, type):
         try:
             task = None
             project = None
@@ -620,32 +620,36 @@ class NotifyFreelancerView(View):
 
             try:
                 # Try to fetch task
-                task = Task.objects.get(id=object_id)
-                project = task.project  # If task found, get associated project
-                notification_text = _(
-                    f"{task.title} - The task you have been assigned by {project.client.username} is pending. "
-                    f"Deadline: {task.deadline}. Project: {project.title}."
-                )
-                users_to_notify = task.assigned_to.all()
+                print(type)
+                if type == 'task':
+                    task = Task.objects.get(id=object_id)
+                    project = task.project  # If task found, get associated project
+                    notification_text = _(
+                        f"{task.title} - The task you have been assigned by {project.client.username} is pending. "
+                        f"Deadline: {task.deadline}. Project: {project.title}."
+                    )
+                    users_to_notify = task.assigned_to.all()
 
-            except ObjectDoesNotExist:
-                # If task is not found, try to fetch project
-                try:
+                elif type == 'project':
                     project = Project.objects.get(id=object_id)
                     notification_text = _(
                         f"{project.title} - The project you have been assigned by {project.client.username} is pending. "
                         f"Deadline: {project.deadline}."
                     )
                     users_to_notify = project.assigned_to.all()
-                    
+                    print(users_to_notify)
 
-                except ObjectDoesNotExist:
-                    return JsonResponse({
-                        "status": "error",
-                        "message": "Invalid task or project ID."
-                    }, status=400)
+                # Include the client in the notification list
+                
+
+            except ObjectDoesNotExist:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "Invalid task or project ID."
+                }, status=400)
 
             # Check if user has already been notified within the last 24 hours
+            
             for user in users_to_notify:
                 recent_notification = Notification.objects.filter(
                     user=user,
@@ -653,10 +657,12 @@ class NotifyFreelancerView(View):
                     created_at__gte=timezone.now() - timezone.timedelta(hours=24)
                 ).first()
 
+                print("recent_notification",recent_notification)
+
                 if recent_notification:
                     return JsonResponse({
                         "status": "error",
-                        "message": "Freelancer already notified. Please try again in 24 hours."
+                        "message": "User already notified. Please try again in 24 hours."
                     }, status=400)
 
                 # Send new notification
@@ -672,3 +678,14 @@ class NotifyFreelancerView(View):
         except Exception as e:
             # Log exception here
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+def get_upcoming_notifications(request):
+    if request.method == 'GET':
+        # Get notifications due within the next week
+        upcoming_notifications = Notification.objects.filter(
+            created_at__gte=timezone.now(),
+            created_at__lt=timezone.now() + timezone.timedelta(weeks=1)
+        ).values('id', 'notification_text', 'created_at')
+
+        return JsonResponse(list(upcoming_notifications), safe=False)

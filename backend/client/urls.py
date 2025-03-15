@@ -6,7 +6,7 @@ from core.views import *
 from .DashBoardViews import SpendingDataView
 from .profileViews import UnAuthClientViews,ClientViews,update_profile,ClientReviewsandRatings,post_reply,ConnectionView,ConnectionManageViewSet,ConnectionRequestView
 # from .profileViews import ClientViews,ClientProfileUpdateView,update_profile
-
+from .views import CHomePageView
 from django.urls import re_path
 from .consumers import NotificationConsumer
 
@@ -28,6 +28,7 @@ router.register(r'connections', ConnectionManageViewSet, basename='connection')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('homepage/', CHomePageView.as_view(), name='homepage'),
     path('recent_activity/', RecentActivityView.as_view(), name='recent_activity'),
     path('specified_recent_activity/', SpecifiedActivityListView.as_view(), name='specified_recent_activity'),
     path('other_recent_activity/', ActivityListView.as_view(), name='other_recent_activity'),

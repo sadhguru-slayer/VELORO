@@ -77,13 +77,13 @@ const CDashboard = ({ userId, role }) => {
       {/* Main Content Area */}
       <div className={`
         bg-gray-100 flex-1 flex flex-col overflow-x-hidden
-        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-16'}
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14'}
       `}>
         {/* Header */}
         <CHeader userId={userId}/>
         
         {/* Main Content */}
-        <div className="flex-1 overflow-auto bg-gray-50 p-3">
+        <div className="flex-1 overflow-auto bg-gray-50">
           {/* Content Section */}
           {loading ? (
             <div>Loading...</div>
