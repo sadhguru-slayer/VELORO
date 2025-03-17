@@ -9,7 +9,7 @@ import { FaTimes,FaCheck } from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Empty, Spin, Avatar, Tooltip } from 'antd';
 import { UserOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
-
+import { useMediaQuery } from 'react-responsive';
 
 const CConnectionRequests = ({userId, role}) => {
   const navigate = useNavigate();
@@ -24,11 +24,7 @@ const CConnectionRequests = ({userId, role}) => {
   });
 
   // Handle the navigation on menu item click
-  const handleMenuClick = (component) => {
-    if (component !== 'connections') {
-      navigate('/client/dashboard', { state: { component } });
-    }
-  };
+
 
   const handleProfileMenu = (profileComponent) => {
 
@@ -138,6 +134,7 @@ const CConnectionRequests = ({userId, role}) => {
     return dateObject.toLocaleString();
   }
 
+  const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -149,14 +146,14 @@ const CConnectionRequests = ({userId, role}) => {
         role={role}
         dropdown={true} 
         collapsed={true} 
-        handleMenuClick={handleMenuClick} 
-        activeComponent={activeComponent} 
-        handleProfileMenu={handleProfileMenu} 
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-14 md:ml-14">
-        {/* Header */}
+      <div className={`
+        flex-1 flex flex-col overflow-hidden
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}
+      `}>
+      {/* Header */}
         <CHeader userId={userId}/>
 
         {/* Connections Content */}

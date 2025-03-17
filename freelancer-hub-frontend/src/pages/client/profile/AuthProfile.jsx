@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { Button, Pagination, Table, Tooltip, Progress, Tabs, Card, Statistic } from "antd";
 import { 
   UserOutlined, 
@@ -32,113 +32,114 @@ import { AnimatePresence } from 'framer-motion';
 
 const { TabPane } = Tabs;
 
-const AuthProfile = ({userId, role, editable, isSiderCollapsed}) => {  
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [clientInfo, setClientInfo] = useState({});
-    const [projects, setProjects] = useState([]);
-    const [reviewsList, setReviewsList] = useState([]);
-    const [connectionCount, setConnectionCount] = useState(0);  // To store connection count
-    const [averageRating, setAverageRating] = useState(0);  // To store average rating  
-    const [openDropdown, setOpenDropdown] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const pageSize = 5;
-    const paginatedData = projects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    const [showDetails, setShowDetails] = useState(false); // To toggle the modal visibility
-    const [selectedProject, setSelectedProject] = useState(null); // To store the selected project
-  
-    const handlePaginationChange = (page) => {
-      setCurrentPage(page);
-    };
-  
-    const [loading, setLoading] = useState(true);
+const AuthProfile = () => {
+  const { userId, isEditable, isAuthenticated, role, currentUserId } = useOutletContext();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [clientInfo, setClientInfo] = useState({});
+  const [projects, setProjects] = useState([]);
+  const [reviewsList, setReviewsList] = useState([]);
+  const [connectionCount, setConnectionCount] = useState(0);  // To store connection count
+  const [averageRating, setAverageRating] = useState(0);  // To store average rating  
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+  const paginatedData = projects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const [showDetails, setShowDetails] = useState(false); // To toggle the modal visibility
+  const [selectedProject, setSelectedProject] = useState(null); // To store the selected project
 
-    // Add new states for enhanced features
-    const [activeTab, setActiveTab] = useState('1');
-    const [projectStats, setProjectStats] = useState({
-      completed: 0,
-      ongoing: 0,
-      total: 0
-    });
+  const handlePaginationChange = (page) => {
+    setCurrentPage(page);
+  };
 
-    const isMobile = useMediaQuery({ maxWidth: 767 });
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-      // This ensures that we wait for userId and accessToken to be available
-      const fetchProfileDetails = async () => {
-        const accessToken = Cookies.get("accessToken");
-  
-        if (!userId || !accessToken) {
-          console.log("Waiting for userId or accessToken...");
-          return; 
-        }
-  
-        setLoading(true); // Start loading indicator
-  
-        try {
-          const response = await axios.get("http://127.0.0.1:8000/api/client/get_profile_data", {
-            params: { userId: userId }, // Passing userId as query parameter
-            headers: {
-              Authorization: `Bearer ${accessToken}`, // Passing the access token as Authorization header
-            },
-          });
-  
-          // Assuming the response data structure is as expected
-          const data = response.data;
-          setClientInfo(data.client_profile);
-          setProjects(data.projects);
-          setReviewsList(data.reviews_and_ratings.reviews);
-          setConnectionCount(data.connection_count);
-          setAverageRating(data.reviews_and_ratings.average_rating);
-        } catch (error) {
-          console.log(error); // Handle any errors
-        } finally {
-          setLoading(false); // Stop loading after request is completed
-        }
-      };
-  
-      // Ensure that we wait for userId and accessToken before making the request
-      if (userId && Cookies.get("accessToken")) {
-        fetchProfileDetails();
-      } else {
-        console.log("Waiting for userId and accessToken...");
+  // Add new states for enhanced features
+  const [activeTab, setActiveTab] = useState('1');
+  const [projectStats, setProjectStats] = useState({
+    completed: 0,
+    ongoing: 0,
+    total: 0
+  });
+
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+
+  useEffect(() => {
+    // This ensures that we wait for userId and accessToken to be available
+    const fetchProfileDetails = async () => {
+      const accessToken = Cookies.get("accessToken");
+
+      if (!userId || !accessToken) {
+        console.log("Waiting for userId or accessToken...");
+        return; 
       }
-    }, [userId]); 
-    
-    // Calculate project stats
-    useEffect(() => {
-      if (projects.length > 0) {
-        const stats = projects.reduce((acc, project) => {
-          if (project.status === 'completed') acc.completed++;
-          if (project.status === 'ongoing') acc.ongoing++;
-          acc.total++;
-          return acc;
-        }, { completed: 0, ongoing: 0, total: 0 });
-        setProjectStats(stats);
-      }
-    }, [projects]);
-    const getStatusColor = (status) => {
-      switch (status) {
-        case 'completed':
-          return { color: 'green', label: 'Completed' }; // Green for completed
-        case 'ongoing':
-          return { color: 'yellow', label: 'Ongoing' }; // Yellow for ongoing
-        case 'pending':
-          return { color: 'red', label: 'Pending' }; // Red for pending
-        default:
-          return { color: 'gray', label: 'Unknown' }; // Gray for undefined status
+
+      setLoading(true); // Start loading indicator
+
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/client/get_profile_data", {
+          params: { userId: userId }, // Passing userId as query parameter
+          headers: {
+            Authorization: `Bearer ${accessToken}`, // Passing the access token as Authorization header
+          },
+        });
+
+        // Assuming the response data structure is as expected
+        const data = response.data;
+        setClientInfo(data.client_profile);
+        setProjects(data.projects);
+        setReviewsList(data.reviews_and_ratings.reviews);
+        setConnectionCount(data.connection_count);
+        setAverageRating(data.reviews_and_ratings.average_rating);
+      } catch (error) {
+        console.log(error); // Handle any errors
+      } finally {
+        setLoading(false); // Stop loading after request is completed
       }
     };
-    
-    const openDetails = (project) => {
-      setSelectedProject(project);
-      setShowDetails(true);
-    };
-    
-    const closeDetails = () => {
-      setShowDetails(false);
-    };
-    
+
+    // Ensure that we wait for userId and accessToken before making the request
+    if (userId && Cookies.get("accessToken")) {
+      fetchProfileDetails();
+    } else {
+      console.log("Waiting for userId and accessToken...");
+    }
+  }, [userId]); 
+  
+  // Calculate project stats
+  useEffect(() => {
+    if (projects.length > 0) {
+      const stats = projects.reduce((acc, project) => {
+        if (project.status === 'completed') acc.completed++;
+        if (project.status === 'ongoing') acc.ongoing++;
+        acc.total++;
+        return acc;
+      }, { completed: 0, ongoing: 0, total: 0 });
+      setProjectStats(stats);
+    }
+  }, [projects]);
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return { color: 'green', label: 'Completed' }; // Green for completed
+      case 'ongoing':
+        return { color: 'yellow', label: 'Ongoing' }; // Yellow for ongoing
+      case 'pending':
+        return { color: 'red', label: 'Pending' }; // Red for pending
+      default:
+        return { color: 'gray', label: 'Unknown' }; // Gray for undefined status
+    }
+  };
+  
+  const openDetails = (project) => {
+    setSelectedProject(project);
+    setShowDetails(true);
+  };
+  
+  const closeDetails = () => {
+    setShowDetails(false);
+  };
+  
   return (
     <div className={`w-full  max-w-[1200px] min-w-[320px] min-h-full h-fit mx-auto p-4 space-y-4`}>
       {/* Profile Header */}
@@ -156,7 +157,7 @@ const AuthProfile = ({userId, role, editable, isSiderCollapsed}) => {
                 alt="Profile" 
                 className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-md"
               />
-              {editable && (
+              {isEditable && (
                 <Tooltip title="Edit Profile">
                   <Button 
                     icon={<EditOutlined />}

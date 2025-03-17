@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Tooltip } from 'antd';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { CSSTransition } from 'react-transition-group';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'react-responsive';
+import PropTypes from 'prop-types';
 
 import { 
   FaHome,
@@ -25,7 +26,19 @@ import {
   FaChartBar
 } from 'react-icons/fa';
 
-const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMenu, activeProfileComponent }) => {
+const FSider = ({ 
+  userId, 
+  role, 
+  isAuthenticated, 
+  isEditable,
+  dropdown, 
+  collapsed, 
+  handleMenuClick, 
+  abcds,
+  handleProfileMenu,
+  activeProfileComponent 
+}) => {
+  
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
   const [showText, setShowText] = useState(!collapsed);
   const [isDashboardDropdownOpen, setIsDashboardDropdownOpen] = useState(true);
@@ -35,6 +48,7 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const currentUserId = userId;
 
   const iconClass = isMobile ? "w-4 h-4" : "w-5 h-5";
 
@@ -76,28 +90,80 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
     },
     { 
       abcd: 'profile', 
-      to: '/freelancer/profile', 
+      to: `/freelancer/profile/${userId}`, 
       icon: <FaUserCircle className={iconClass} />,
       text: 'Profile'
     }
   ];
 
   const dashboardLinks = [
-    { abcd: 'freelancer-analytics', text: 'Analytics', icon: <FaChartLine className={iconClass} />, tooltip: 'Activity Overview' },
-    { abcd: 'projects', text: 'Projects', icon: <FaProjectDiagram className={iconClass} />, tooltip: 'Manage Projects' },
-    { abcd: 'bidding-overview', text: 'Bidding Overview', icon: <FaClipboardList className={iconClass} />, tooltip: 'View Bids' },
-    { abcd: 'upcoming-events', text: 'Upcoming Events', icon: <FaCalendarAlt className={iconClass} />, tooltip: 'View Events' }
+    { 
+      abcd: 'freelancer-analytics', 
+      to: '/freelancer/dashboard/freelancer-analytics',
+      text: 'Analytics', 
+      icon: <FaChartLine className={iconClass} />, 
+      tooltip: 'Activity Overview' 
+    },
+    { 
+      abcd: 'project-management', 
+      to: '/freelancer/dashboard/project-management',
+      text: 'Project Management', 
+      icon: <FaProjectDiagram className={iconClass} />, 
+      tooltip: 'Manage Projects' 
+    },
+    { 
+      abcd: 'bidding-overview', 
+      to: '/freelancer/dashboard/bidding-overview',
+      text: 'Bidding Overview', 
+      icon: <FaClipboardList className={iconClass} />, 
+      tooltip: 'View Bids' 
+    },
+    { 
+      abcd: 'upcoming-events', 
+      to: '/freelancer/dashboard/upcoming-events',
+      text: 'Upcoming Events', 
+      icon: <FaCalendarAlt className={iconClass} />, 
+      tooltip: 'View Events' 
+    }
   ];
 
   const profileLinks = [
-    { abcd: 'profile', text: 'View Profile', icon: <FaUserCircle className={iconClass} />, tooltip: 'View Your Profile' },
-    { abcd: 'connections', text: 'Connections', icon: <FaHandshake className={iconClass} />, tooltip: 'Manage Connections' },
-    { abcd: 'collaborations', text: 'Collaborations', icon: <FaInbox className={iconClass} />, tooltip: 'View Collaborations' },
-    { abcd: 'portfolio', text: 'Portfolio', icon: <FaProjectDiagram className={iconClass} />, tooltip: 'Manage Portfolio' },
-    { abcd: 'settings', text: 'Settings', icon: <FaCog className={iconClass} />, tooltip: 'Profile Settings' }
+    { 
+      abcd: 'view_profile', 
+      to: `/freelancer/profile/${userId}/view_profile`, 
+      text: 'View Profile', 
+      icon: <FaUserCircle className={iconClass} />, 
+      tooltip: 'View Your Profile' 
+    },
+    { 
+      abcd: 'connections', 
+      to: `/freelancer/profile/${userId}/connections`, 
+      text: 'Connections', 
+      icon: <FaHandshake className={iconClass} />, 
+      tooltip: 'Manage Connections' 
+    },
+    { 
+      abcd: 'collaborations', 
+      to: `/freelancer/profile/${userId}/collaborations`, 
+      text: 'Collaborations', 
+      icon: <FaInbox className={iconClass} />, 
+      tooltip: 'View Collaborations' 
+    },
+    { 
+      abcd: 'portfolio', 
+      to: `/freelancer/profile/${userId}/portfolio`, 
+      text: 'Portfolio', 
+      icon: <FaProjectDiagram className={iconClass} />, 
+      tooltip: 'Manage Portfolio' 
+    },
+    { 
+      abcd: 'settings', 
+      to: `/freelancer/profile/${userId}/settings`, 
+      text: 'Settings', 
+      icon: <FaCog className={iconClass} />, 
+      tooltip: 'Profile Settings' 
+    }
   ];
-
-  const role = Cookies.get('role');
 
   const handleLogout = async () => {
     const refreshToken = Cookies.get('refreshToken');
@@ -150,9 +216,22 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
         setIsDashboardDropdownOpen(!isDashboardDropdownOpen);
       }
     } else {
-      navigate('/freelancer/dashboard');
+      navigate('/freelancer/dashboard/freelancer-analytics');
       setIsDashboardDropdownOpen(true);
     }
+  };
+
+  const handleProfileNavigation = () => {
+    if (!location.pathname.includes('/freelancer/profile')) {
+      navigate(`/freelancer/profile/${userId}/view_profile`);
+    }
+    
+    if (isCollapsed) {
+      setIsCollapsed(false);
+      setShowText(true);
+    }
+    
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
   };
 
   const handleMobileNavClick = (link) => {
@@ -172,7 +251,7 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
     >
       <motion.div
         whileHover={{ x: 4 }}
-        onClick={() => isMain ? handleMainLinkClick(link) : handleMenuClick(link.abcd)}
+        onClick={() => isMain ? handleMainLinkClick(link) : navigate(link.to)}
         className={`
           group flex items-center gap-3.5 p-3 rounded-xl transition-all duration-300
           hover:bg-violet-50/80 cursor-pointer relative
@@ -238,7 +317,7 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 bg-violet-900/30 z-50 backdrop-blur-sm"
+        className="fixed inset-0 bg-violet-900/30 backdrop-blur-sm z-50"
         onClick={() => setMobileMenuOpen(false)}
       >
         <motion.div
@@ -276,15 +355,15 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   if (activeMenu === 'dashboard') {
-                    handleMenuClick(item.abcd);
+                    navigate(item.to);
                   } else {
-                    handleProfileMenu(item.abcd);
+                    navigate(item.to);
                   }
                   setMobileMenuOpen(false);
                 }}
                 className={`
                   flex items-center gap-3 p-4 rounded-xl mb-2 transition-all duration-200
-                  ${(activeMenu === 'dashboard' ? abcds === item.abcd : activeProfileComponent === item.abcd)
+                  ${(activeMenu === 'dashboard' ? location.pathname.includes(item.abcd) : location.pathname.includes(item.abcd))
                     ? 'bg-violet-50 text-violet-600 shadow-sm shadow-violet-100'
                     : 'text-gray-600 hover:bg-violet-50/60 hover:text-violet-500'
                   }
@@ -340,7 +419,6 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
 
   return (
     <div
-      ref={reference}
       className={`
         h-screen 
         bg-white/90 backdrop-blur-xl
@@ -442,18 +520,18 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
                 {dashboardLinks.map(link => (
                   <div
                     key={link.abcd}
-                    onClick={() => handleMenuClick(link.abcd)}
+                    onClick={() => navigate(link.to)}
                     className={`
                       group flex items-center gap-3 px-3 py-2 rounded-lg 
                       transition-all duration-300 cursor-pointer
-                      ${abcds === link.abcd ? 
+                      ${location.pathname.includes(link.abcd) ? 
                         'bg-violet-500/10 text-violet-400' : 
                         'text-gray-400 hover:bg-white/5 hover:text-violet-400'}
                     `}
                   >
                     <div className={`
                       flex items-center justify-center
-                      ${abcds === link.abcd ? 
+                      ${location.pathname.includes(link.abcd) ? 
                         'text-violet-400' : 'text-gray-400 group-hover:text-violet-400'}
                     `}>
                       {link.icon}
@@ -470,12 +548,7 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
           <Tooltip title={isCollapsed ? "Profile" : ""} placement="right">
             <motion.div
               whileHover={{ x: 4 }}
-              onClick={() => {
-                if (!location.pathname.includes('/freelancer/profile')) {
-                  navigate('/freelancer/profile');
-                }
-                setIsProfileDropdownOpen(!isProfileDropdownOpen);
-              }}
+              onClick={handleProfileNavigation}
               className={`
                 group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
                 hover:bg-violet-50/80 cursor-pointer relative
@@ -529,18 +602,18 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
               {profileLinks.map(link => (
                 <div
                   key={link.abcd}
-                  onClick={() => handleProfileMenu(link.abcd)}
+                  onClick={() => navigate(link.to)}
                   className={`
                     group flex items-center gap-3 px-3 py-2 rounded-lg 
                     transition-all duration-300 cursor-pointer
-                    ${activeProfileComponent === link.abcd ? 
+                    ${location.pathname.includes(link.abcd) ? 
                       'bg-violet-500/10 text-violet-400' : 
                       'text-gray-400 hover:bg-white/5 hover:text-violet-400'}
                   `}
                 >
                   <div className={`
                     flex items-center justify-center
-                    ${activeProfileComponent === link.abcd ? 
+                    ${location.pathname.includes(link.abcd) ? 
                       'text-violet-400' : 'text-gray-400 group-hover:text-violet-400'}
                   `}>
                     {link.icon}
@@ -595,6 +668,19 @@ const FSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
       <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-violet-50/30 backdrop-blur-sm -z-10" />
     </div>
   );
+};
+
+FSider.propTypes = {
+  userId: PropTypes.string.isRequired,
+  role: PropTypes.string.isRequired,
+  isAuthenticated: PropTypes.bool.isRequired,
+  isEditable: PropTypes.bool.isRequired,
+  dropdown: PropTypes.bool,
+  collapsed: PropTypes.bool,
+  handleMenuClick: PropTypes.func,
+  abcds: PropTypes.string,
+  handleProfileMenu: PropTypes.func,
+  activeProfileComponent: PropTypes.string
 };
 
 export default FSider;

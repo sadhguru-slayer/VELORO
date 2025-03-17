@@ -245,7 +245,7 @@ const BiddingOverview = () => {
   );
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-6 space-y-6">
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -417,7 +417,6 @@ const BiddingOverview = () => {
       {/* Recent Bids Section */}
       <Card 
         title="Recent Bids"
-
         className="mb-8"
       >
          <div className="p-4 flex flex-col items-end sm:flex-row gap-4 sm:gap-6">

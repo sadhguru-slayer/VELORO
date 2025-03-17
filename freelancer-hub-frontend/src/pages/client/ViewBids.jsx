@@ -14,7 +14,7 @@ import {
   FaCheckCircle,
   FaSearch
 } from 'react-icons/fa';
-
+import { useMediaQuery } from 'react-responsive';
 const { Search } = Input;
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -207,13 +207,18 @@ const ViewBids = ({userId, role}) => {
     { title: 'Description', dataIndex: 'description', key: 'description' },
   ];
 
+  const isMobile = useMediaQuery({ maxWidth: 767 });
   return (
     <div className="flex h-screen bg-gray-100">
       <CSider userId={userId} 
       role={role} dropdown={true} collapsed={true} handleMenuClick={handleMenuClick} handleProfileMenu={handleProfileMenu}/>
 
-      <div className="bg-gray-100 flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-14 md:ml-14 lg:ml-22">
-        <CHeader userId={userId}/>
+      <div className={`
+        flex-1 flex flex-col overflow-hidden
+        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}
+      `}>
+      
+      <CHeader userId={userId}/>
         <div className="flex-1 overflow-auto bg-gray-50 p-6">
           {loading ? (
             <IndividualLoadingComponent />

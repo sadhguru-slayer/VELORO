@@ -8,7 +8,7 @@ import FileUpload from '../../components/chat/FileUpload';
 import SearchMessages from '../../components/chat/SearchMessages';
 import GroupMembers from '../../components/chat/GroupMembers';
 
-const FCollaboration = () => {
+const FCollaboration = ({ userId, role, isAuthenticated, isEditable }) => {
   const [activeChat, setActiveChat] = useState(null);
   const [chats, setChats] = useState([
     { id: 1, name: "E-commerce Website Team", lastMessage: "Great progress on the UI!", isOnline: true },

@@ -275,13 +275,15 @@ const UpcomingEvents = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-white rounded-lg shadow-lg">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-teal-600 flex items-center gap-2 mb-4 sm:mb-0">
-          <CalendarOutlined /> Upcoming Events
-        </h2>
-      </div>
-
+    <div className="p-6 space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h2 className="text-2xl font-bold text-violet-900 mb-2">Upcoming Events</h2>
+        {/* Rest of your component content */}
+      </motion.div>
       <div className="calendar-container rounded-lg shadow-md overflow-hidden mb-6">
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}

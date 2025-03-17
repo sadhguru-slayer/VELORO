@@ -55,7 +55,6 @@ const OtherProfile = ({userId, role,editable}) => {
     const handlePaginationChange = (page) => {
       setCurrentPage(page);
     };
-  
     useEffect(() => {
       const fetchProfileDetails = async () => {
         const accessToken = Cookies.get('accessToken');

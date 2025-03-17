@@ -127,6 +127,15 @@ const DashboardOverview = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h2 className="text-2xl font-bold text-teal-900 mb-2">Dashboard Overview</h2>
+        <p className="text-gray-600">Welcome to your client dashboard</p>
+      </motion.div>
+
       {/* Project Health Overview */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={18}>

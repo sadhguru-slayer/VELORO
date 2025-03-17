@@ -1,30 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Input, notification, Checkbox, Card, Pagination, Tooltip, Progress, Statistic, Empty, Spin, Tag, Rate,Select,Avatar } from 'antd';
+import { 
+  Modal, Button, Input, Card, Pagination, Tooltip, Progress, 
+  Statistic, Empty, Spin, Tag, Rate, Select, Avatar, Timeline,
+  Collapse, Badge
+} from 'antd';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ProjectOutlined,
-  ClockCircleOutlined,
-  DollarOutlined,
-  TeamOutlined,
-  CheckCircleOutlined,
-  FilterOutlined,
-  SortAscendingOutlined,
-  UserOutlined,
-  StarOutlined,
-  MessageOutlined,
-  CalendarOutlined,
-  GlobalOutlined,
-  LikeOutlined,
-  DislikeOutlined,
-  DownloadOutlined,
+  ProjectOutlined, ClockCircleOutlined, DollarOutlined,
+  TeamOutlined, CheckCircleOutlined, FilterOutlined,
+  UserOutlined, StarOutlined, MessageOutlined,
+  CalendarOutlined, GlobalOutlined, LikeOutlined,
+  DislikeOutlined, DownloadOutlined, FileTextOutlined,
+  BulbOutlined, TrophyOutlined, SafetyOutlined,
+  EnvironmentOutlined, AimOutlined
 } from '@ant-design/icons';
-import FHeader from '../../components/freelancer/FHeader';
-import FSider from '../../components/freelancer/FSider';
 import CSider from '../../components/client/CSider';
 import CHeader from '../../components/client/CHeader';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { useMediaQuery } from 'react-responsive';
+
+const { Panel } = Collapse;
+const { Option } = Select;
 
 const formatText = (text) => {
   if (!text) return '';
@@ -122,6 +120,40 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
     // ... more enhanced bid data ...
   ];
 
+  // New state for enhanced features
+  const [activeTab, setActiveTab] = useState('overview');
+  const [milestones, setMilestones] = useState([]);
+  const [projectAnalytics, setProjectAnalytics] = useState({
+    viewCount: 245,
+    bidEngagement: 68,
+    averageRating: 4.2,
+    completionEstimate: 85
+  });
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1
+    }
+  };
+
+  // Responsive layout hooks
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+  const isTablet = useMediaQuery({ minWidth: 768, maxWidth: 1023 });
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
+
   useEffect(() => {
     const fetchProjectDetails = async () => {
       setLoading(true);
@@ -169,6 +201,262 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
     fetchProjectDetails();
   }, [projectId]);
 
+  const handleFilterChange = (key, value) => {
+    setSelectedFilters((prevFilters) => ({
+      ...prevFilters,
+      [key]: value,
+    }));
+  };
+
+  // Project Overview Section
+  const ProjectOverview = () => (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      {/* Project Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          {
+            title: "Total Bids",
+            value: projectStats.totalBids,
+            icon: <TeamOutlined />,
+            color: "bg-violet-500"
+          },
+          {
+            title: "Average Bid",
+            value: `₹${projectStats.averageBid}`,
+            icon: <DollarOutlined />,
+            color: "bg-teal-500"
+          },
+          {
+            title: "Time Left",
+            value: "5 days",
+            icon: <ClockCircleOutlined />,
+            color: "bg-amber-500"
+          },
+          {
+            title: "Success Rate",
+            value: "75%",
+            icon: <TrophyOutlined />,
+            color: "bg-emerald-500"
+          }
+        ].map((stat, index) => (
+          <motion.div
+            key={index}
+            variants={itemVariants}
+            className={`${stat.color} rounded-xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-3xl opacity-80">{stat.icon}</div>
+              <div className="text-right">
+                <div className="text-sm opacity-80">{stat.title}</div>
+                <div className="text-2xl font-bold">{stat.value}</div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Project Description Card */}
+      <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <FileTextOutlined className="text-violet-500" />
+          Project Description
+        </h3>
+        <div className="prose max-w-none text-gray-600">
+          <div dangerouslySetInnerHTML={{ __html: project?.description }} />
+        </div>
+      </motion.div>
+
+      {/* Project Requirements */}
+      <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <BulbOutlined className="text-amber-500" />
+          Project Requirements
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="text-lg font-medium mb-3">Required Skills</h4>
+            <div className="flex flex-wrap gap-2">
+              {project?.skills?.map((skill, index) => (
+                <Tag key={index} color="blue" className="px-3 py-1 rounded-full">
+                  {skill}
+                </Tag>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium mb-3">Project Scope</h4>
+            <Timeline>
+              {project?.tasks?.map((task, index) => (
+                <Timeline.Item 
+                  key={index}
+                  color="blue"
+                  dot={<AimOutlined style={{ fontSize: '16px' }} />}
+                >
+                  <div className="font-medium">{task.title}</div>
+                  <div className="text-sm text-gray-500">{task.description}</div>
+                </Timeline.Item>
+              ))}
+            </Timeline>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+
+  // Bids Section
+  const BidsSection = () => (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      {/* Filters and Sort */}
+      <div className="flex flex-wrap gap-4 items-center justify-between bg-white p-4 rounded-xl shadow-lg">
+        <div className="flex gap-3 flex-wrap">
+          <Select
+            defaultValue="all"
+            style={{ width: 120 }}
+            onChange={(value) => handleFilterChange('status', value)}
+          >
+            <Option value="all">All Bids</Option>
+            <Option value="pending">Pending</Option>
+            <Option value="shortlisted">Shortlisted</Option>
+          </Select>
+          <Select
+            defaultValue="all"
+            style={{ width: 120 }}
+            onChange={(value) => handleFilterChange('budget', value)}
+          >
+            <Option value="all">All Budgets</Option>
+            <Option value="low">Under ₹1000</Option>
+            <Option value="medium">₹1000-₹5000</Option>
+            <Option value="high">Above ₹5000</Option>
+          </Select>
+        </div>
+        <Select
+          defaultValue="recent"
+          style={{ width: 150 }}
+          onChange={(value) => setSortBy(value)}
+        >
+          <Option value="recent">Most Recent</Option>
+          <Option value="rating">Highest Rated</Option>
+          <Option value="budget">Lowest Budget</Option>
+        </Select>
+      </div>
+
+      {/* Bids List */}
+      <AnimatePresence>
+        {enhancedBidsData.map((bid, index) => (
+          <motion.div
+            key={bid.id}
+            variants={itemVariants}
+            className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-6"
+          >
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Freelancer Info */}
+              <div className="md:w-1/4">
+                <div className="flex flex-col items-center text-center">
+                  <Avatar 
+                    size={80} 
+                    src={bid.freelancer.avatar}
+                    className="ring-2 ring-violet-500 ring-offset-2"
+                  />
+                  <h4 className="mt-2 font-semibold text-lg">
+                    {bid.freelancer.name}
+                  </h4>
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <GlobalOutlined />
+                    {bid.freelancer.country}
+                  </div>
+                  <Rate 
+                    disabled 
+                    defaultValue={bid.freelancer.rating} 
+                    className="text-amber-400"
+                  />
+                  <div className="mt-2">
+                    <Tag color="green">
+                      {bid.completionRate}% Success Rate
+                    </Tag>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bid Details */}
+              <div className="md:w-3/4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      ₹{bid.bidAmount}
+                    </h3>
+                    <div className="text-sm text-gray-500">
+                      Delivery in {bid.duration}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="primary"
+                      className="bg-violet-500 hover:bg-violet-600"
+                      onClick={() => setSelectedBid(bid)}
+                    >
+                      View Details
+                    </Button>
+                    <Button
+                      icon={<MessageOutlined />}
+                      className="border-violet-500 text-violet-500"
+                    >
+                      Message
+                    </Button>
+                  </div>
+                </div>
+
+                <Collapse 
+                  ghost 
+                  className="border-none"
+                  expandIcon={({ isActive }) => (
+                    <motion.div
+                      animate={{ rotate: isActive ? 90 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      ▶
+                    </motion.div>
+                  )}
+                >
+                  <Panel header="View Proposal" key="1">
+                    <div className="text-gray-600">
+                      {bid.proposal}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {bid.skills.map((skill, idx) => (
+                        <Tag key={idx} color="cyan">{skill}</Tag>
+                      ))}
+                    </div>
+                  </Panel>
+                </Collapse>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {/* Pagination */}
+      <div className="flex justify-center mt-6">
+        <Pagination
+          current={1}
+          total={50}
+          pageSize={5}
+          showSizeChanger={false}
+          className="shadow-lg rounded-full bg-white px-4 py-2"
+        />
+      </div>
+    </motion.div>
+  );
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -177,231 +465,100 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
     return <div>No project details available.</div>;
   }
 
-  const handleFilterChange = (key, value) => {
-    setSelectedFilters((prevFilters) => ({
-      ...prevFilters,
-      [key]: value,
-    }));
-  };
-
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex h-screen bg-gray-50">
       <CSider
         userId={userId}
         role={role}
         dropdown={true}
-        collapsed={true}
+        collapsed={isMobile || isTablet}
         handleMenuClick={handleMenuClick}
-        abcds={activeComponent}
+        activeComponent={activeComponent}
         handleProfileMenu={handleProfileMenu}
         activeProfileComponent={activeProfileComponent}
       />
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-14 sm:ml-14 md:ml-14 lg:ml-22">
+
+      <div className={`flex-1 flex flex-col overflow-hidden ${
+        isMobile ? 'ml-0' : isTablet || isDesktop ? 'ml-14' : 'ml-64'
+      }`}>
         <CHeader userId={userId} />
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 md:p-6">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-7xl mx-auto space-y-6"
           >
-            {/* Project Overview Card */}
-            <Card 
-              className="shadow-lg rounded-xl border-none"
-              title={
-                <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold text-gray-800">{project?.title}</h1>
-                  <Tag color="teal" className="text-sm">
-                    {formatText(project?.status) || 'Active'}
-                  </Tag>
-                </div>
-              }
-            >
-              {/* Project Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                {[
-                  {
-                    title: "Total Bids",
-                    value: projectStats.totalBids,
-                    icon: <TeamOutlined />,
-                    color: "#0d9488"
-                  },
-                  {
-                    title: "Average Bid",
-                    value: `₹${projectStats.averageBid}`,
-                    icon: <DollarOutlined />,
-                    color: "#0ea5e9"
-                  },
-                  {
-                    title: "Time Left",
-                    value: "5 days",
-                    icon: <ClockCircleOutlined />,
-                    color: "#f59e0b"
-                  },
-                  {
-                    title: "Completion Rate",
-                    value: "75%",
-                    icon: <CheckCircleOutlined />,
-                    color: "#22c55e"
-                  }
-                ].map((stat, index) => (
-                  <Card key={index} className="shadow-sm hover:shadow-md transition-all">
-                    <Statistic 
-                      title={
-                        <span className="text-gray-600 font-medium flex items-center gap-2">
-                          {stat.icon}
-                          {stat.title}
-                        </span>
-                      }
-                      value={stat.value}
-                      valueStyle={{ color: stat.color }}
-                    />
-                  </Card>
-                ))}
-              </div>
-
-              {/* Project Details */}
-              <div className="prose max-w-none">
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Project Description</h3>
-                  <div className="text-gray-600" dangerouslySetInnerHTML={{ __html: project?.description }} />
-                </div>
-
-                {/* Tasks Accordion */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Project Tasks</h3>
-                  {project?.tasks.map((task, index) => (
-                    <motion.div
-                      key={index}
-                      initial={false}
-                      className="border border-gray-200 rounded-lg overflow-hidden"
-                    >
-                      <div className="bg-white p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-md font-medium text-gray-700">{task.title}</h4>
-                          <Tag color="blue">₹{task.budget}</Tag>
-                        </div>
-                        <div className="text-gray-600 text-sm" dangerouslySetInnerHTML={{ __html: task.description }} />
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {task.skills_required_for_task.map((skill, idx) => (
-                            <Tag key={idx} color="cyan">{skill.name}</Tag>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-
-            {/* Bids Section */}
-            <Card 
-              className="shadow-lg rounded-xl border-none"
-              title={
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-800">Project Bids</h2>
-                  <div className="flex gap-3">
-                    <Button 
-                      icon={<FilterOutlined />}
-                      onClick={() => setShowFilters(!showFilters)}
-                      className="border-teal-500 text-teal-500"
-                    >
-                      Filters
-                    </Button>
-                    <Select
-                      defaultValue="recent"
-                      onChange={(value) => setSortBy(value)}
-                      className="w-32"
-                    >
-                      <Option value="recent">Most Recent</Option>
-                      <Option value="rating">Highest Rated</Option>
-                      <Option value="lowest">Lowest Bid</Option>
-                      <Option value="highest">Highest Bid</Option>
-                    </Select>
+            {/* Project Header */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                    {project?.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <Tag color="violet">{formatText(project?.status)}</Tag>
+                    <span className="text-gray-500">•</span>
+                    <span className="text-gray-500">
+                      Posted {project?.created_at}
+                    </span>
                   </div>
                 </div>
-              }
-            >
-              {/* Bids List */}
-              <div className="space-y-4">
-                {enhancedBidsData.map((bid, index) => (
-                  <motion.div
-                    key={bid.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all"
+                <div className="flex gap-2">
+                  <Button type="default" icon={<DownloadOutlined />}>
+                    Export
+                  </Button>
+                  <Button 
+                    type="primary" 
+                    className="bg-violet-500 hover:bg-violet-600"
                   >
-                    <div className="flex items-start gap-4">
-                      <Avatar size={64} src={bid.freelancer.avatar} />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h3 className="text-lg font-medium text-gray-800">{bid.freelancer.name}</h3>
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                              <GlobalOutlined />
-                              {bid.freelancer.country}
-                              <span className="text-gray-300">|</span>
-                              <Rate disabled defaultValue={bid.freelancer.rating} className="text-yellow-400" />
-                              <span className="text-gray-300">|</span>
-                              <CheckCircleOutlined className="text-green-500" />
-                              {bid.completionRate}% Completion Rate
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-teal-600">₹{bid.bidAmount}</div>
-                            <div className="text-sm text-gray-500">{bid.duration}</div>
-                          </div>
-                        </div>
-                        
-                        <p className="text-gray-600 mb-4">{bid.proposal}</p>
-                        
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {bid.skills.map((skill, idx) => (
-                            <Tag key={idx} color="blue">{skill}</Tag>
-                          ))}
-                        </div>
+                    Edit Project
+                  </Button>
+                </div>
+              </div>
+            </div>
 
-                        <div className="flex justify-between items-center">
-                          <div className="flex gap-3">
-                            <Button 
-                              type="primary"
-                              className="bg-teal-500 hover:bg-teal-600"
-                              onClick={() => setSelectedBid(bid)}
-                            >
-                              View Details
-                            </Button>
-                            <Button 
-                              icon={<MessageOutlined />}
-                              className="border-teal-500 text-teal-500"
-                            >
-                              Message
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <Tooltip title="Response Time">
-                              <span><ClockCircleOutlined className="mr-1" />{bid.responseTime}</span>
-                            </Tooltip>
-                            <Tooltip title="Completed Projects">
-                              <span><CheckCircleOutlined className="mr-1" />{bid.freelancer.completedProjects} Projects</span>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-xl shadow-lg p-2">
+              <div className="flex overflow-x-auto">
+                {['overview', 'bids', 'analytics'].map((tab) => (
+                  <Button
+                    key={tab}
+                    type={activeTab === tab ? 'primary' : 'text'}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 rounded-lg ${
+                      activeTab === tab 
+                        ? 'bg-violet-500 text-white' 
+                        : 'text-gray-600'
+                    }`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </Button>
                 ))}
               </div>
+            </div>
 
-              <div className="mt-6 flex justify-center">
-                <Pagination
-                  current={1}
-                  total={50}
-                  pageSize={5}
-                  showSizeChanger={false}
-                />
-              </div>
-            </Card>
+            {/* Tab Content */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === 'overview' && <ProjectOverview />}
+                {activeTab === 'bids' && <BidsSection />}
+                {activeTab === 'analytics' && (
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <h3 className="text-xl font-semibold mb-6">
+                      Project Analytics
+                    </h3>
+                    {/* Add analytics content here */}
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
         </div>
       </div>

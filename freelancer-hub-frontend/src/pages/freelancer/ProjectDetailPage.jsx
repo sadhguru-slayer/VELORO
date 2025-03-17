@@ -8,7 +8,7 @@ import { Upload } from "antd";
 import { CheckCircleOutlined, ExclamationCircleOutlined, UploadOutlined } from "@ant-design/icons";
 import { GrRevert } from "react-icons/gr";
 
-const ProjectDetailPage = () => {
+const ProjectDetailPage = ({ userId, role, isAuthenticated, isEditable }) => {
   const navigate = useNavigate();
   const [taskStatus,setTaskStatus]=useState("");
   const [loading, setLoading] = useState(true);

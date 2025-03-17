@@ -7,7 +7,7 @@ import { FaLink } from "react-icons/fa6";
 
 const {TabPane} = Tabs
 
-const ProjectPageForBidding = () => {
+const ProjectPageForBidding = ({ userId, role, isAuthenticated, isEditable }) => {
   const navigate = useNavigate();
   const location = useLocation();
 

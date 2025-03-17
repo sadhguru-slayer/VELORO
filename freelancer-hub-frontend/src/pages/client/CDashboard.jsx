@@ -33,19 +33,6 @@ const CDashboard = ({ userId, role }) => {
     setLoading(false);
   }, [location.state]);
 
-  const handleMenuClick = (component) => {
-    if (location.pathname !== '/client/dashboard') {
-      navigate('/client/dashboard', { state: { component } });
-    } else {
-      setActiveComponent(component);
-    }
-    setIndividualLoading(true);
-
-    setTimeout(() => {
-      setIndividualLoading(false);
-    }, 500);
-  };
-
   const handleProfileMenu = (profileComponent) => {
     if (location.pathname !== '/client/profile') {
       navigate(`/client/profile/${userId}`, { state: { profileComponent } });
@@ -68,7 +55,6 @@ const CDashboard = ({ userId, role }) => {
         role={role} 
         dropdown={true} 
         collapsed={true} 
-        handleMenuClick={handleMenuClick} 
         abcds={activeComponent} 
         handleProfileMenu={handleProfileMenu} 
         activeProfileComponent={activeProfileComponent}

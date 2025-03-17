@@ -208,54 +208,55 @@ const FreelancerAnalyticsPage = () => {
   }, []);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="p-4 space-y-6"
-    >
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-violet-50 p-6 rounded-xl shadow-lg gap-6">
-  <div className="flex flex-col md:w-1/2">
-    <h1 className="text-3xl font-extrabold text-violet-900 mb-2">Freelancer Analytics</h1>
-    <p className="text-gray-600 text-lg">Comprehensive insights into your performance, earnings, and growth</p>
-  </div>
-  <div className="flex flex-col md:flex-row gap-4 mt-6 md:mt-0 w-full md:w-auto">
-    <RangePicker
-      value={dateRange}
-      onChange={setDateRange}
-      className="w-full md:w-72 border-violet-300 rounded-xl p-2 focus:ring-violet-400 transition-all duration-300"
-    />
-    <Select
-      value={timeRange}
-      onChange={setTimeRange}
-      className="w-full md:w-32 border-violet-300 rounded-xl focus:ring-violet-400 transition-all duration-300"
-      options={[
-        { value: "week", label: "This Week" },
-        { value: "month", label: "This Month" },
-        { value: "quarter", label: "This Quarter" }
-      ]}
-    />
-    <Button
-      type="primary"
-      icon={<DownloadOutlined />}
-      className="bg-violet-600 hover:bg-violet-700 text-white w-full md:w-auto rounded-xl shadow-md transform hover:scale-105 transition-all duration-300"
-    >
-      Download Report
-    </Button>
-    <Button
-      icon={<ReloadOutlined />}
-      onClick={() => {
-        setLoading(true);
-        setTimeout(() => setLoading(false), 1000);
-      }}
-      className="w-full md:w-auto rounded-xl border-violet-600 border-2 hover:border-violet-700 text-violet-600 hover:text-violet-700 transition-all duration-300"
-    >
-      Refresh
-    </Button>
-  </div>
-</div>
-
-
+    <div className="p-6 space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h2 className="text-2xl font-bold text-violet-900 mb-2">Analytics Dashboard</h2>
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-violet-50 p-6 rounded-xl shadow-lg gap-6">
+          <div className="flex flex-col md:w-1/2">
+            <h1 className="text-3xl font-extrabold text-violet-900 mb-2">Freelancer Analytics</h1>
+            <p className="text-gray-600 text-lg">Comprehensive insights into your performance, earnings, and growth</p>
+          </div>
+          <div className="flex flex-col md:flex-row gap-4 mt-6 md:mt-0 w-full md:w-auto">
+            <RangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              className="w-full md:w-72 border-violet-300 rounded-xl p-2 focus:ring-violet-400 transition-all duration-300"
+            />
+            <Select
+              value={timeRange}
+              onChange={setTimeRange}
+              className="w-full md:w-32 border-violet-300 rounded-xl focus:ring-violet-400 transition-all duration-300"
+              options={[
+                { value: "week", label: "This Week" },
+                { value: "month", label: "This Month" },
+                { value: "quarter", label: "This Quarter" }
+              ]}
+            />
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              className="bg-violet-600 hover:bg-violet-700 text-white w-full md:w-auto rounded-xl shadow-md transform hover:scale-105 transition-all duration-300"
+            >
+              Download Report
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                setLoading(true);
+                setTimeout(() => setLoading(false), 1000);
+              }}
+              className="w-full md:w-auto rounded-xl border-violet-600 border-2 hover:border-violet-700 text-violet-600 hover:text-violet-700 transition-all duration-300"
+            >
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </motion.div>
       <Spin spinning={loading}>
         {/* Key Metrics */}
         <Row gutter={[16, 16]} className="mb-8">
@@ -550,7 +551,7 @@ const FreelancerAnalyticsPage = () => {
           </Col>
         </Row>
       </Spin>
-    </motion.div>
+    </div>
   );
 };
 

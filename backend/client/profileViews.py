@@ -100,6 +100,7 @@ class ClientViews(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         auth_user = request.user
         user_id = request.GET.get('userId')
+        print(user_id)
 
         # Retrieve the user object for the requested userId
         user = get_object_or_404(User, id=user_id)

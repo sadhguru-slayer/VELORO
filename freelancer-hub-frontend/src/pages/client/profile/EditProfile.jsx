@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import {
   Form,
@@ -31,7 +31,11 @@ import { useMediaQuery } from "react-responsive";
 
 const { Panel } = Collapse;
 
-const EditProfile = ({ userId, role, isSiderCollapsed }) => {
+const EditProfile = () => {
+  const { userId, role, isAuthenticated, isEditable, currentUserId } = useOutletContext();
+  
+  console.log("EditProfile props:", { userId, role, isAuthenticated, isEditable, currentUserId });
+  
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [clientInfo, setClientInfo] = useState({
@@ -132,7 +136,7 @@ const EditProfile = ({ userId, role, isSiderCollapsed }) => {
         }
       );
       message.success("Profile updated successfully!");
-      navigate(`/client/profile/${userId}`);
+      navigate(`/client/profile/${userId}/view_profile`);
     } catch (error) {
       console.error("Error updating profile:", error);
       message.error("Failed to update profile");
@@ -151,7 +155,7 @@ const EditProfile = ({ userId, role, isSiderCollapsed }) => {
           <motion.div whileHover={{ scale: 1.02 }}>
             <Button
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(`/client/profile/${userId}`)}
+              onClick={() => navigate(`/client/profile/${userId}/view_profile`)}
               className="border-teal-500 text-teal-500 hover:text-teal-600 hover:border-teal-600 rounded-lg h-10"
             >
               Back to Profile
@@ -196,6 +200,7 @@ const EditProfile = ({ userId, role, isSiderCollapsed }) => {
                 type="file"
                 className="hidden"
                 onChange={handleFileChange}
+                style={{ display: 'none' }}
                 accept="image/*"
               />
             </div>

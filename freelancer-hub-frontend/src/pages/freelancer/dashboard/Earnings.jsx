@@ -1,5 +1,6 @@
 import React from 'react';
 import { Line, Pie } from 'react-chartjs-2';
+import { motion } from 'framer-motion';
 
 const Earnings = () => {
     // Data for the line chart (monthly earnings)
@@ -59,7 +60,14 @@ const Earnings = () => {
     ];
 
     return (
-        <div>
+        <div className="p-6 space-y-6">
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+            >
+                <h2 className="text-2xl font-bold text-violet-900 mb-2">Earnings Overview</h2>
+            </motion.div>
             <div className="bg-white p-6 mt-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold">Monthly Earnings Overview</h2>
                 <Line data={lineChartData} />

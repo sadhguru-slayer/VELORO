@@ -1,273 +1,382 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import LoadingComponent from '../components/LoadingComponent';
-import { verifyToken, refreshToken as refreshAuthToken } from '../utils/auth';
+import { verifyToken } from '../utils/auth';
 import Cookies from 'js-cookie';
+import { FiCheck, FiX, FiEye, FiEyeOff } from "react-icons/fi";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    rememberMe: false
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isTyping, setIsTyping] = useState({ username: false, password: false });
+  const [formTouched, setFormTouched] = useState(false);
 
+  // Single authentication check on component mount
   useEffect(() => {
-    const checkTokens = async () => {
-      setLoading(true); // Start loading
+    const checkAuth = async () => {
       try {
         const accessToken = Cookies.get('accessToken');
         const refreshToken = Cookies.get('refreshToken');
+        const role = Cookies.get('role');
 
+        // If no tokens, allow login
         if (!accessToken || !refreshToken) {
-          return null; // No tokens, no session
+          setLoading(false);
+          return;
         }
 
-        // Step 1: Verify the access token validity
-        const isTokenValid = await verifyToken(accessToken);
-
-        // Step 2: Refresh token if invalid
-        if (!isTokenValid) {
-          const newAccessToken = await refreshAuthToken(refreshToken);
-          if (newAccessToken) {
-            Cookies.set('accessToken', newAccessToken, { secure: true, sameSite: 'Strict' });
-          } else {
-            throw new Error('Token refresh failed');
-          }
+        // Verify token and redirect if valid
+        const isValid = await verifyToken(accessToken);
+        if (isValid) {
+          // Get return URL from location state or default based on role
+          const returnUrl = location.state?.from || (role === 'client' ? '/client/homepage' : '/freelancer/homepage');
+          navigate(returnUrl, { replace: true });
+          return;
         }
 
-        const response = await axios.get('http://127.0.0.1:8000/api/profile/', {
-          headers: { Authorization: `Bearer ${Cookies.get('accessToken')}` },
-        });
-        const { is_profiled, role } = response.data.user;
-
-        // Step 3: Navigate based on profile status and role
-       if (role === 'client') {
-          navigate('/client/homepage');
-        } else {
-          navigate('/freelancer/homepage');
-        }
-      } catch (error) {
-        console.error('Authentication error:', error);
-
-        // Clear tokens and redirect to login
+        // If token invalid, clear cookies and allow login
         Cookies.remove('accessToken');
         Cookies.remove('refreshToken');
-      } finally {
-        setLoading(false); // End loading
+        Cookies.remove('role');
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setLoading(false);
       }
     };
 
-    checkTokens();
-  }, [navigate]);
+    checkAuth();
+  }, [navigate, location]);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    setFormTouched(true);
+    
+    // Update typing state for animation
+    if (name === 'username' || name === 'password') {
+      setIsTyping(prev => ({
+        ...prev,
+        [name]: true
+      }));
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!username.trim()) {
-      newErrors.username = "Username is required.";
+    
+    if (!formData.username.trim()) {
+      newErrors.username = "Username is required";
+    } else if (formData.username.length < 3) {
+      newErrors.username = "Username must be at least 3 characters";
     }
-    if (!password) {
-      newErrors.password = "Password is required.";
-    } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  useEffect(() => {
+    if (formTouched) {
+      validateForm();
+    }
+  }, [formData, formTouched]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return;
-    }
-
-    const payload = { username, password, remember_me: rememberMe };
-
+    setLoading(true);
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        payload
+        {
+          username: formData.username,
+          password: formData.password,
+          remember_me: formData.rememberMe
+        }
       );
+
       const { access, refresh, role } = response.data;
 
-      // Store tokens in cookies
-      Cookies.set("accessToken", access, { secure: true, sameSite: 'Strict' });
-      Cookies.set("refreshToken", refresh, { secure: true, sameSite: 'Strict' });
-      Cookies.set("role", role, { secure: true, sameSite: 'Strict' });
+      // Set cookies with appropriate options
+      const cookieOptions = {
+        secure: true,
+        sameSite: 'Strict',
+        expires: formData.rememberMe ? 7 : undefined // 7 days if remember me
+      };
 
-      // Redirect based on is_profiled and role
-      if(role === 'client'){
-        navigate("/client/homepage");
-      }
-      else {
-        navigate("/freelancer/homepage");
-      }
+      Cookies.set("accessToken", access, cookieOptions);
+      Cookies.set("refreshToken", refresh, cookieOptions);
+      Cookies.set("role", role, cookieOptions);
+
+      // Clear any stored data for fresh session
+      localStorage.clear();
+
+      // Navigate to appropriate homepage or return URL
+      const returnUrl = location.state?.from || (role === 'client' ? '/client/homepage' : '/freelancer/homepage');
+      navigate(returnUrl, { replace: true });
+
     } catch (error) {
-      if (error.response && error.response.data) {
-        setErrors({ api: error.response.data.error || "Login failed." });
-      } else {
-        console.error("Error logging in:", error);
-      }
+      setLoading(false);
+      setErrors({
+        api: error.response?.data?.error || "Login failed. Please try again."
+      });
     }
   };
 
   if (loading) {
-    return <LoadingComponent text="Please wait while we verify your session..." />;
+    return <LoadingComponent text="Please wait..." />;
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A1B] flex items-center justify-center p-4 md:p-0">
-      {/* Animated Background with both color schemes */}
+    <div className="h-screen bg-[#F9FAFB] flex items-center justify-center px-4">
+      {/* Background gradients - adjusted size */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-violet-600/20 to-teal-500/20 rounded-full filter blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-l from-violet-600/20 to-teal-500/20 rounded-full filter blur-[120px]" />
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gradient-to-r from-violet-500/30 to-teal-400/30 rounded-full filter blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-l from-violet-500/30 to-teal-400/30 rounded-full filter blur-[120px]" />
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative w-full max-w-6xl bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl flex overflow-hidden"
+      {/* Main card - reduced max width and padding */}
+      <motion.div
+        className="relative w-full max-w-5xl h-[90vh] bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl flex overflow-hidden mx-4"
       >
-        {/* Left Panel - Feature Showcase */}
+        {/* Left Panel - adjusted spacing */}
         <div className="hidden lg:block lg:w-1/2 relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 to-teal-500/10" />
-          <div className="relative h-full flex flex-col items-center justify-center p-12 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              className="max-w-md"
-            >
-              <h2 className="text-3xl font-bold text-white mb-6">
-                Welcome Back to Veloro
-              </h2>
-              <p className="text-gray-300 mb-8">
-                Your gateway to professional excellence and meaningful collaborations
-              </p>
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-teal-400/5" />
+          <div className="relative h-full flex flex-col items-center justify-center p-8">
+            <h2 className="text-2xl font-bold text-violet-700 mb-4">
+              Welcome Back to Veloro
+            </h2>
+            <p className="text-gray-600 mb-6 text-sm">
+              Your gateway to professional excellence
+            </p>
 
-              {/* Role Cards */}
-              <div className="grid grid-cols-1 gap-4 mb-8">
-                <div className="p-6 bg-white/5 rounded-xl backdrop-blur-sm border border-violet-500/20">
-                  <h3 className="text-xl font-semibold text-violet-300 mb-2">Freelancer Portal</h3>
-                  <p className="text-gray-400 text-sm">Access your projects, track earnings, and find new opportunities.</p>
-                </div>
-                <div className="p-6 bg-white/5 rounded-xl backdrop-blur-sm border border-teal-500/20">
-                  <h3 className="text-xl font-semibold text-teal-300 mb-2">Client Dashboard</h3>
-                  <p className="text-gray-400 text-sm">Manage your projects, connect with talent, and grow your business.</p>
-                </div>
+            {/* Role Cards - reduced padding and spacing */}
+            <div className="grid grid-cols-1 gap-3 mb-6 w-full max-w-sm">
+              <div className="p-4 bg-white/60 rounded-xl backdrop-blur-sm border border-violet-400/20">
+                <h3 className="text-lg font-semibold text-violet-600 mb-1">Freelancer Portal</h3>
+                <p className="text-gray-600 text-xs">Access your projects and opportunities</p>
               </div>
+              <div className="p-4 bg-white/60 rounded-xl backdrop-blur-sm border border-teal-400/20">
+                <h3 className="text-lg font-semibold text-teal-600 mb-1">Client Dashboard</h3>
+                <p className="text-gray-600 text-xs">Manage your projects and talent</p>
+              </div>
+            </div>
 
-              {/* Platform Stats */}
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { stat: "20K+", label: "Active Users" },
-                  { stat: "98%", label: "Success Rate" },
-                  { stat: "15K+", label: "Projects" },
-                  { stat: "$10M+", label: "Paid Out" }
-                ].map((item, index) => (
-                  <div key={index} className="p-4 bg-white/5 rounded-xl backdrop-blur-sm">
-                    <div className="text-2xl font-bold text-white">{item.stat}</div>
-                    <div className="text-sm text-gray-400">{item.label}</div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            {/* Stats Cards - compact layout */}
+            <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
+              {[
+                { stat: "20K+", label: "Active Users" },
+                { stat: "98%", label: "Success Rate" },
+                { stat: "15K+", label: "Projects" },
+                { stat: "$10M+", label: "Paid Out" }
+              ].map((item, index) => (
+                <div key={index} className="p-3 bg-white/60 rounded-xl backdrop-blur-sm border border-violet-400/20">
+                  <div className="text-xl font-bold text-violet-600">{item.stat}</div>
+                  <div className="text-xs text-gray-600">{item.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Right Panel - Login Form */}
-        <div className="w-full lg:w-1/2 p-8 md:p-12">
-          <div className="max-w-md mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
-                Sign In to Veloro
-              </h1>
-              <p className="text-gray-400">
-                Access your professional workspace
-              </p>
-            </div>
+        {/* Right Panel - adjusted spacing */}
+        <div className="w-full lg:w-1/2 p-6 flex items-center justify-center">
+          <div className="w-full max-w-md">
+            <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-violet-600 to-teal-500 bg-clip-text text-transparent mb-2">
+              Sign In to Veloro
+            </h1>
+            <p className="text-center text-gray-600 text-sm mb-6">
+              Access your professional workspace
+            </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Form - reduced spacing */}
+            <form onSubmit={handleSubmit} className="space-y-4">
               {errors.api && (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                   <p className="text-red-400 text-sm text-center">{errors.api}</p>
                 </div>
               )}
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300" htmlFor="username">
+  
+              {/* Username field */}
+              <div className="space-y-1 relative">
+                <label className="text-sm font-medium text-violet-600 flex items-center justify-between">
                   Username
+                  <AnimatePresence>
+                    {isTyping.username && (
+                      <motion.span
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="text-xs text-gray-400"
+                      >
+                        Typing...
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </label>
-                <input
-                  id="username"
-                  type="text"
-                  className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
-                    errors.username ? "border-red-500" : "border-white/10"
-                  } text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200`}
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-                {errors.username && (
-                  <p className="text-red-400 text-xs">{errors.username}</p>
-                )}
+                <div className="relative">
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    className={`w-full px-4 py-3 rounded-xl bg-white/60 border ${
+                      errors.username 
+                        ? "border-red-400 focus:border-red-500" 
+                        : formData.username 
+                          ? "border-green-400 focus:border-green-500" 
+                          : "border-violet-400/20"
+                    } text-gray-700 placeholder-gray-400 focus:ring-1 transition-all duration-200`}
+                    placeholder="Enter your username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    onFocus={() => setIsTyping(prev => ({ ...prev, username: true }))}
+                    onBlur={() => setIsTyping(prev => ({ ...prev, username: false }))}
+                  />
+                  <AnimatePresence>
+                    {formData.username && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        {errors.username ? (
+                          <FiX className="text-red-500 w-5 h-5" />
+                        ) : (
+                          <FiCheck className="text-green-500 w-5 h-5" />
+                        )}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <AnimatePresence>
+                  {errors.username && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-red-400 text-xs"
+                    >
+                      {errors.username}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300" htmlFor="password">
+  
+              {/* Password field */}
+              <div className="space-y-1 relative">
+                <label className="text-sm font-medium text-violet-600 flex items-center justify-between">
                   Password
+                  <AnimatePresence>
+                    {isTyping.password && (
+                      <motion.span
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="text-xs text-gray-400"
+                      >
+                        Typing...
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
-                    errors.password ? "border-red-500" : "border-white/10"
-                  } text-white placeholder-gray-500 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all duration-200`}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                {errors.password && (
-                  <p className="text-red-400 text-xs">{errors.password}</p>
-                )}
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    className={`w-full px-4 py-3 rounded-xl bg-white/60 border ${
+                      errors.password 
+                        ? "border-red-400 focus:border-red-500" 
+                        : formData.password 
+                          ? "border-green-400 focus:border-green-500" 
+                          : "border-violet-400/20"
+                    } text-gray-700 placeholder-gray-400 pr-10 focus:ring-1 transition-all duration-200`}
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    onFocus={() => setIsTyping(prev => ({ ...prev, password: true }))}
+                    onBlur={() => setIsTyping(prev => ({ ...prev, password: false }))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-violet-600 transition-colors"
+                  >
+                    {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                  </button>
+                </div>
+                <AnimatePresence>
+                  {errors.password && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-red-400 text-xs"
+                    >
+                      {errors.password}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </div>
-
+  
               <div className="flex items-center justify-between">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
+                    name="rememberMe"
+                    checked={formData.rememberMe}
+                    onChange={handleInputChange}
                     className="w-4 h-4 rounded border-white/10 bg-white/5 text-gray-600 focus:ring-gray-400"
                   />
-                  <span className="text-sm text-gray-300">Remember me</span>
+                  <span className="text-sm text-gray-600">Remember me</span>
                 </label>
-                <a href="/forgot-password" className="text-sm text-gray-300 hover:text-white transition-colors duration-200">
+                <a href="/forgot-password" className="text-sm text-gray-600 hover:text-violet-500 transition-colors duration-200">
                   Forgot password?
                 </a>
               </div>
-
+  
+              {/* Submit Button */}
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-teal-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-violet-500/25 transition-all duration-300 flex items-center justify-center space-x-2"
+                className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
+                  !formTouched || Object.keys(errors).length > 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-violet-500 to-teal-400 hover:shadow-lg hover:shadow-violet-500/25"
+                }`}
+                disabled={!formTouched || Object.keys(errors).length > 0}
               >
-                <span>Sign In</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
+                <span className="text-white">Sign In</span>
+                {formTouched && Object.keys(errors).length === 0 && (
+                  <FiCheck className="w-5 h-5 text-white" />
+                )}
               </motion.button>
-
-              <p className="text-center text-gray-400">
+  
+              <p className="text-center text-gray-600">
                 New to Veloro?{" "}
-                <a href="/register" className="font-medium text-white hover:text-gray-300 transition-colors duration-200">
+                <a href="/register" className="font-medium text-violet-600 hover:text-teal-500 transition-colors duration-200">
                   Create an account
                 </a>
               </p>

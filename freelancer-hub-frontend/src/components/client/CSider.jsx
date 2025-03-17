@@ -24,10 +24,17 @@ import {
   FaWallet,
   FaChartLine,
   FaCalendarAlt,
-  FaInbox
+  FaInbox,
+  FaComments,
+  FaEnvelope,
+  FaArchive,
+  FaUserFriends,
+  FaPlusCircle,
+  FaGlobe,
+  FaPalette
 } from 'react-icons/fa';
 
-const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMenu, activeProfileComponent, userId }) => {
+const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId }) => {
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
   const [isTextVisible, setIsTextVisible] = useState(!collapsed);
   const [isDashboardDropdownOpen, setIsDashboardDropdownOpen] = useState(true);
@@ -61,28 +68,83 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
       text: 'View Bids',
       tooltip: 'View Project Bids'
     },
-    { 
-      abcd: 'notifications', 
-      to: '/client/notifications', 
-      icon: <FaBell className={iconClass} />,
-      text: 'Notifications',
-      tooltip: 'View Notifications'
-    }
+
   ];
 
   const dashboardLinks = [
-    { abcd: 'overview', text: 'Overview', icon: <FaChartLine className={iconClass} />, tooltip: 'Dashboard Overview' },
-    { abcd: 'projects', text: 'Projects', icon: <FaProjectDiagram className={iconClass} />, tooltip: 'Manage Projects' },
-    { abcd: 'recent_activity', text: 'Recent Activity', icon: <FaInbox className={iconClass} />, tooltip: 'View Recent Activity' },
-    { abcd: 'spendings', text: 'Spendings', icon: <FaWallet className={iconClass} />, tooltip: 'Track Spendings' },
-    { abcd: 'upcoming-events', text: 'Upcoming Events', icon: <FaCalendarAlt className={iconClass} />, tooltip: 'View Events' }
+    { 
+      abcd: 'overview', 
+      to: '/client/dashboard/overview',
+      text: 'Overview', 
+      icon: <FaChartLine className={iconClass} />, 
+      tooltip: 'Dashboard Overview' 
+    },
+    { 
+      abcd: 'projects', 
+      to: '/client/dashboard/projects',
+      text: 'Projects', 
+      icon: <FaProjectDiagram className={iconClass} />, 
+      tooltip: 'Manage Projects' 
+    },
+    { 
+      abcd: 'recent_activity', 
+      to: '/client/dashboard/recent_activity',
+      text: 'Recent Activity', 
+      icon: <FaInbox className={iconClass} />, 
+      tooltip: 'View Recent Activity' 
+    },
+    { 
+      abcd: 'spendings', 
+      to: '/client/dashboard/spendings',
+      text: 'Spendings', 
+      icon: <FaWallet className={iconClass} />, 
+      tooltip: 'Track Spendings' 
+    },
+    { 
+      abcd: 'upcoming-events', 
+      to: '/client/dashboard/upcoming-events',
+      text: 'Upcoming Events', 
+      icon: <FaCalendarAlt className={iconClass} />, 
+      tooltip: 'View Events' 
+    }
+  ];
+
+  const messageLinks = [
+    { 
+      abcd: 'direct', 
+      to: '/client/messages/direct',
+      text: 'Direct Messages', 
+      icon: <FaEnvelope className={iconClass} />, 
+      tooltip: 'Direct Messages' 
+    },
+    { 
+      abcd: 'groups', 
+      to: '/client/messages/groups',
+      text: 'Group Chats', 
+      icon: <FaUsers className={iconClass} />, 
+      tooltip: 'Group Chats' 
+    },
+    { 
+      abcd: 'communities', 
+      to: '/client/messages/communities',
+      text: 'Communities', 
+      icon: <FaGlobe className={iconClass} />, 
+      tooltip: 'Communities' 
+    },
+    { 
+      abcd: 'settings', 
+      to: '/client/messages/settings',
+      text: 'Chat Settings', 
+      icon: <FaCog className={iconClass} />, 
+      tooltip: 'Chat Settings' 
+    }
   ];
 
   const profileLinks = [
-    { abcd: 'view_profile', text: 'View Profile', icon: <FaUserCircle className={iconClass} />, tooltip: 'View Your Profile' },
-    { abcd: 'edit_profile', text: 'Edit Profile', icon: <FaCog className={iconClass} />, tooltip: 'Edit Profile Settings' },
-    { abcd: 'reviews_ratings', text: 'Reviews', icon: <FaStar className={iconClass} />, tooltip: 'View Reviews & Ratings' },
-    { abcd: 'collaborations', text: 'Collaborations', icon: <FaHandshake className={iconClass} />, tooltip: 'View Collaborations' }
+    { abcd: 'view_profile', to: `/client/profile/${userId}/view_profile`, text: 'View Profile', icon: <FaUserCircle className={iconClass} />, tooltip: 'View Your Profile' },
+    { abcd: 'edit_profile', to: `/client/profile/${userId}/edit_profile`, text: 'Edit Profile', icon: <FaCog className={iconClass} />, tooltip: 'Edit Profile Settings' },
+    { abcd: 'reviews_ratings', to: `/client/profile/${userId}/reviews_ratings`, text: 'Reviews', icon: <FaStar className={iconClass} />, tooltip: 'View Reviews & Ratings' },
+    { abcd: 'collaborations', to: `/client/profile/${userId}/collaborations`, text: 'Collaborations', icon: <FaHandshake className={iconClass} />, tooltip: 'View Collaborations' }
   ];
 
   const mobileMainLinks = [
@@ -98,6 +160,7 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
       icon: <FaChartBar className={iconClass} />,
       text: 'Dashboard'
     },
+
     { 
       abcd: 'post-project', 
       to: '/client/post-project', 
@@ -105,21 +168,24 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
       text: 'Post'
     },
     { 
+      abcd: 'view-bids', 
+      to: '/client/view-bids', 
+      icon: <FaClipboardList className={iconClass} />,
+      text: 'View Bids',
+      tooltip: 'View Project Bids'
+    },
+    { 
       abcd: 'profile', 
       to: `/client/profile/${userId}`, 
       icon: <FaUserCircle className={iconClass} />,
       text: 'Profile'
     },
-    { 
-      abcd: 'notifications', 
-      to: '/client/notifications', 
-      icon: <FaBell className={iconClass} />,
-      text: 'Alerts'
-    }
+
   ];
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [isMessagesDropdownOpen, setIsMessagesDropdownOpen] = useState(true);
 
   const handleSidebarToggle = () => {
     setIsCollapsed(!isCollapsed);
@@ -174,7 +240,7 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
         setIsDashboardDropdownOpen(!isDashboardDropdownOpen);
       }
     } else {
-      navigate('/client/dashboard');
+      handleMenuClick('overview');
       setIsDashboardDropdownOpen(true);
     }
   };
@@ -189,13 +255,17 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
   };
 
   const handleProfileNavigation = () => {
+    const currentUserId = Cookies.get('userId') || userId;
+    
     if (!location.pathname.includes('/profile')) {
-      navigate(`/client/profile/${userId}`);
+      navigate(`/client/profile/${currentUserId}/view_profile`);
     }
+    
     if (isCollapsed) {
       setIsCollapsed(false);
       setShowText(true);
     }
+    
     setIsProfileDropdownOpen(!isProfileDropdownOpen);
   };
 
@@ -207,7 +277,7 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
     >
       <motion.div
         whileHover={{ x: 4 }}
-        onClick={() => isMain ? handleMainLinkClick(link) : handleMenuClick(link.abcd)}
+        onClick={() => isMain ? handleMainLinkClick(link) : navigate(link.to)}
         className={`
           group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
           hover:bg-gray-50/80 cursor-pointer relative
@@ -262,12 +332,27 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const handleMenuClick = (component) => {
+    console.log(component)
+    if (location.pathname !== "/client/dashboard") {
+      navigate(`/client/dashboard/${component}`);
+    }
+  };
+  const handleProfileMenu = (component) => {
+    console.log(component)
+    if (location.pathname !== "/client/profile") {
+      navigate(`/client/profile/${userId}/${component}`);
+    }
+  };
+
   const MobileMenu = () => {
     if (!mobileMenuOpen) return null;
 
     const menuItems = activeMenu === 'dashboard' ? dashboardLinks : profileLinks;
     const menuTitle = activeMenu === 'dashboard' ? 'Dashboard' : 'Profile';
 
+
+    
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -479,11 +564,11 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
                   {dashboardLinks.map(link => (
                 <div
                   key={link.abcd}
-                  onClick={() => handleMenuClick(link.abcd)}
+                  onClick={() => navigate(link.to)}
                       className={`
                         group flex items-center gap-2 px-3 py-2 rounded-lg 
                         transition-all duration-300 cursor-pointer
-                        ${abcds === link.abcd ? 
+                        ${location.pathname.includes(link.abcd) ? 
                           'bg-teal-500/10 text-teal-400' : 
                           'text-gray-400 hover:bg-white/5 hover:text-teal-400'}
                       `}
@@ -496,6 +581,92 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
               )}
             </AnimatePresence>
         </div>
+
+          <div className="space-y-1">
+            <Tooltip title={isCollapsed ? "Messages" : ""} placement="right">
+              <motion.div
+                whileHover={{ x: 4 }}
+                onClick={() => {
+                  if (isCollapsed) {
+                    setIsCollapsed(false);
+                    setTimeout(() => setShowText(true), 300);
+                    setIsMessagesDropdownOpen(true);
+                  } else {
+                    setIsMessagesDropdownOpen(!isMessagesDropdownOpen);
+                  }
+                }}
+                className={`
+                  group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
+                  hover:bg-gray-50/80 cursor-pointer relative
+                  ${location.pathname.includes('/messages') ? 
+                    'bg-gradient-to-r from-teal-50 to-blue-50' : ''}
+                `}
+              >
+                <div className={`
+                  absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full
+                  ${location.pathname.includes('/messages') ? 'bg-teal-500' : 'bg-transparent'}
+                `} />
+
+                <div className={`
+                  flex items-center justify-center min-w-[24px]
+                  ${location.pathname.includes('/messages') ? 
+                    'text-teal-500' : 'text-gray-400 group-hover:text-teal-500'}
+                `}>
+                  <FaComments className={iconClass} />
+                </div>
+
+                {!isCollapsed && (
+                  <motion.div
+                    initial={false}
+                    animate={{ opacity: showText ? 1 : 0 }}
+                    transition={{ duration: 0.2, delay: 0.2 }}
+                    className="flex items-center justify-between flex-1"
+                  >
+                    <span className={`
+                      text-sm font-medium
+                      ${location.pathname.includes('/messages') ? 
+                        'text-teal-500' : 'text-gray-500 group-hover:text-teal-500'}
+                    `}>
+                      Messages
+                    </span>
+                    <FaChevronDown 
+                      className={chevronStyles}
+                      style={{ transform: isMessagesDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    />
+                  </motion.div>
+                )}
+              </motion.div>
+            </Tooltip>
+
+            <AnimatePresence>
+              {isMessagesDropdownOpen && !isCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-4 pl-4 border-l border-gray-100 space-y-1 overflow-hidden"
+                >
+                  {messageLinks.map(link => (
+                    <div
+                      key={link.abcd}
+                      onClick={() => navigate(link.to)}
+                      className={`
+                        group flex items-center gap-2 px-3 py-2 rounded-lg 
+                        transition-all duration-300 cursor-pointer
+                        ${location.pathname.includes(link.abcd) ? 
+                          'bg-teal-500/10 text-teal-400' : 
+                          'text-gray-400 hover:bg-white/5 hover:text-teal-400'}
+                      `}
+                    >
+                      {link.icon}
+                      <span className="text-sm">{link.text}</span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <Tooltip title={isCollapsed ? "Profile" : ""} placement="right">
             <div className="space-y-1">
@@ -554,11 +725,11 @@ const CSider = ({ collapsed, handleMenuClick, abcds, reference, handleProfileMen
                   {profileLinks.map(link => (
                 <div
                   key={link.abcd}
-                  onClick={() => handleProfileMenu(link.abcd)}
+                  onClick={() => navigate(link.to)}
                       className={`
                         group flex items-center gap-2 px-3 py-2 rounded-lg 
                         transition-all duration-300 cursor-pointer
-                        ${activeProfileComponent === link.abcd ? 
+                        ${location.pathname.includes(link.abcd) ? 
                           'bg-teal-500/10 text-teal-400' : 
                           'text-gray-400 hover:bg-white/5 hover:text-teal-400'}
                       `}

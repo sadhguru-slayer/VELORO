@@ -8,6 +8,7 @@ import Cookies from "js-cookie";
 import DOMPurify from "dompurify";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip } from 'antd';
+import { RiMessage3Fill } from "react-icons/ri";
 
 const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
   
@@ -26,6 +27,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
   const socketRef = useRef(null);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // Quick actions menu items
   const quickActions = [
@@ -112,6 +114,31 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
       }
     };
   }, []);
+
+  // Add this effect to handle message count updates
+  // useEffect(() => {
+  //   const messageSocket = new WebSocket(
+  //     `ws://localhost:8000/ws/messages_count/?token=${Cookies.get('accessToken')}`
+  //   );
+  
+  //   messageSocket.onmessage = function (event) {
+  //     const data = JSON.parse(event.data);
+  //     if (data.unread_messages !== undefined) {
+  //       setUnreadMessages(data.unread_messages);
+  //     }
+  //   };
+  
+  //   messageSocket.onclose = function (event) {
+  //     if (event.code !== 1000) {
+  //       console.error("Message WebSocket closed unexpectedly");
+  //     }
+  //   };
+  
+  //   return () => {
+  //     messageSocket.close();
+  //   };
+  // }, []);
+
   const [user, setUser] = useState(null);
   useEffect(() => {
     const fetchUser = async () => {
@@ -160,7 +187,12 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
 
       Cookies.remove("accessToken");
       Cookies.remove("refreshToken");
-      navigate("/");
+      Cookies.remove("role");
+      Cookies.remove("userId");
+      localStorage.clear();
+      setTimeout(() => {  
+        navigate("/");
+      }, 1000);
     } catch (error) {
       console.error("Logout error:", error);
       navigate("/");
@@ -318,7 +350,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
 
   return (
     <>
-      <header className="sticky top-0 bg-white border-b border-gray-200 h-16 flex items-center px-6 justify-between shadow-sm z-10">
+      <header className="sticky top-0 bg-white border-b border-gray-200 h-16 flex items-center p-4 px-6 justify-between shadow-sm z-10">
         {/* Logo Section - Always visible */}
       <div className="flex items-center">
           <Link 
@@ -531,129 +563,168 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                 </AnimatePresence>
               </div>
 
-        {/* Notifications */}
-              <Tooltip title="Notifications">
+        {/* Add Messages Icon */}
+        <Tooltip title="Messages">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative cursor-pointer group"
+            onClick={() => navigate('/client/messages/direct')}
+          >
+            <div className="relative">
+              <RiMessage3Fill className="text-xl text-gray-600 group-hover:text-teal-600 transition-colors" />
+              {unreadMessages > 0 && (
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative cursor-pointer"
-                  onClick={() => navigate('/client/notifications')}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-2 -right-2 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-sm"
                 >
-                  <FaBell className="text-xl text-gray-600 hover:text-teal-600 transition-colors" />
-                  {notificationsCount > 0 && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                    >
-            {notificationsCount}
-                    </motion.span>
-                  )}
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
                 </motion.div>
-              </Tooltip>
-
-              {/* Profile Dropdown */}
-              <div className="relative profile-dropdown">
-                <Tooltip title="Profile & Settings">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsProfiledClicked(!isProfiledClicked)}
-                    className="cursor-pointer"
-                  >
-                    <FaUserCircle className="text-2xl text-gray-600 hover:text-teal-600 transition-colors" />
-                  </motion.div>
-                </Tooltip>
-
-                <AnimatePresence>
-                  {isProfiledClicked && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden"
-                    >
-                      <div className="py-2">
-                        <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-                              <span className="text-lg font-semibold text-white">
-                                {user.profile_picture ? (
-                                  <img 
-                                    src={`http://localhost:8000${user.profile_picture}`} 
-                                    alt="" 
-                                    className="w-10 h-10 object-cover rounded-full"
-                                  />
-                                ) : (
-                                  <FaUserCircle className="text-teal-500" />
-                                )}
-          </span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{user.username}</p>
-                              <p className="text-xs text-gray-500 truncate max-w-[200px]">{user.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                            <span>Online</span>
-                          </div>
-        </div>
-
-                        <div className="py-2">
-                          <motion.button
-                            whileHover={{ x: 4 }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
-                onClick={() => { 
-                  setIsProfiledClicked(false);
-                  navigate(`/client/profile/${userId}`);
-                            }}
-                          >
-                            <span className="text-gray-900">Profile</span>
-                          </motion.button>
-                          
-                          <motion.button
-                            whileHover={{ x: 4 }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
-                            onClick={() => {
-                              setIsProfiledClicked(false);
-                              navigate('/settings');
-                            }}
-                          >
-                            <span className="text-gray-900">Settings</span>
-                          </motion.button>
-                        </div>
-
-                        <div className="my-2 border-t border-gray-200" />
-                        
-                        <motion.button
-                          whileHover={{ x: 4 }}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-red-600"
-                onClick={() => {
-                  handleLogout();
-                            setIsProfiledClicked(false);
+              )}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                initial={false}
+                whileHover={{
+                  scale: 1.8,
+                  opacity: 0.15,
                 }}
-              >
-                          <span>Logout</span>
-                        </motion.button>
+              />
             </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+          </motion.div>
+        </Tooltip>
 
-              {/* Mobile Search Button */}
-              <div className="md:hidden">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsMobileSearchOpen(true)}
-                  className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"
+        {/* Notifications */}
+        <Tooltip title="Notifications">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative cursor-pointer group"
+            onClick={() => navigate('/client/notifications')}
+          >
+            <div className="relative">
+              <FaBell className="text-xl text-gray-600 group-hover:text-teal-600 transition-colors" />
+              {notificationsCount > 0 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-sm"
                 >
-                  <FaSearch className="text-lg" />
-                </motion.button>
+                  {notificationsCount > 99 ? '99+' : notificationsCount}
+                </motion.div>
+              )}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                initial={false}
+                whileHover={{
+                  scale: 1.8,
+                  opacity: 0.15,
+                }}
+              />
+            </div>
+          </motion.div>
+        </Tooltip>
+
+        {/* Profile Dropdown */}
+        <div className="relative profile-dropdown">
+          <Tooltip title="Profile & Settings">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsProfiledClicked(!isProfiledClicked)}
+              className="cursor-pointer"
+            >
+              <FaUserCircle className="text-2xl text-gray-600 hover:text-teal-600 transition-colors" />
+            </motion.div>
+          </Tooltip>
+
+          <AnimatePresence>
+            {isProfiledClicked && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden"
+              >
+                <div className="py-2">
+                  <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                        {user?.profile_picture ? (
+                          <img 
+                            src={`http://localhost:8000${user.profile_picture}`} 
+                            alt="" 
+                            className="w-10 h-10 object-cover rounded-full"
+                          />
+                        ) : (
+                          <FaUserCircle className="text-white text-2xl" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                        <p className="text-xs text-gray-500 truncate max-w-[200px]">{user?.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      <span>Online</span>
+                    </div>
+                  </div>
+
+                  <div className="py-2">
+                    <motion.button
+                      whileHover={{ x: 4 }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                      onClick={() => { 
+                        setIsProfiledClicked(false);
+                        navigate(`/client/profile/${userId}`);
+                      }}
+                    >
+                      <span className="text-gray-900">Profile</span>
+                    </motion.button>
+                    
+                    <motion.button
+                      whileHover={{ x: 4 }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                      onClick={() => {
+                        setIsProfiledClicked(false);
+                        navigate('/settings');
+                      }}
+                    >
+                      <span className="text-gray-900">Settings</span>
+                    </motion.button>
+                  </div>
+
+                  <div className="my-2 border-t border-gray-200" />
+                  
+                  <motion.button
+                    whileHover={{ x: 4 }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-red-600"
+                    onClick={() => {
+                      handleLogout();
+                      setIsProfiledClicked(false);
+                    }}
+                  >
+                    <span>Logout</span>
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+
+        {/* Mobile Search Button */}
+        <div className="md:hidden">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"
+          >
+            <FaSearch className="text-lg" />
+          </motion.button>
+    </div>
+  </div>
           </>
         )}
     </header>
@@ -679,6 +750,38 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
         
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background-color: #64748b;
+        }
+
+        /* Add these new styles */
+        .header-icon {
+          position: relative;
+          transition: all 0.2s ease;
+        }
+
+        .header-icon:hover::after {
+          content: '';
+          position: absolute;
+          inset: -8px;
+          background: currentColor;
+          opacity: 0.1;
+          border-radius: 50%;
+          z-index: -1;
+        }
+
+        .badge-pulse {
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+          }
         }
       `}</style>
     </>

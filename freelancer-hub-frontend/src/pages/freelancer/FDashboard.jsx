@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { useMediaQuery } from 'react-responsive';
@@ -9,7 +9,7 @@ import FSider from '../../components/freelancer/FSider';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import LoadingComponent from '../../components/LoadingComponent';
 
-import { BiddingOverview, Notifications, ProjectManagementPage, ProjectStatusOverview, UpcomingEvents } from './dashboard';
+import { BiddingOverview, ProjectManagementPage, ProjectStatusOverview, UpcomingEvents } from './dashboard';
 import FreelancerAnalyticsPage from './dashboard/FreelancerAnalyticsPage';
 import Earnings from './dashboard/Earnings';
 
@@ -17,13 +17,28 @@ import Earnings from './dashboard/Earnings';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
-const FDashboard = () => {
+const FDashboard = ({ userId, role, isAuthenticated, isEditable }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
+  // Extract component from URL pathname
+  const getComponentFromPath = () => {
+    const path = location.pathname.split('/').pop();
+    const componentMap = {
+      'projects': 'projects',
+      'earnings': 'earnings',
+      'bidding-overview': 'bidding-overview',
+      'project-status-overview': 'project-status-overview',
+      'upcoming-events': 'upcoming-events',
+      'freelancer-analytics': 'freelancer-analytics',
+      'dashboard': 'freelancer-analytics'
+    };
+    return componentMap[path] || 'freelancer-analytics';
+  };
+
   const [state, setState] = useState({
-    activeComponent: 'freelancer-analytics',
+    activeComponent: getComponentFromPath(),
     activeProfileComponent: 'view_profile',
     loading: true,
     individualLoading: false,
@@ -31,29 +46,12 @@ const FDashboard = () => {
   });
 
   useEffect(() => {
-    const initializeDashboard = async () => {
-      try {
-        const currentState = location.state?.component;
-        const currentProfileState = location.state?.profileComponent;
-        
-        setState(prev => ({
-          ...prev,
-          activeComponent: currentState || 'freelancer-analytics',
-          activeProfileComponent: currentProfileState || prev.activeProfileComponent,
-          loading: false
-        }));
-      } catch (error) {
-        setState(prev => ({
-          ...prev,
-          error: 'Failed to initialize dashboard',
-          loading: false
-        }));
-        toast.error('Failed to load dashboard. Please try again.');
-      }
-    };
-
-    initializeDashboard();
-  }, [location.state]);
+    setState(prev => ({
+      ...prev,
+      activeComponent: getComponentFromPath(),
+      loading: false
+    }));
+  }, [location.pathname]);
 
   const validateFile = (file) => {
     if (!file) return false;
@@ -71,17 +69,19 @@ const FDashboard = () => {
   const handleMenuClick = async (component) => {
     try {
       setState(prev => ({ ...prev, individualLoading: true }));
-      
-      if (location.pathname !== '/freelancer/dashboard') {
-        navigate('/freelancer/dashboard', { state: { component } });
-      } else {
-        setState(prev => ({ ...prev, activeComponent: component }));
-      }
-      
+      navigate(`/freelancer/dashboard/${component}`);
       await new Promise(resolve => setTimeout(resolve, 500));
-      setState(prev => ({ ...prev, individualLoading: false }));
+      setState(prev => ({ 
+        ...prev, 
+        activeComponent: component,
+        individualLoading: false 
+      }));
     } catch (error) {
-      setState(prev => ({ ...prev, error: error.message, individualLoading: false }));
+      setState(prev => ({ 
+        ...prev, 
+        error: error.message, 
+        individualLoading: false 
+      }));
       toast.error('Failed to switch components. Please try again.');
     }
   };
@@ -104,28 +104,6 @@ const FDashboard = () => {
     }
   };
 
-  const renderComponent = () => {
-    const components = {
-      'projects': ProjectManagementPage,
-      'earnings': Earnings,
-      'bidding-overview': BiddingOverview,
-      'project-status-overview': ProjectStatusOverview,
-      'upcoming-events': UpcomingEvents,
-      'freelancer-analytics': FreelancerAnalyticsPage
-    };
-
-    const Component = components[state.activeComponent];
-    if (!Component) return null;
-
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<LoadingComponent variant="dashboard" role="freelancer" className="bg-violet-200 animate-pulse" />}>
-          <Component />
-        </Suspense>
-      </ErrorBoundary>
-    );
-  };
-
   return (
     <motion.div 
       className="flex h-screen bg-gray-100"
@@ -134,27 +112,40 @@ const FDashboard = () => {
       transition={{ duration: 0.3 }}
     >
       <FSider 
+        userId={userId}
+        role={role}
+        isAuthenticated={isAuthenticated}
+        isEditable={isEditable}
         dropdown={true} 
-        collapsed={true} 
-        handleMenuClick={handleMenuClick} 
+        collapsed={true}
+        handleMenuClick={handleMenuClick}
         abcds={state.activeComponent}
-        activeProfileComponent={state.activeComponent}
-        handleProfileMenu={handleProfileMenu}
       />
       
       <div className={`flex-1 flex flex-col overflow-x-hidden ${
         isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'
       }`}>
-        <FHeader />
+        <FHeader 
+          userId={userId}
+          role={role}
+          isAuthenticated={isAuthenticated}
+          isEditable={isEditable}
+        />
         
         <div className="flex-1 overflow-auto bg-gray-200 p-2">
-          {state.loading ? (
-            <LoadingComponent variant="dashboard" role="freelancer" className="bg-violet-200 animate-pulse" />
-          ) : state.individualLoading ? (
-            <LoadingComponent variant="dashboard" role="freelancer" className="bg-violet-200 animate-pulse" />
-          ) : (
-            renderComponent()
-          )}
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingComponent variant="dashboard" role="freelancer" className="bg-violet-200 animate-pulse" />}>
+              <Routes>
+                <Route index element={<FreelancerAnalyticsPage />} />
+                <Route path="freelancer-analytics" element={<FreelancerAnalyticsPage />} />
+                <Route path="projects" element={<ProjectManagementPage />} />
+                <Route path="earnings" element={<Earnings />} />
+                <Route path="bidding-overview" element={<BiddingOverview />} />
+                <Route path="project-status-overview" element={<ProjectStatusOverview />} />
+                <Route path="upcoming-events" element={<UpcomingEvents />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
 

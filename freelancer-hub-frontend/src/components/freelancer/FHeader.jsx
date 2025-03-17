@@ -9,9 +9,10 @@ import { motion } from 'framer-motion';
 import { Tooltip, Badge, Input, AutoComplete } from 'antd';
 import { useMediaQuery } from 'react-responsive';
 import { RiMessage3Fill } from "react-icons/ri";
+import PropTypes from 'prop-types';
 
 
-const FHeader = () => {
+const FHeader = ({ userId, role, isAuthenticated, isEditable }) => {
   const navigate = useNavigate();
   const [isProfileClicked, setIsProfileClicked] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -38,7 +39,12 @@ const FHeader = () => {
       });
       Cookies.remove("accessToken");
       Cookies.remove("refreshToken");
-      navigate("/login");
+      Cookies.remove("role");
+      Cookies.remove("userId");
+      localStorage.clear();
+      setTimeout(() => {  
+        navigate("/");
+      }, 1000);
     } catch (error) {
       console.error(error);
     }
@@ -55,33 +61,40 @@ const FHeader = () => {
   };
 
   return (
-    <header className="border-b-gray-300 bg-white text-black border h-16 flex items-center px-4 justify-between z-10 shadow-sm">
+    <header className="bg-white border-b border-gray-100 h-16 flex items-center px-6 justify-between z-10 sticky top-0 shadow-sm backdrop-blur-lg bg-white/80">
       {/* Logo Section */}
       <motion.div 
-        whileHover={{ scale: 1.05 }}
+        whileHover={{ scale: 1.02 }}
         className="flex items-center"
       >
-        <Link to="/" className="text-xl font-bold tracking-wide text-violet-700">
-          Veloro<span className="text-violet-500">Freelance</span>
+        <Link to="/" className="text-xl font-bold tracking-tight">
+          <span className="bg-gradient-to-r from-violet-800 to-teal-600 bg-clip-text text-transparent">
+            Veloro
+          </span>
         </Link>
       </motion.div>
 
       {/* Search Bar */}
       <motion.div 
         className={`relative transition-all duration-300 ${isSearchFocused ? 'w-96' : 'w-72'} ${isMobile ? 'hidden' : 'block'}`}
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: 1.01 }}
       >
         <AutoComplete
           value={searchQuery}
           onChange={setSearchQuery}
           onSearch={handleSearch}
-          options={searchResults.map(result => ({ value: result.value, label: <Link to={result.link}>{result.value}</Link> }))}
-          placeholder="Search projects, clients, skills..."
+          options={searchResults.map(result => ({ 
+            value: result.value, 
+            label: <Link to={result.link}>{result.value}</Link> 
+          }))}
           className="w-full"
         >
           <Input
-            prefix={<FaSearch className="text-gray-500" />}
-            className="rounded-full px-4 py-2 bg-gray-100 text-gray-900 focus:outline-none"
+            prefix={<FaSearch className="text-gray-400" />}
+            className="rounded-full px-4 py-2 bg-gray-50/80 hover:bg-gray-50 focus:bg-white
+              border border-gray-200 hover:border-violet-200 focus:border-violet-300
+              transition-all duration-300 focus:ring-2 focus:ring-violet-100"
+            placeholder="Search projects, skills..."
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
           />
@@ -89,93 +102,115 @@ const FHeader = () => {
       </motion.div>
 
       {/* Actions Section */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-5">
         {/* Quick Actions */}
-        <motion.div 
-          className="flex items-center gap-4"
-        >
-
-          <Tooltip title="My Projects">
+        <motion.div className="flex items-center gap-5">
+          <Tooltip title="My Projects" placement="bottom">
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 text-violet-700 hover:text-violet-900 transition-all duration-300"
-              onClick={() => navigate('/freelancer/my-projects')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`p-2 text-gray-600 hover:text-violet-700 transition-all duration-300 hover:bg-violet-50 ${location.pathname === '/freelancer/dashboard/project-management' ? 'text-violet-700 bg-violet-50 rounded-full' : ''}`}
+              onClick={() => navigate('/freelancer/dashboard/project-management')}
             >
               <FaDiagramProject className="text-xl" />
             </motion.button>
           </Tooltip>
 
-          <Tooltip title="Messages">
+          <Tooltip title="Messages" placement="bottom">
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 text-violet-700 hover:text-violet-900 transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 text-gray-600 hover:text-violet-700 transition-all duration-300"
               onClick={() => navigate('/freelancer/messages')}
             >
-            <RiMessage3Fill className="text-xl" />
+              <RiMessage3Fill className="text-xl" />
             </motion.button>
+          </Tooltip>
+
+          {/* Notifications */}
+          <Tooltip title="Notifications" placement="bottom">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/freelancer/notifications')} 
+              className="relative cursor-pointer"
+            >
+              <FaBell className="text-xl text-gray-600 hover:text-violet-700 transition-all duration-300" />
+              <Badge 
+                count={5} 
+                className="absolute -top-2 -right-2"
+                style={{ 
+                  backgroundColor: '#8B5CF6',
+                  boxShadow: '0 0 0 2px #fff'
+                }}
+              />
+            </motion.div>
           </Tooltip>
         </motion.div>
 
-        {/* Notifications */}
+        {/* User Profile */}
         <motion.div 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigate('/freelancer/notifications')} 
-          className="relative cursor-pointer"
-        >
-          <FaBell className="text-xl text-violet-700" />
-          <Badge count={5} className="absolute -top-2 -right-2" />
-        </motion.div>
-
-        {/* User Dropdown */}
-        <motion.div 
-          className="relative group"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          className="relative group pl-5 border-l border-gray-100"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           <FaUserCircle
-            className="text-2xl text-violet-700 cursor-pointer"
+            className="text-2xl text-gray-600 hover:text-violet-700 cursor-pointer transition-all duration-300"
             onClick={toggleProfileDropdown}
           />
+          
           {isProfileClicked && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute right-0 bg-white text-black rounded-lg shadow-md mt-2 w-48"
+              exit={{ opacity: 0 }}
+              className="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden"
             >
-              <span
-                className="block px-4 py-2 hover:bg-gray-100 transition"
-                onClick={() => { 
-                  setIsProfileClicked(false);
-                  navigate('/freelancer/profile');
-                }}
-              >
-                <p className="text-black">Profile</p>
-              </span>
-              <Link
-                to="/settings"
-                className="block px-4 py-2 hover:bg-gray-100 transition"
-                onClick={() => setIsProfileClicked(false)}
-              >
-                <p className="text-black">Settings</p>
-              </Link>
-              <Link
-                onClick={() => {
-                  handleLogout();
-                  setIsProfileClicked(false);
-                }}
-                className="block px-4 py-2 hover:bg-gray-100 transition"
-              >
-                <p className="text-black">Logout</p>
-              </Link>
+              <div className="py-1">
+                <motion.span
+                  whileHover={{ x: 4 }}
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                  onClick={() => { 
+                    setIsProfileClicked(false);
+                    navigate('/freelancer/profile');
+                  }}
+                >
+                  Profile
+                </motion.span>
+                <motion.span
+                  whileHover={{ x: 4 }}
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                  onClick={() => {
+                    setIsProfileClicked(false);
+                    navigate('/settings');
+                  }}
+                >
+                  Settings
+                </motion.span>
+                <motion.span
+                  whileHover={{ x: 4 }}
+                  className="block px-4 py-2 text-red-600 hover:bg-gray-50 cursor-pointer transition-all duration-200"
+                  onClick={() => {
+                    handleLogout();
+                    setIsProfileClicked(false);
+                  }}
+                >
+                  Logout
+                </motion.span>
+              </div>
             </motion.div>
           )}
         </motion.div>
       </div>
     </header>
   );
+};
+
+FHeader.propTypes = {
+  userId: PropTypes.string.isRequired,
+  role: PropTypes.string.isRequired,
+  isAuthenticated: PropTypes.bool.isRequired,
+  isEditable: PropTypes.bool.isRequired
 };
 
 export default FHeader;

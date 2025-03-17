@@ -128,7 +128,6 @@ const CHomepage = ({ userId, role }) => {
 
         setSpendingTrend(spendingResponse.data);
 
-        console.log(response.data)
 
         setLoading(false);
       } catch (error) {
@@ -148,11 +147,7 @@ const CHomepage = ({ userId, role }) => {
       navigate(`/client/profile/${userId}`, { state: { profileComponent } });
     }
   };
-  const handleMenuClick = (component) => {
-    if (location.pathname !== "/client/dashboard") {
-      navigate("/client/dashboard", { state: { component } });
-    }
-  };
+
 
   const renderStars = (rating) => (
     <div className="flex items-center gap-1">
@@ -171,10 +166,10 @@ const CHomepage = ({ userId, role }) => {
     <div className="flex h-screen bg-gray-100">
       <CSider 
         userId={userId} 
+        
         role={role} 
         dropdown={true} 
         collapsed={true} 
-        handleMenuClick={handleMenuClick} 
         handleProfileMenu={handleProfileMenu}
       />
     

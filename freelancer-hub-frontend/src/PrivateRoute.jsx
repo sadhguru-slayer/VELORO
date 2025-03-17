@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams, Outlet } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie'; // Import js-cookie
@@ -7,25 +7,36 @@ import { verifyToken, refreshToken as refreshTokenFunction } from './utils/auth'
 import LoadingComponent from './components/LoadingComponent';
 import FProfile from './pages/freelancer/FProfile';
 import CProfile from './pages/client/CProfile';
+import ProfilePageLayout from './components/layouts/ProfilePageLayout';
 
-const PrivateRoute = ({ element: Component, ...rest }) => {
+const PrivateRoute = ({ element: Component, allowedRoles = [], ...rest }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { id: routeId } = useParams(); // Extract the id from the route params
+  const { id: routeId } = useParams();
   const [authState, setAuthState] = useState({
     isAuthenticated: false,
     isProfiled: false,
     role: '',
     userId: null,
-    loading: true, // Initially true while we are verifying the authentication
+    loading: true,
+    hasPermission: false
   });
-  const [isEditable, setIsEditable] = useState(false); // Moved here to ensure it's not re-rendered
+  const [isEditable, setIsEditable] = useState(false);
+
+  // Move token and role outside useEffect to avoid recreation on each render
+  const token = Cookies.get('accessToken');
+  const role = Cookies.get('role');
 
   // Function to check if a token is expiring soon (within 60 seconds)
   const isTokenExpiringSoon = (token) => {
-    const decoded = jwtDecode(token);
-    const currentTime = Date.now() / 1000; // Current time in seconds
-    return decoded.exp - currentTime < 60; // Token will expire in less than 60 seconds
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000; // Current time in seconds
+      return decoded.exp - currentTime < 60; // Token will expire in less than 60 seconds
+    } catch (error) {
+      console.error('Token decode error:', error);
+      return true;
+    }
   };
 
   // Function to refresh the access token using the refresh token
@@ -43,132 +54,157 @@ const PrivateRoute = ({ element: Component, ...rest }) => {
       }
     } catch (error) {
       console.error('Error refreshing token:', error);
-      return null;
     }
     return null;
   };
 
-  // Function to authenticate the user and check the token status
+  // Authenticate user function
   const authenticateUser = async () => {
-    const token = Cookies.get('accessToken'); // Retrieve token from cookies
-    const refresh = Cookies.get('refreshToken'); // Retrieve refresh token from cookies
-
     if (!token) {
-      setAuthState((prevState) => ({ ...prevState, loading: false }));
+      setAuthState(prev => ({ ...prev, loading: false }));
       return;
     }
 
     try {
-      // Check if the access token is about to expire
       if (isTokenExpiringSoon(token)) {
         const newToken = await refreshAccessToken();
-        if (newToken) {
-          return authenticateUser(); // Retry with the new token
-        }
-      }
-
-      // Verify the access token's validity using the refresh token
-      const isTokenValid = await verifyToken(refresh);
-      if (!isTokenValid && refresh) {
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          Cookies.set('accessToken', newToken, { expires: 1, secure: true, sameSite: 'Strict' });
-          return authenticateUser(); // Retry with the new token
-        } else {
+        if (!newToken) {
           throw new Error('Token refresh failed');
         }
-      } else if (!isTokenValid) {
-        throw new Error('Invalid token and no refresh token available');
       }
 
-      // Fetch user profile if the token is valid
+      const refresh = Cookies.get('refreshToken');
+      const isTokenValid = await verifyToken(refresh);
+      
+      if (!isTokenValid && refresh) {
+        const newToken = await refreshAccessToken();
+        if (!newToken) {
+          throw new Error('Token refresh failed');
+        }
+      }
+
       const response = await axios.get('http://127.0.0.1:8000/api/profile/', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const { is_profiled, role, id } = response.data.user;
+      const hasPermission = allowedRoles.length === 0 || allowedRoles.includes(role);
 
       setAuthState({
         isAuthenticated: true,
         isProfiled: is_profiled,
         role,
-        userId: id,  // Save user ID here
+        userId: id,
         loading: false,
+        hasPermission,
+      });
+
+      Cookies.set('userId', id, { 
+        expires: 1, 
+        secure: true, 
+        sameSite: 'Strict' 
       });
 
     } catch (error) {
       console.error('Authentication error:', error);
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
-      setAuthState((prevState) => ({ ...prevState, loading: false }));
+      Cookies.remove('userId');
+      setAuthState(prev => ({ ...prev, loading: false }));
       navigate('/login');
     }
   };
 
-  // Periodically check token validity at regular intervals
+  // Initial authentication check
   useEffect(() => {
     authenticateUser();
+  }, [token]); // Only re-run when token changes
 
-    const intervalId = setInterval(async () => {
-      const token = Cookies.get('accessToken');
-      
-      if (token) {
-        if (isTokenExpiringSoon(token)) {
-          await refreshAccessToken();
-          authenticateUser(); // Retry authentication after refreshing the token
-        }
-      } else {
-        console.log("No token found.");
-      }
-    }, 30000); // Check every 30 seconds
-    
-    // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [navigate, location.pathname]);
-
-  const { isAuthenticated, role, loading, userId } = authState;
-
-  // Update isEditable state when userId and routeId match
+  // Periodic token check
   useEffect(() => {
-    if (userId) {
-      setIsEditable(routeId === userId.toString()); // Check if the route's id matches the authenticated userId
+    const intervalId = setInterval(async () => {
+      const currentToken = Cookies.get('accessToken');
+      if (currentToken && isTokenExpiringSoon(currentToken)) {
+        await refreshAccessToken();
+      }
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, []); // Empty dependency array as this should only run once
+
+  // Update isEditable state
+  useEffect(() => {
+    if (authState.userId) {
+      setIsEditable(routeId === authState.userId.toString());
     }
-  }, [userId, routeId]);
+  }, [authState.userId, routeId]); // Only depend on userId and routeId
+
+  const { isAuthenticated,  loading,  hasPermission } = authState;
+  const userId = authState.userId;
 
   if (loading) {
     // Show loading screen until authentication is completed
     return <LoadingComponent text="Please wait while we verify your session..." />;
   }
 
+  // Handle public routes
+  if (!allowedRoles.length) {
+    return <Component {...rest} />;
+  }
+
+  // Handle profile routes for unauthenticated users
   if (!isAuthenticated) {
-    // Show profile for unauthenticated users
     if (location.pathname.includes('/freelancer/profile/')) {
-      return <FProfile {...rest} userId={routeId} isAuthenticated={isAuthenticated} isEditable={isEditable}/>;
+      return <FProfile {...rest} userId={routeId} isAuthenticated={false} isEditable={false}/>;
     }
     if (location.pathname.includes('/client/profile/')) {
-      return <CProfile  {...rest} userId={routeId} isAuthenticated={isAuthenticated} isEditable={isEditable}/>;
+      return <CProfile {...rest} userId={routeId} isAuthenticated={false} isEditable={false}/>;
     }
-
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Render the appropriate profile component based on the user's role and route
-  if (isAuthenticated) {
-    let Id = routeId === undefined ? userId : routeId;
-    if (role === 'client' && location.pathname.includes('/freelancer/profile/')) {
-      // If the user is a client and visiting the freelancer profile route, redirect to client profile
-      return <CProfile {...rest} userId={Id} role={role} isAuthenticated={isAuthenticated} isEditable={isEditable} />;
-    }
-    if (role === 'freelancer' && location.pathname.includes('/client/profile/')) {
-      // If the user is a freelancer and visiting the client profile route, redirect to freelancer profile
-      return <FProfile {...rest} userId={Id} role={role} isAuthenticated={isAuthenticated} isEditable={isEditable} />;
-    }
-
-    // Otherwise render the intended component (CProfile for client or FProfile for freelancer)
-    return <Component {...rest} userId={Id} role={role} isAuthenticated={isAuthenticated} isEditable={isEditable} />;
+  // Handle unauthorized access
+  if (!hasPermission) {
+    return <Navigate to={`/${role}/homepage`} replace />;
   }
 
-  return <Navigate to="/login" />;
+  // Handle profile routes for authenticated users
+  const currentId = routeId || userId;
+  
+  if (location.pathname.includes('/profile/')) {
+    if (role === 'client' && location.pathname.includes('/freelancer/')) {
+      return <FProfile {...rest} userId={currentId} role={role} isAuthenticated={true} isEditable={isEditable} />;
+    }
+    if (role === 'freelancer' && location.pathname.includes('/client/')) {
+      return <CProfile {...rest} userId={currentId} role={role} isAuthenticated={true} isEditable={isEditable} />;
+    }
+  }
+
+  // Handle messages and other routes
+  if (location.pathname.includes('/messages/')) {
+    return (
+      <Component 
+        {...rest} 
+        userId={userId} 
+        role={role} 
+        isAuthenticated={isAuthenticated} 
+        isEditable={isEditable}
+      >
+        <Outlet context={{ userId, role, isAuthenticated, isEditable }} />
+      </Component>
+    );
+  }
+
+  // Handle all other authenticated routes
+  return (
+    <Component 
+      {...rest} 
+      userId={userId} 
+      role={role} 
+      isAuthenticated={isAuthenticated} 
+      isEditable={isEditable} 
+    />
+  );
 };
 
 export default PrivateRoute;

@@ -70,7 +70,7 @@ const allProjects = [
   },
 ];
 
-const BrowseProjectsPage = () => {
+const BrowseProjectsPage = ({ userId, role, isAuthenticated, isEditable }) => {
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
   const navigate = useNavigate();
@@ -123,13 +123,14 @@ const BrowseProjectsPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <FSider 
-        dropdown={true} 
-        collapsed={true} 
-        handleMenuClick={handleMenuClick} 
-        handleProfileMenu={handleProfileMenu} 
-      />
-      
+    <FSider 
+    userId={userId}
+    role={role}
+    isAuthenticated={isAuthenticated}
+    isEditable={isEditable}
+    dropdown={true} 
+    collapsed={true}
+  />      
       <div className={`flex-1 flex flex-col overflow-x-hidden ${
         isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'
       }`}><FHeader />
@@ -137,7 +138,7 @@ const BrowseProjectsPage = () => {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex-1 overflow-auto p-4"
+          className="flex-1 overflow-auto p-6"
         >
           <div className="max-w-7xl mx-auto">
             {/* Search Header */}

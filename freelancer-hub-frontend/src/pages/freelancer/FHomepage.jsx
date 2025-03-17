@@ -63,7 +63,8 @@ const projectData = {
   ],
 };
 
-const FHomepage = () => {
+const FHomepage = ({ userId, role, isAuthenticated, isEditable }) => {
+  
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const navigate = useNavigate();
   const location = useLocation();
@@ -241,30 +242,25 @@ const FHomepage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100">
       <FSider 
+        userId={userId}
+        role={role}
+        isAuthenticated={isAuthenticated}
+        isEditable={isEditable}
         dropdown={true} 
         collapsed={true} 
-        handleMenuClick={handleMenuClick} 
-        handleProfileMenu={handleProfileMenu} 
+        handleProfileMenu={handleProfileMenu}
       />
-      
-      <div className={`
-        flex-1 flex flex-col overflow-hidden
-        ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}
-      `}>
-
-        
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <FHeader />
-        </motion.div>
-
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'ml-0 pb-16' : 'ml-14'}`}>
+        <FHeader 
+          userId={userId}
+          role={role}
+          isAuthenticated={isAuthenticated}
+          isEditable={isEditable}
+        />
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto  space-y-8">
 {/* Welcome banner */}
             <div className="relative overflow-hidden rounded-2xl shadow-2xl min-h-[60vh]">
               {/* Gradient Background with Animation */}
