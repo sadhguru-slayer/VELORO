@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaSearch, FaBell, FaUserCircle, FaPlus, FaLock } from "react-icons/fa";
+import { FaSearch, FaBell, FaUserCircle, FaPlus, FaLock, FaEnvelope, FaUsers, FaCog, FaWallet } from "react-icons/fa";
 import { MdDashboard, MdWork } from "react-icons/md";
 import { IoMdBriefcase } from "react-icons/io";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -7,7 +7,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import DOMPurify from "dompurify";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tooltip } from 'antd';
+import { Tooltip, Spin } from 'antd';
 import { RiMessage3Fill } from "react-icons/ri";
 
 const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
@@ -28,6 +28,11 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadDirectMessages, setUnreadDirectMessages] = useState(0);
+  const [unreadGroupMessages, setUnreadGroupMessages] = useState(0);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [isLoadingWallet, setIsLoadingWallet] = useState(true);
 
   // Quick actions menu items
   const quickActions = [
@@ -48,7 +53,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
     {
       icon: <IoMdBriefcase className="text-lg" />,
       label: 'My Projects',
-      path: '/client/projects',
+      path: '/client/dashboard/projects',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
@@ -86,27 +91,42 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
 
   // WebSocket connection for search
   useEffect(() => {
-    socketRef.current = new WebSocket("ws://localhost:8000/ws/search/");
+    const connectWebSocket = () => {
+      socketRef.current = new WebSocket("ws://localhost:8000/ws/search/");
+      
+      socketRef.current.onopen = () => {
+        console.log("WebSocket Connected for Search");
+        const token = Cookies.get("accessToken");
+        if (token) {
+          socketRef.current.send(JSON.stringify({ type: "auth", token }));
+        }
+      };
 
-    socketRef.current.onopen = () => {
-      console.log("WebSocket Connected for Search");
-      const token = Cookies.get("accessToken");
-      if (token) {
-        socketRef.current.send(JSON.stringify({ type: "auth", token }));
-      }
+      socketRef.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          console.error("Search WebSocket error:", data.error);
+          return;
+        }
+        setSearchResults({
+          users: data.users || [],
+          projects: data.projects || [],
+          categories: data.categories || [],
+        });
+        setShowResults(true);
+      };
+
+      socketRef.current.onclose = () => {
+        console.log("WebSocket Disconnected, attempting to reconnect...");
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      socketRef.current.onerror = (error) => {
+        console.error("WebSocket Error:", error);
+      };
     };
 
-    socketRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setSearchResults({
-        users: data.users || [],
-        projects: data.projects || [],
-        categories: data.categories || [],
-      });
-      setShowResults(true);
-    };
-
-    socketRef.current.onclose = () => console.log("WebSocket Disconnected");
+    connectWebSocket();
 
     return () => {
       if (socketRef.current) {
@@ -203,13 +223,16 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
     const term = event.target.value;
     setSearchTerm(term);
 
-    if (term.length >= 2) {
+    if (term.length >= 2 && socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ 
+        query: term,
+        token: Cookies.get("accessToken")
+      }));
       setIsSearchActive(true);
-    const token = Cookies.get("accessToken");
-      if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ query: term, token }));
+    } else {
+      setShowResults(false);
+      setIsSearchActive(false);
     }
-  }
   };
 
   const handleCloseSearch = () => {
@@ -276,7 +299,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                         whileHover={{ x: 4 }}
                         className="flex items-center gap-3 p-4 hover:bg-gray-50 rounded-md cursor-pointer"
                         onClick={() => {
-                          navigate(`/${user.role}/profile/${user.id}`);
+                          navigate(`/${user.pathrole}/profile/${user.id}/view_profile`);
                           setIsMobileSearchOpen(false);
                         }}
                       >
@@ -312,7 +335,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                         whileHover={{ x: 4 }}
                         className="p-4 hover:bg-gray-50 rounded-md cursor-pointer"
                         onClick={() => {
-                          navigate(`/project/${project.id}`);
+                          navigate(`/project/${project.id}/view_project`);
                           setIsMobileSearchOpen(false);
                         }}
                       >
@@ -345,6 +368,78 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
           )}
         </div>
       </motion.div>
+    );
+  };
+
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/finance/wallet/balance/', {
+          headers: { Authorization: `Bearer ${Cookies.get('accessToken')}` },
+        });
+        console.log(response.data);
+        setWalletBalance(response.data.balance);
+      } catch (error) {
+        console.error('Error fetching wallet balance:', error);
+      } finally {
+        setIsLoadingWallet(false);
+      }
+    };
+
+    fetchWalletBalance();
+    // Set up polling every 30 seconds to update balance
+    const intervalId = setInterval(fetchWalletBalance, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const WalletDisplay = ({ isCompact = false }) => {
+    const formatBalance = (balance) => {
+      if (balance === null) return '---';
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR'
+      }).format(balance);
+    };
+
+    if (isCompact) {
+      return (
+        <div className="px-4 py-3 bg-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FaWallet className="text-teal-600" />
+            <span className="text-sm text-gray-600">Balance:</span>
+          </div>
+          {isLoadingWallet ? (
+            <Spin size="small" />
+          ) : (
+            <span className="text-sm font-medium text-gray-900">
+              {formatBalance(walletBalance)}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Tooltip title="Wallet Balance">
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="relative cursor-pointer group"
+          onClick={() => navigate('/client/wallet')}
+        >
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200">
+            <FaWallet className="text-teal-600" />
+            {isLoadingWallet ? (
+              <Spin size="small" />
+            ) : (
+              <span className="text-sm font-medium text-gray-900">
+                {formatBalance(walletBalance)}
+              </span>
+            )}
+          </div>
+        </motion.div>
+      </Tooltip>
     );
   };
 
@@ -458,7 +553,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                                 key={user.id}
                                 whileHover={{ x: 4 }}
                                 className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md cursor-pointer"
-                                onClick={() => navigate(`/${user.role}/profile/${user.id}`)}
+                                onClick={() => navigate(`/${user.pathrole}/profile/${user.id}/view_profile`)}
                               >
                                 {user.profile_picture ? (
                                   <img 
@@ -519,81 +614,23 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
 
       {/* Actions Section */}
       <div className="flex items-center gap-6">
-              {/* Mobile Quick Actions */}
-              <div className="md:hidden relative mobile-actions">
-                <Tooltip title="Quick Actions">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowMobileActions(!showMobileActions)}
-                    className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  >
-                    <FaPlus className="text-lg" />
-                  </motion.button>
-                </Tooltip>
-
-                <AnimatePresence>
-                  {showMobileActions && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
-                    >
-                      <div className="py-2">
-                        {quickActions.map((action) => (
-                          <motion.button
-                            key={action.path}
-                            whileHover={{ x: 4 }}
-                            onClick={() => {
-                              navigate(action.path);
-                              setShowMobileActions(false);
-                            }}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3"
-                          >
-                            <span className={`${action.color} p-2 rounded-lg ${action.bgColor}`}>
-                              {action.icon}
-                            </span>
-                            <span className="text-gray-700">{action.label}</span>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-        {/* Add Messages Icon */}
-        <Tooltip title="Messages">
-          <motion.div
+        {/* Hide wallet on mobile */}
+        <div className="hidden md:block">
+          <WalletDisplay />
+        </div>
+        
+        {/* Mobile Search Button */}
+        <div className="md:hidden">
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="relative cursor-pointer group"
-            onClick={() => navigate('/client/messages/direct')}
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"
           >
-            <div className="relative">
-              <RiMessage3Fill className="text-xl text-gray-600 group-hover:text-teal-600 transition-colors" />
-              {unreadMessages > 0 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-2 -right-2 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-sm"
-                >
-                  {unreadMessages > 99 ? '99+' : unreadMessages}
-                </motion.div>
-              )}
-              <motion.div
-                className="absolute inset-0 rounded-full bg-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                initial={false}
-                whileHover={{
-                  scale: 1.8,
-                  opacity: 0.15,
-                }}
-              />
-            </div>
-          </motion.div>
-        </Tooltip>
-
+            <FaSearch className="text-lg" />
+          </motion.button>
+        </div>
+        
         {/* Notifications */}
         <Tooltip title="Notifications">
           <motion.div
@@ -603,7 +640,9 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
             onClick={() => navigate('/client/notifications')}
           >
             <div className="relative">
-              <FaBell className="text-xl text-gray-600 group-hover:text-teal-600 transition-colors" />
+              <FaBell className={`text-xl text-gray-600 group-hover:text-teal-600 transition-colors
+                ${location.pathname === '/client/notifications' ? 'text-teal-600 ' : 'text-gray-600'}
+                `} />
               {notificationsCount > 0 && (
                 <motion.div
                   initial={{ scale: 0 }}
@@ -622,6 +661,103 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                 }}
               />
             </div>
+          </motion.div>
+        </Tooltip>
+
+        {/* Add Messages Icon */}
+        <Tooltip title="Messages">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative cursor-pointer group"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMessagesOpen(!isMessagesOpen);
+            }}
+          >
+            <div className="relative">
+              <RiMessage3Fill className={`text-xl text-gray-600 group-hover:text-teal-600 transition-colors
+                ${location.pathname.includes('/client/messages') ? 'text-teal-600 ' : 'text-gray-600'}
+                `} />
+              {unreadMessages > 0 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-2 -right-2 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-sm"
+                >
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </motion.div>
+              )}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                initial={false}
+                whileHover={{
+                  scale: 1.8,
+                  opacity: 0.15,
+                }}
+              />
+            </div>
+
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {isMessagesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 border border-gray-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="py-2">
+                    <Link
+                      to="/client/messages/direct"
+                      className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100
+                        ${location.pathname === '/client/messages/direct' ? 'text-teal-600 ' : 'text-gray-600'}
+                        `}
+                      onClick={() => setIsMessagesOpen(false)}
+                    >
+                      <FaEnvelope className="w-4 h-4 mr-3" />
+                      Direct Messages
+                      {unreadDirectMessages > 0 && (
+                        <span className={`ml-auto bg-teal-500 text-white text-xs px-2 py-1 rounded-full
+                          ${location.pathname === '/client/messages/direct' ? 'text-teal-600 ' : 'text-gray-600'}
+                          `}
+                        >
+                          {unreadDirectMessages > 99 ? '99+' : unreadDirectMessages}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/client/messages/groups"
+                      className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100
+                        ${location.pathname === '/client/messages/groups' ? 'text-teal-600 ' : 'text-gray-600'}
+                        `}
+                      onClick={() => setIsMessagesOpen(false)}
+                    >
+                      <FaUsers className="w-4 h-4 mr-3" />
+                      Group Chats
+                      {unreadGroupMessages > 0 && (
+                        <span className={`ml-auto bg-teal-500 text-white text-xs px-2 py-1 rounded-full
+                          ${location.pathname === '/client/messages/groups' ? 'text-teal-600 ' : 'text-gray-600'}
+                          `}
+                        >
+                          {unreadGroupMessages > 99 ? '99+' : unreadGroupMessages}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/client/messages/settings"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsMessagesOpen(false)}
+                    >
+                      <FaCog className="w-4 h-4 mr-3" />
+                      Chat Settings
+                    </Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </Tooltip>
 
@@ -644,7 +780,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden"
+                className="absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden z-[100]"
               >
                 <div className="py-2">
                   <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white">
@@ -669,6 +805,11 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                       <span className="w-2 h-2 rounded-full bg-green-500"></span>
                       <span>Online</span>
                     </div>
+                  </div>
+
+                  {/* Add wallet display for mobile */}
+                  <div className="md:hidden">
+                    <WalletDisplay isCompact={true} />
                   </div>
 
                   <div className="py-2">
@@ -713,17 +854,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
           </AnimatePresence>
         </div>
 
-        {/* Mobile Search Button */}
-        <div className="md:hidden">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsMobileSearchOpen(true)}
-            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"
-          >
-            <FaSearch className="text-lg" />
-          </motion.button>
-    </div>
+       
   </div>
           </>
         )}

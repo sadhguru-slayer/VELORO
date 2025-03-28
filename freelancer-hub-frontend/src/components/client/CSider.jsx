@@ -25,6 +25,7 @@ import {
   FaChartLine,
   FaCalendarAlt,
   FaInbox,
+  FaPlus,
   FaComments,
   FaEnvelope,
   FaArchive,
@@ -124,13 +125,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
       icon: <FaUsers className={iconClass} />, 
       tooltip: 'Group Chats' 
     },
-    { 
-      abcd: 'communities', 
-      to: '/client/messages/communities',
-      text: 'Communities', 
-      icon: <FaGlobe className={iconClass} />, 
-      tooltip: 'Communities' 
-    },
+
     { 
       abcd: 'settings', 
       to: '/client/messages/settings',
@@ -151,20 +146,26 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
     { 
       abcd: 'homepage', 
       to: '/client/homepage', 
+      link: '/client/homepage',
       icon: <FaHome className={iconClass} />,
       text: 'Home'
     },
     { 
       abcd: 'dashboard', 
       to: '/client/dashboard', 
+      link: '/client/dashboard',
       icon: <FaChartBar className={iconClass} />,
       text: 'Dashboard'
     },
 
+
+
+ 
     { 
       abcd: 'post-project', 
       to: '/client/post-project', 
-      icon: <FaProjectDiagram className={iconClass} />,
+      link: '/client/post-project',
+      icon: <FaPlus className="text-lg" />,
       text: 'Post'
     },
     { 
@@ -174,12 +175,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
       text: 'View Bids',
       tooltip: 'View Project Bids'
     },
-    { 
-      abcd: 'profile', 
-      to: `/client/profile/${userId}`, 
-      icon: <FaUserCircle className={iconClass} />,
-      text: 'Profile'
-    },
+
 
   ];
 
@@ -430,7 +426,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
           initial={{ y: 0 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 shadow-lg"
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-lg"
         >
           <div className="flex items-center justify-around px-2 py-2 max-w-screen-xl mx-auto">
             {mobileMainLinks.map((link) => (
@@ -439,7 +435,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleMobileNavClick(link)}
                 className={`flex flex-col items-center justify-center p-2 rounded-lg ${
-                  location.pathname === link.to 
+                  location.pathname.includes(link.link)
                     ? 'text-teal-500 bg-teal-50' 
                     : 'text-gray-400'
                 }`}
@@ -468,7 +464,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
           bg-white/90 backdrop-blur-xl
       flex flex-col items-center 
           transition-all duration-300 ease-in-out
-          fixed z-20 
+          fixed z-50 
           ${isCollapsed ? 'w-14' : 'w-56'}
           shadow-lg border-r border-gray-100
         `}
@@ -582,7 +578,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
             </AnimatePresence>
         </div>
 
-          <div className="space-y-1">
+  {/*        <div className="space-y-1">
             <Tooltip title={isCollapsed ? "Messages" : ""} placement="right">
               <motion.div
                 whileHover={{ x: 4 }}
@@ -666,7 +662,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </div> */}
 
           <Tooltip title={isCollapsed ? "Profile" : ""} placement="right">
             <div className="space-y-1">

@@ -115,25 +115,28 @@ const LoginPage = () => {
         }
       );
 
-      const { access, refresh, role } = response.data;
+      const { access, refresh, role, is_talentrise } = response.data;
 
-      // Set cookies with appropriate options
       const cookieOptions = {
         secure: true,
         sameSite: 'Strict',
-        expires: formData.rememberMe ? 7 : undefined // 7 days if remember me
+        expires: formData.rememberMe ? 7 : undefined
       };
 
       Cookies.set("accessToken", access, cookieOptions);
       Cookies.set("refreshToken", refresh, cookieOptions);
       Cookies.set("role", role, cookieOptions);
 
-      // Clear any stored data for fresh session
+      // Only set is_talentrise cookie if it exists in the response
+      if (is_talentrise) {
+        Cookies.set("is_talentrise", "true", cookieOptions);
+      }
+
       localStorage.clear();
 
-      // Navigate to appropriate homepage or return URL
-      const returnUrl = location.state?.from || (role === 'client' ? '/client/homepage' : '/freelancer/homepage');
-      navigate(returnUrl, { replace: true });
+      // Redirect based on role
+      const redirectPath = role === 'client' ? '/client/homepage' : '/freelancer/homepage';
+      navigate(redirectPath, { replace: true });
 
     } catch (error) {
       setLoading(false);

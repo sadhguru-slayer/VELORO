@@ -13,7 +13,7 @@ from django.urls import reverse
 def create_connection_notification(sender, instance, created, **kwargs):
     if created and instance.status == 'pending':
         # Create a notification for the user who sent the connection request
-        message_from_user = _(f"You have sent a connection request to <strong><a href='/{instance.to_user.role}/profile/{instance.to_user.id}'>{instance.to_user.username}</a></strong>.")
+        message_from_user = _(f"You have sent a connection request to <strong><a href='/{instance.to_user.role}/profile/{instance.to_user.id}/view_profile'>{instance.to_user.username}</a></strong>.")
         message_from_user = str(message_from_user)
         fuser = instance.from_user
         
@@ -25,7 +25,7 @@ def create_connection_notification(sender, instance, created, **kwargs):
         )
 
         # Create a notification for the user who received the connection request
-        message_to_user = _(f"You have received a connection request from <strong><a href='/{instance.from_user.role}/profile/{instance.from_user.id}'>{instance.from_user.username}</a></strong>.")
+        message_to_user = _(f"You have received a connection request from <strong><a href='/{instance.from_user.role}/profile/{instance.from_user.id}/view_profile'>{instance.from_user.username}</a></strong>.")
         message_to_user = str(message_to_user)
         tuser = instance.to_user
         Notification.objects.create(

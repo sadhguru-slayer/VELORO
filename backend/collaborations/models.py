@@ -19,8 +19,8 @@ class Collaboration(models.Model):
     COLLABORATION_TYPE_CHOICES = [
         ('freelancer', 'Freelancer Collaboration'),
         ('client', 'Client Collaboration'),
-        ('mixed', 'Mixed Collaboration'),
         ('project', 'Project Collaboration'),  # For general collaborations on a single project
+        ('request_job', 'Request Job Collaboration'),
     ]
     collaboration_type = models.CharField(max_length=50, choices=COLLABORATION_TYPE_CHOICES, default='mixed')
 

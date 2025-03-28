@@ -143,7 +143,7 @@ const CConnections = ({ userId, role }) => {
 
                               <div className="flex-1">
                                 <h3 
-                                  onClick={() => navigate(`/${connection.role}/profile/${connection.user_id}`)}
+                                  onClick={() => navigate(`/${connection.role}/profile/${connection.user_id}/view_profile`)}
                                   className="text-lg font-semibold text-teal-600 cursor-pointer hover:text-teal-700"
                                 >
                                   {connection.user_name}
@@ -166,11 +166,12 @@ const CConnections = ({ userId, role }) => {
                                     <ClockCircleOutlined />
                                     {format_timeStamp(connection.created_at)}
                                   </div>
+                              
                                   <Tooltip title="Send Message">
                                     <motion.button
                                       whileHover={{ scale: 1.1 }}
                                       whileTap={{ scale: 0.9 }}
-                                      onClick={() => navigate('/client/messages', { state: { userId: connection.user_id }})}
+                                      onClick={() => navigate('/client/messages/direct', { state: { userId: connection.user_id }})}
                                       className="p-2 rounded-full bg-teal-100 text-teal-600 
                                                hover:bg-teal-200 transition-all duration-300"
                                     >

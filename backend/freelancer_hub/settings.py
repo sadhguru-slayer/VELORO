@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'freelancer',
     'collaborations',
     'rest_framework_simplejwt',
+    'talentrise',
+    'financeapp',
     'drf_yasg',
     "corsheaders",
     'rest_framework_simplejwt.token_blacklist',
@@ -230,6 +232,10 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'  # URL prefix for media files (accessible to the browser)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Path where media files are stored on the server
 
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -239,4 +245,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = 'freelancer_hub.asgi.application'
 
 AUTH_USER_MODEL = 'core.User'
+
 

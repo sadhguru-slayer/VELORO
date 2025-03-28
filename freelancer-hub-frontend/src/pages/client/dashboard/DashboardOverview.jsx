@@ -15,6 +15,9 @@ import {
 } from '@ant-design/icons';
 import { Line, Pie } from '@ant-design/plots';
 import { useMediaQuery } from 'react-responsive';
+import { RiBarChartFill, RiPieChartFill, RiCalendarEventFill } from 'react-icons/ri';
+import { BsGraphUp, BsPeopleFill } from 'react-icons/bs';
+import { AiFillProject, AiOutlineAreaChart } from 'react-icons/ai';
 
 // Dummy data for new features
 const projectMetrics = {
@@ -63,6 +66,15 @@ const DashboardOverview = () => {
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
+  // New state for additional features
+  const [activeProjects, setActiveProjects] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [financialOverview, setFinancialOverview] = useState({
+    totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0
+  });
+
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -82,9 +94,35 @@ const DashboardOverview = () => {
       }
     };
 
-    
-
     fetchDashboardData();
+  }, []);
+
+  // Fetch additional data
+  useEffect(() => {
+    const fetchAdditionalData = async () => {
+      try {
+        const accessToken = Cookies.get('accessToken');
+        const [projectsRes, teamRes, financeRes] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/api/client/active_projects', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }),
+          axios.get('http://127.0.0.1:8000/api/client/team_members', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }),
+          axios.get('http://127.0.0.1:8000/api/client/financial_overview', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          })
+        ]);
+        
+        setActiveProjects(projectsRes.data);
+        setTeamMembers(teamRes.data);
+        setFinancialOverview(financeRes.data);
+      } catch (error) {
+        console.error('Error fetching additional data:', error);
+      }
+    };
+
+    fetchAdditionalData();
   }, []);
 
   // Project Health Distribution Chart Config
@@ -126,22 +164,96 @@ const DashboardOverview = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      {/* Enhanced Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h2 className="text-2xl font-bold text-teal-900 mb-2">Dashboard Overview</h2>
-        <p className="text-gray-600">Welcome to your client dashboard</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Overview</h2>
+            <p className="text-gray-600">Welcome back! Here's what's happening with your projects</p>
+          </div>
+          <Button 
+            type="primary" 
+            icon={<BellOutlined />}
+            className="flex items-center"
+          >
+            Notifications
+          </Button>
+        </div>
       </motion.div>
 
-      {/* Project Health Overview */}
+      {/* Quick Stats Grid */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={18}>
+        {[
+          {
+            title: 'Active Projects',
+            value: activeProjects.length,
+            icon: <AiFillProject className="text-3xl" />,
+            color: '#6366f1',
+            trend: 'up'
+          },
+          {
+            title: 'Team Members',
+            value: teamMembers.length,
+            icon: <BsPeopleFill className="text-3xl" />,
+            color: '#10b981',
+            trend: 'stable'
+          },
+          {
+            title: 'Total Revenue',
+            value: `₹${financialOverview.totalRevenue.toLocaleString()}`,
+            icon: <BsGraphUp className="text-3xl" />,
+            color: '#3b82f6',
+            trend: 'up'
+          },
+          {
+            title: 'Net Profit',
+            value: `₹${financialOverview.netProfit.toLocaleString()}`,
+            icon: <RiBarChartFill className="text-3xl" />,
+            color: '#22c55e',
+            trend: 'up'
+          }
+        ].map((stat, index) => (
+          <Col xs={24} sm={12} lg={6} key={index}>
+            <motion.div whileHover={{ scale: 1.02 }}>
+              <Card className="shadow-sm rounded-xl h-full">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-sm mb-2">{stat.title}</p>
+                    <h3 className="text-2xl font-bold">{stat.value}</h3>
+                  </div>
+                  <div 
+                    className={`p-3 rounded-lg`}
+                    style={{ backgroundColor: `${stat.color}10` }}
+                  >
+                    {React.cloneElement(stat.icon, { className: `text-${stat.color}` })}
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <Progress 
+                    percent={75} 
+                    showInfo={false}
+                    strokeColor={stat.color}
+                    trailColor={`${stat.color}20`}
+                  />
+                </div>
+              </Card>
+            </motion.div>
+          </Col>
+        ))}
+      </Row>
+
+      {/* Main Content Area */}
+      <Row gutter={[16, 16]}>
+        {/* Project Overview */}
+        <Col xs={24} lg={16}>
           <Card className="shadow-sm rounded-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold">Project Portfolio Health</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Project Overview</h2>
               <Select 
                 defaultValue="thisMonth" 
                 style={{ width: 120 }}
@@ -181,40 +293,38 @@ const DashboardOverview = () => {
           </Card>
         </Col>
 
-        <Col xs={24} lg={6}>
-          <Card className="shadow-sm rounded-xl">
-            <Statistic
-              title="Budget Utilization"
-              value={projectMetrics.budgetMetrics.spent}
-              precision={0}
-              valueStyle={{ color: '#3f8600' }}
-              prefix="₹"
-              suffix={
-                <small className="text-gray-500">
-                  /{projectMetrics.budgetMetrics.totalBudget}
-                </small>
-              }
-            />
-            <Progress
-              percent={Math.round((projectMetrics.budgetMetrics.spent / projectMetrics.budgetMetrics.totalBudget) * 100)}
-              strokeColor={{
-                '0%': '#10B981',
-                '100%': '#059669'
-              }}
-            />
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Committed</span>
-                <span className="font-medium">₹{projectMetrics.budgetMetrics.committed}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Remaining</span>
-                <span className="font-medium">₹{projectMetrics.budgetMetrics.remaining}</span>
-              </div>
+        {/* Team Performance */}
+        <Col xs={24} lg={8}>
+          <Card className="shadow-sm rounded-xl h-full">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Team Performance</h2>
+              <Tooltip title="Team performance metrics">
+                <InfoCircleOutlined className="text-gray-400" />
+              </Tooltip>
+            </div>
+            <div className="space-y-4">
+              {[
+                { title: 'Productivity', value: 85, color: '#10B981' },
+                { title: 'Engagement', value: 78, color: '#3B82F6' },
+                { title: 'Satisfaction', value: 92, color: '#6366F1' }
+              ].map((metric, index) => (
+                <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium">{metric.title}</span>
+                    <span className="text-lg font-semibold">{metric.value}%</span>
+                  </div>
+                  <Progress 
+                    percent={metric.value} 
+                    showInfo={false}
+                    strokeColor={metric.color}
+                  />
+                </div>
+              ))}
             </div>
           </Card>
         </Col>
       </Row>
+
 
       {/* Milestone Progress */}
       <Card className="shadow-sm rounded-xl">
@@ -253,163 +363,77 @@ const DashboardOverview = () => {
         </Row>
       </Card>
 
-      {/* Resource Allocation */}
-      <Card className="shadow-sm rounded-xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Resource Allocation</h2>
-          <Tooltip title="Resource allocation across different project areas">
-            <InfoCircleOutlined className="text-gray-400" />
-          </Tooltip>
-        </div>
-        <Row gutter={[16, 16]}>
-          {Object.entries(projectMetrics.resourceAllocation).map(([key, value]) => (
-            <Col xs={24} sm={12} lg={6} key={key}>
-              <Card className="bg-gray-50 border-0">
-                <Statistic
-                  title={key.charAt(0).toUpperCase() + key.slice(1)}
-                  value={value}
-                  suffix="%"
-                  valueStyle={{ color: '#2563EB' }}
-                />
-                <Progress
-                  percent={value}
-                  showInfo={false}
-                  strokeColor="#2563EB"
-                  trailColor="#E5E7EB"
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </Card>
 
-      {/* Recent Activity Feed */}
-      <Card className="shadow-sm rounded-xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Recent Activity</h2>
-          <BellOutlined className="text-gray-400" />
-        </div>
-        <List
-          dataSource={projectMetrics.recentActivities}
-          renderItem={(item) => (
-            <List.Item>
-              <div className="flex justify-between w-full">
-                <span>{item.description}</span>
-                <span className="text-gray-500">{item.timestamp}</span>
-              </div>
-            </List.Item>
-          )}
-        />
-      </Card>
-
-      {/* Upcoming Deadlines */}
-      <Card className="shadow-sm rounded-xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Upcoming Deadlines</h2>
-          <ScheduleOutlined className="text-gray-400" />
-        </div>
-        <List
-          dataSource={upcomingDeadlines}
-          renderItem={(item) => (
-            <List.Item>
-              <div className="flex justify-between w-full">
-                <span>{item.title}</span>
-                <span className="text-gray-500">{item.deadline}</span>
-                {item.notified ? (
-                  <button className="ml-4 bg-gray-300 text-white rounded px-2 py-1" disabled>
-                    Notified
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => notifyFreelancer(item.id,item.type)} 
-                    className="ml-4 bg-blue-500 text-white rounded px-2 py-1"
-                  >
-                    Notify
-                  </button>
-                )}
-              </div>
-            </List.Item>
-          )}
-        />
-      </Card>
-
-      {/* Team Performance Metrics */}
-      <Card className="shadow-sm rounded-xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Team Performance</h2>
-          <Tooltip title="Team performance metrics">
-            <InfoCircleOutlined className="text-gray-400" />
-          </Tooltip>
-        </div>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} lg={8}>
-            <Statistic
-              title="Completed Tasks"
-              value={projectMetrics.teamPerformance.completedTasks}
-              valueStyle={{ color: '#10B981' }}
-            />
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Statistic
-              title="Pending Tasks"
-              value={projectMetrics.teamPerformance.pendingTasks}
-              valueStyle={{ color: '#EF4444' }}
-            />
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Statistic
-              title="Productivity Trend"
-              value={projectMetrics.teamPerformance.productivityTrend === 'up' ? '↑' : '↓'}
-              valueStyle={{ 
-                color: projectMetrics.teamPerformance.productivityTrend === 'up' ? '#10B981' : '#EF4444'
-              }}
-            />
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Quick Actions */}
+      {/* Additional Sections */}
       <Row gutter={[16, 16]}>
-        {[
-          { title: 'Post New Project', icon: <ProjectOutlined />, path: '/client/post-project' },
-          { title: 'View Active Projects', icon: <ClockCircleOutlined />, path: '/client/dashboard/projects' },
-          { title: 'Manage Team', icon: <TeamOutlined />, path: '/client/dashboard/team' },
-          { title: 'Financial Overview', icon: <DollarCircleOutlined />, path: '/client/dashboard/finance' }
-        ].map((action, index) => (
-          <Col xs={24} sm={12} lg={6} key={index}>
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate(action.path)}
-              className="cursor-pointer"
-            >
-              <Card className="text-center hover:shadow-md transition-all duration-300">
-                <div className="text-4xl text-teal-500 mb-3">{action.icon}</div>
-                <h3 className="font-medium">{action.title}</h3>
-              </Card>
-            </motion.div>
-          </Col>
-        ))}
+        {/* Recent Activity */}
+        <Col xs={24} lg={12}>
+          <Card className="shadow-sm rounded-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Recent Activity</h2>
+              <Button type="link" onClick={() => navigate('/client/activity')}>
+                View All
+              </Button>
+            </div>
+            <List
+              dataSource={projectMetrics.recentActivities}
+              renderItem={(item) => (
+                <List.Item>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-gray-100 rounded-full">
+                        <BellOutlined className="text-gray-500" />
+                      </div>
+                      <span>{item.description}</span>
+                    </div>
+                    <span className="text-gray-500 text-sm">{item.timestamp}</span>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+
+        
+
+        {/* Upcoming Deadlines */}
+        <Col xs={24} lg={12}>
+          <Card className="shadow-sm rounded-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Upcoming Deadlines</h2>
+              <ScheduleOutlined className="text-gray-400" />
+            </div>
+            <List
+              dataSource={upcomingDeadlines}
+              renderItem={(item) => (
+                <List.Item>
+                  <div className="flex justify-between w-full">
+                    <span>{item.title}</span>
+                    <span className="text-gray-500">{item.deadline}</span>
+                    {item.notified ? (
+                      <button className="ml-4 bg-gray-300 text-white rounded px-2 py-1" disabled>
+                        Notified
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => notifyFreelancer(item.id,item.type)} 
+                        className="ml-4 bg-blue-500 text-white rounded px-2 py-1"
+                      >
+                        Notify
+                      </button>
+                    )}
+                  </div>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
       </Row>
 
-      {/* Upcoming Notifications */}
-      <Card className="shadow-sm rounded-xl">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Upcoming Notifications</h2>
-          <ScheduleOutlined className="text-gray-400" />
-        </div>
-        <List
-          dataSource={upcomingDeadlines}
-          renderItem={(item) => (
-            <List.Item>
-              <div className="flex justify-between w-full">
-                <span>{item.notification_text}</span>
-                <span className="text-gray-500">{new Date(item.created_at).toLocaleString()}</span>
-              </div>
-            </List.Item>
-          )}
-        />
-      </Card>
+      
+     
+
+   
     </div>
   );
 };

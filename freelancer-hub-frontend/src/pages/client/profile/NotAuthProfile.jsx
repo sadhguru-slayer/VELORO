@@ -4,8 +4,8 @@ import Cookies from 'js-cookie';
 import axios from'axios';
 import { Button, Pagination,Table, Modal, Tag, Progress, Avatar } from "antd";
 import {  FaLock, FaUserPlus } from 'react-icons/fa';
-import { ProjectOutlined, StarOutlined, CalendarOutlined } from '@ant-design/icons';
-
+import { ProjectOutlined, StarOutlined, CalendarOutlined, BookOutlined , ClockCircleOutlined, TrophyOutlined, SafetyCertificateOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { FaGraduationCap } from 'react-icons/fa';
 import { motion } from "framer-motion";
 
 const LoginModal = ({ isVisible, onClose, onSuccess }) => {
@@ -276,6 +276,122 @@ const NotAuthProfile = ({userId, role, editable}) => {
           </div>
         </div>
       </div>
+
+      {/* Student Information Section - Only show if role is student */}
+      {clientInfo.role === 'student' && clientInfo.student_info && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-sm p-6"
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+            <FaGraduationCap  className="text-teal-600" />
+            Academic Profile
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Institution Info */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-gray-700 mb-3">Institution</h4>
+              <div className="space-y-2">
+                <p className="text-gray-600">{clientInfo.student_info.institution.name}</p>
+                <p className="text-sm text-gray-500">{clientInfo.student_info.institution.location}</p>
+                {clientInfo.student_info.institution.website && (
+                  <a 
+                    href={clientInfo.student_info.institution.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-teal-600 hover:text-teal-700 text-sm"
+                  >
+                    Visit Website
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Academic Details */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-gray-700 mb-3">Academic Details</h4>
+              <div className="space-y-2">
+                <p className="text-gray-600">
+                  {clientInfo.student_info.academic_info.course}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {clientInfo.student_info.academic_info.field_of_study}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {clientInfo.student_info.academic_info.year_of_study} • 
+                  Graduating {clientInfo.student_info.academic_info.graduation_year}
+                </p>
+              </div>
+            </div>
+
+            {/* Skills & Availability */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-gray-700 mb-3">Skills & Availability</h4>
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {clientInfo.student_info.skills_learning.map((skill, index) => (
+                    <Tag key={index} color="blue">{skill}</Tag>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 flex items-center gap-2">
+                  <ClockCircleOutlined />
+                  Available: {clientInfo.student_info.weekly_availability}
+                </p>
+              </div>
+            </div>
+
+            {/* Achievements */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-gray-700 mb-3">Achievements</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <TrophyOutlined className="text-yellow-500" />
+                  <span className="text-gray-600">
+                    {clientInfo.student_info.completed_gigs} Completed Gigs
+                  </span>
+                </div>
+                {clientInfo.student_info.academic_achievements && (
+                  <p className="text-sm text-gray-500">
+                    {clientInfo.student_info.academic_achievements}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Certifications */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-gray-700 mb-3">Certifications</h4>
+              <div className="space-y-2">
+                {clientInfo.student_info.certifications.map((cert, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <SafetyCertificateOutlined className="text-teal-600" />
+                    <span className="text-gray-600">{cert}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Profile Status */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-medium text-gray-700 mb-3">Profile Status</h4>
+              <div className="space-y-3">
+                <Progress 
+                  percent={clientInfo.student_info.profile_completion} 
+                  size="small"
+                  strokeColor="#0D9488"
+                />
+                {clientInfo.student_info.is_verified && (
+                  <Tag icon={<CheckCircleOutlined />} color="success">
+                    Verified Student
+                  </Tag>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Projects Section with Blur Effect */}
       <div className="bg-white rounded-xl shadow-sm p-6">

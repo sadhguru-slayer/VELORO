@@ -1,7 +1,9 @@
 .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-
+body{
+  /* overflow: hidden; */
+}
   
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
@@ -19,3 +21,34 @@
     --ant-primary-color-active: #4C1D95;
   }
   
+
+  /* Add these 3D-related styles to your global CSS */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-gpu {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Create a depth effect shadow */
+.depth-shadow {
+  box-shadow: 0 10px 30px -5px rgba(124, 58, 237, 0.2);
+}
+
+/* Optimize animations for performance */
+@keyframes float {
+  0% { transform: translateY(0) translateZ(0); }
+  50% { transform: translateY(-10px) translateZ(20px); }
+  100% { transform: translateY(0) translateZ(0); }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .transform-gpu {
+    transition: none !important;
+    animation: none !important;
+  }
+}

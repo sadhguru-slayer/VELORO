@@ -1,0 +1,26 @@
+New Features
+Request Job in collaboration
+Chats and Collabs:
+    Direct chat:
+        -Connections
+        -Project (two people EG:Client and Freelancer)
+    Group Chat:
+        -Connections(Collaborative)
+        -Project Collabs
+
+    Collabs:
+        -Freelancers
+        -Clients
+        -Projects
+        -Request Jobs(Non MVP)
+
+MVP FOCUSED
+Profiles:
+Freelancers:
+    -Availability
+    -Skill Verification
+Job Matching:
+    -Basic Job Matching
+Bidding System:
+    -Freelancers submit proposals; clients review and hire.
+    

@@ -50,10 +50,20 @@ class Activity(models.Model):
     related_model = models.CharField(max_length=100, null=True, blank=True)  # Name of the related model (e.g., project, payment, etc.)
     related_object_id = models.PositiveIntegerField(null=True, blank=True)  # ID of the related object (e.g., project ID, payment ID)
     
+    # Add new fields to store more detailed change information
+    changes_detail = models.JSONField(null=True, blank=True)  # Store detailed changes
+    
     class Meta:
         ordering = ['-timestamp']  # Order by most recent activity
 
     def __str__(self):
         return f'{self.user.username} - {self.activity_type} - {self.timestamp}'
+    
+    @property
+    def formatted_changes(self):
+        """Returns a formatted string of changes for display"""
+        if self.changes_detail:
+            return " | ".join(self.changes_detail.get('changes', []))
+        return self.description
     
     

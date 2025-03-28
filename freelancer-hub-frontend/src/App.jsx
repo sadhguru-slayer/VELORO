@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { message, Spin } from 'antd';
 import Cookies from 'js-cookie';
 import CMessages from './pages/client/CMessages';
+
 import DOMPurify from "dompurify";
 import { verifyToken, refreshToken } from './utils/auth';
 import PrivateRoute from './PrivateRoute';
@@ -28,12 +29,20 @@ import FConnections from './pages/freelancer/FConnections';
 import FConnectionRequests from './pages/freelancer/FConnectionRequests';
 import ArchivedChats from './pages/client/messages/ArchivedChats';
 import MessageRequests from './pages/client/messages/MessageRequests';
-import GroupChats from './pages/client/messages/GroupChats';
+import GroupChats from './pages/client/messages/groups/index';
+import FGroupChats from './pages/freelancer/messages/groups/index';
+// import GroupChats from './pages/client/messages/GroupChats';
 import CreateGroup from './pages/client/messages/CreateGroup';
 import Communities from './pages/client/messages/Communities';
-import ChatSettings from './pages/client/settings/index';
-import DirectMessages from './pages/client/messages/DirectMessages';
-
+import ChatSettings from './pages/client/messages/settings/index';
+import FChatsettings from './pages/freelancer/messages/settings/index';
+// import DirectMessages from './pages/client/messages/DirectMessages';
+import DirectMessages from './pages/client/messages/direct/index';
+import FDirectMessages from './pages/freelancer/messages/direct/index';
+import NotificationSettings from './pages/freelancer/messages/settings/components/NotificationSettings';
+import PermissionsSettings from './pages/freelancer/messages/settings/components/PermissionsSettings';
+import AppearanceSettings from './pages/freelancer/messages/settings/components/AppearanceSettings';
+import FMessages from './pages/freelancer/FMessages';
 // Lazy load components for better performance
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -121,6 +130,11 @@ const clientRoutes = [
         element: <ChatSettings />
       }
     ]
+  },
+  {
+    path: "find-talent",
+    component: lazy(() => import('./pages/client/FindTalent')),
+    allowedRoles: ['client']
   }
 ];
 
@@ -306,8 +320,13 @@ const App = () => {
   const [isTokenValid, setIsTokenValid] = useState(true);
   const token = Cookies.get('accessToken');
   const userId = Cookies.get('userId');
-  const userRole = Cookies.get('role') || 'client';
 
+  // Modify the role check to treat student as freelancer
+  const getEffectiveRole = (role) => {
+    return role === 'student' ? 'freelancer' : role;
+  };
+
+  const userRole = getEffectiveRole(Cookies.get('role')) || 'client';
 
   // Token validation
   useEffect(() => {
@@ -502,7 +521,7 @@ const App = () => {
             </Route>
           </Route>
 
-          {/* Freelancer Routes */}
+          {/* Freelancer/Student Routes - Update allowedRoles to include 'student' */}
           <Route path="/freelancer/*">
             <Route index element={<Navigate to="homepage" replace />} />
             
@@ -511,12 +530,25 @@ const App = () => {
               <Route
                 key={path}
                 path={path}
-                element={<PrivateRoute element={Component} allowedRoles={allowedRoles} />}
+                element={
+                  <PrivateRoute 
+                    element={Component} 
+                    allowedRoles={[...allowedRoles, 'student']} // Add student to allowed roles
+                  />
+                }
               />
             ))}
             
             {/* Profile routes using FProfile */}
-            <Route path="profile/:id/*" element={<PrivateRoute element={FProfile} allowedRoles={['client', 'freelancer']} />}>
+            <Route 
+              path="profile/:id/*" 
+              element={
+                <PrivateRoute 
+                  element={FProfile} 
+                  allowedRoles={['client', 'freelancer', 'student']} 
+                />
+              }
+            >
               {freelancerProfileRoutes.map(({ path, component: Component }) => (
                 <Route
                   key={path}
@@ -532,7 +564,7 @@ const App = () => {
               element={
                 <PrivateRoute 
                   element={DashboardLayout} 
-                  allowedRoles={['freelancer']} 
+                  allowedRoles={['freelancer', 'student']} 
                 />
               }
             >
@@ -547,26 +579,41 @@ const App = () => {
             </Route>
 
             {/* Freelancer Connection Routes */}
-            
             <Route
               path="connections"
               element={
                 <PrivateRoute
-                element={FConnections}
-                allowedRoles={['freelancer']}>
-                  
+                  element={FConnections}
+                  allowedRoles={['freelancer', 'student']}>
                 </PrivateRoute>
               } 
-              />
+            />
 
             <Route
               path="connection-requests"
               element={
-                <PrivateRoute allowedRoles={['freelancer']}>
+                <PrivateRoute allowedRoles={['freelancer', 'student']}>
                   <FConnectionRequests />
                 </PrivateRoute>
               }
             />
+
+            {/* Freelancer Messages Route */}
+            <Route
+              path="messages/*"
+              element={
+                <PrivateRoute 
+                  element={FMessages} 
+                  allowedRoles={['freelancer', 'student']} 
+                />
+              }
+            >
+              <Route index element={<Navigate to="direct" replace />} />
+              <Route path="direct" element={<FDirectMessages />} />
+              <Route path="groups" element={<FGroupChats />} />
+              <Route path="communities" element={<Communities />} />
+              <Route path="settings" element={<FChatsettings />} />
+            </Route>
           </Route>
 
           {/* Catch-all route */}

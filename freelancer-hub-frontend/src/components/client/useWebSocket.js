@@ -31,7 +31,7 @@ const useWebSocket = (url, token, onMessage) => {
 
       // Add timestamp to URL to prevent caching
       const timestampedUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
-      const socket = new WebSocket(timestampedUrl);
+      const socket = new WebSocket(`ws://${window.location.host}/ws/notifications/?token=${token}`);
       socketRef.current = socket;
 
       // Set timeout for connection attempt
@@ -112,8 +112,8 @@ const useWebSocket = (url, token, onMessage) => {
       };
 
       socket.onerror = (error) => {
-        console.error("WebSocket Error:", error);
-        // Don't set error state for every error, let onclose handle reconnection
+        console.error('WebSocket error:', error);
+        // Implement reconnection logic here
       };
 
     } catch (err) {
@@ -126,6 +126,15 @@ const useWebSocket = (url, token, onMessage) => {
   useEffect(() => {
     isUnmounting.current = false;
     initializeWebSocket();
+
+    // Add connection monitoring
+    setInterval(() => {
+      if (socketRef.current?.readyState === WebSocket.CLOSED) {
+        console.log('WebSocket disconnected. Reconnecting...');
+        // Reconnect logic
+        initializeWebSocket();
+      }
+    }, 5000);
 
     return () => {
       isUnmounting.current = true;

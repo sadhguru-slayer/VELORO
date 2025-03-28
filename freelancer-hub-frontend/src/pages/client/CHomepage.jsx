@@ -207,7 +207,7 @@ const CHomepage = ({ userId, role }) => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/client/dashboard')}
+                    onClick={() => navigate('/client/find-talent')}
                     className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-teal-700/30 text-white rounded-xl font-semibold hover:bg-teal-700/40 transition-all duration-300 flex items-center justify-center gap-2"
                   >
                     <TeamOutlined />

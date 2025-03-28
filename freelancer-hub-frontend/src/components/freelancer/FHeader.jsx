@@ -1,11 +1,12 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { FaSearch, FaBell, FaUserCircle, FaComments, FaHome, FaCog } from "react-icons/fa";
+import {  FaPlus, FaLock, FaEnvelope, FaUsers, } from "react-icons/fa";
 
 import { FaDiagramProject } from "react-icons/fa6";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from 'js-cookie';
-import { motion } from 'framer-motion';
+import { motion,AnimatePresence } from 'framer-motion';
 import { Tooltip, Badge, Input, AutoComplete } from 'antd';
 import { useMediaQuery } from 'react-responsive';
 import { RiMessage3Fill } from "react-icons/ri";
@@ -19,6 +20,10 @@ const FHeader = ({ userId, role, isAuthenticated, isEditable }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadDirectMessages, setUnreadDirectMessages] = useState(0);
+  const [unreadGroupMessages, setUnreadGroupMessages] = useState(0);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
   const toggleProfileDropdown = () => {
     setIsProfileClicked(prevState => !prevState);
@@ -68,7 +73,7 @@ const FHeader = ({ userId, role, isAuthenticated, isEditable }) => {
         className="flex items-center"
       >
         <Link to="/" className="text-xl font-bold tracking-tight">
-          <span className="bg-gradient-to-r from-violet-800 to-teal-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-violet-800 to-violet-600 bg-clip-text text-transparent">
             Veloro
           </span>
         </Link>
@@ -116,16 +121,101 @@ const FHeader = ({ userId, role, isAuthenticated, isEditable }) => {
             </motion.button>
           </Tooltip>
 
-          <Tooltip title="Messages" placement="bottom">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-2 text-gray-600 hover:text-violet-700 transition-all duration-300"
-              onClick={() => navigate('/freelancer/messages')}
-            >
-              <RiMessage3Fill className="text-xl" />
-            </motion.button>
-          </Tooltip>
+          <Tooltip title="Messages">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative cursor-pointer group"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMessagesOpen(!isMessagesOpen);
+            }}
+          >
+            <div className="relative">
+              <RiMessage3Fill className={`text-xl text-gray-600 group-hover:text-violet-600 transition-colors
+                ${location.pathname.includes('/freelancer/messages') ? 'text-violet-600 ' : 'text-gray-600'}
+                `} />
+              {unreadMessages > 0 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-2 -right-2 bg-violet-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-sm"
+                >
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </motion.div>
+              )}
+              <motion.div
+                className="absolute inset-0 rounded-full bg-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                initial={false}
+                whileHover={{
+                  scale: 1.8,
+                  opacity: 0.15,
+                }}
+              />
+            </div>
+
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {isMessagesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 border border-gray-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="py-2">
+                    <Link
+                      to="/freelancer/messages/direct"
+                      className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100
+                        ${location.pathname === '/freelancer/messages/direct' ? 'text-violet-600 ' : 'text-gray-600'}
+                        `}
+                      onClick={() => setIsMessagesOpen(false)}
+                    >
+                      <FaEnvelope className="w-4 h-4 mr-3" />
+                      Direct Messages
+                      {unreadDirectMessages > 0 && (
+                        <span className={`ml-auto bg-violet-500 text-white text-xs px-2 py-1 rounded-full
+                          ${location.pathname === '/freelancer/messages/direct' ? 'text-violet-600 ' : 'text-gray-600'}
+                          `}
+                        >
+                          {unreadDirectMessages > 99 ? '99+' : unreadDirectMessages}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/freelancer/messages/groups"
+                      className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100
+                        ${location.pathname === '/freelancer/messages/groups' ? 'text-violet-600 ' : 'text-gray-600'}
+                        `}
+                      onClick={() => setIsMessagesOpen(false)}
+                    >
+                      <FaUsers className="w-4 h-4 mr-3" />
+                      Group Chats
+                      {unreadGroupMessages > 0 && (
+                        <span className={`ml-auto bg-violet-500 text-white text-xs px-2 py-1 rounded-full
+                          ${location.pathname === '/freelancer/messages/groups' ? 'text-violet-600 ' : 'text-gray-600'}
+                          `}
+                        >
+                          {unreadGroupMessages > 99 ? '99+' : unreadGroupMessages}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/freelancer/messages/settings"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsMessagesOpen(false)}
+                    >
+                      <FaCog className="w-4 h-4 mr-3" />
+                      Chat Settings
+                    </Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </Tooltip>
 
           {/* Notifications */}
           <Tooltip title="Notifications" placement="bottom">

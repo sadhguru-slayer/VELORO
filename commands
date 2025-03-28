@@ -1,0 +1,34 @@
+Frontend:
+    -cd freelancer-hub-frontend
+
+    -npm run dev
+
+Backend:
+
+    -cd backend
+
+    -source venv/scripts/activate
+
+    -python manage.py runserver
+    
+    Celery:
+
+        -celery -A freelancer_hub worker -l info -P gevent
+
+        -celery -A freelancer_hub beat -l info
+
+    Redis:(WSL):
+    
+        -sudo systemctl stop redis
+        
+        -redis-server
+
+
+Remove DB and Migrations
+Be in backend/
+    -rm db.sqlite3
+    -find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+    -find . -path "*/migrations/*.pyc" -delete
+    -python manage.py makemigrations
+    -python manage.py migrate
+    -python manage.py createsuperuser

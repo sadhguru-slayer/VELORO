@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 const NotificationSettings = () => {
   const [settings, setSettings] = useState({
@@ -19,30 +20,37 @@ const NotificationSettings = () => {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-bold mb-6">Notification Settings</h2>
+      <h2 className="text-3xl font-bold mb-8 text-gray-900">Notification Settings</h2>
       
       <div className="space-y-6">
         {Object.entries(settings).map(([key, value]) => (
-          <div key={key} className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">
-                {key.split(/(?=[A-Z])/).join(' ')}
+          <motion.div 
+            key={key}
+            whileHover={{ scale: 1.02 }}
+            className="flex items-center justify-between p-6 bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50"
+          >
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+              
+                {key.split(/(?=[A-Z])/)
+                    .join(' ')
+                    .replace(/\b\w/g, char => char.toUpperCase())}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mt-1">
                 {`Enable or disable ${key.split(/(?=[A-Z])/).join(' ').toLowerCase()}`}
               </p>
             </div>
             <button
               onClick={() => handleToggle(key)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full
-                ${value ? 'bg-blue-600' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200
+                ${value ? 'bg-primary-500' : 'bg-gray-200'}`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-all duration-200
                   ${value ? 'translate-x-6' : 'translate-x-1'}`}
               />
             </button>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

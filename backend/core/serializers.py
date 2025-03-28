@@ -2,6 +2,10 @@ from rest_framework import serializers
 from .models import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import exceptions
+from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -45,79 +49,123 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = '__all__'  # Assuming User has fields 'id', 'username', 'email'
 
+class MilestoneCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Milestone
+        fields = ['title', 'milestone_type', 'amount', 'due_date', 'is_automated']
+        extra_kwargs = {
+            'due_date': {
+                'required': False,
+                'allow_null': True
+            }
+        }
+
+    def validate_due_date(self, value):
+        """Set default to 1 week from now if not provided"""
+        if not value:
+            return timezone.now() + timezone.timedelta(weeks=1)
+        return value
+
+class MilestoneSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        print(f"Serializing milestone: {instance.id} - {instance.title}")
+        return super().to_representation(instance)
+
+    class Meta:
+        model = Milestone
+        fields = ['title', 'milestone_type', 'amount', 'due_date', 'is_automated', 'status']
+
 class ProjectSerializer(serializers.ModelSerializer):
-    # Custom method field for client to include only id and username
-    client = serializers.SerializerMethodField()
+    def __init__(self, *args, **kwargs):
+        print("ProjectSerializer initialized")  # Debug
+        super().__init__(*args, **kwargs)
     
-    domain = CategorySerializer(read_only=True)
-    skills_required = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all(), many=True)
+    domain = serializers.StringRelatedField()
+    skills_required = SkillSerializer(many=True)
+    milestones = MilestoneSerializer(many=True, read_only=True)
+    tasks = serializers.SerializerMethodField()
+    
+
+    def to_representation(self, instance):
+        print(f"Serializing project: {instance.id} - {instance.title}")
+        print(f"Project skills: {instance.skills_required.all()}")
+        print(f"Project milestones: {instance.milestones.all()}")
+        print(f"Project tasks: {instance.tasks.all()}")
+        return super().to_representation(instance)
 
     class Meta:
         model = Project
         fields = [
             'id', 'title', 'description', 'budget', 'deadline', 
-            'client', 'domain', 'is_collaborative', 'skills_required', 'status'
+            'domain', 'is_collaborative', 'skills_required', 
+            'milestones', 'tasks', 'payment_strategy'
         ]
 
-    def get_client(self, obj):
-        return {
-            'id': obj.client.id,
-            'username': obj.client.username
-        }
-
-    def update(self, instance, validated_data):
-        # Handling the 'skills_required' relationship explicitly
-        skills_data = validated_data.pop('skills_required', None)
-        if skills_data is not None:
-            instance.skills_required.set(skills_data)  # Assign skills directly
-        return super().update(instance, validated_data)
-
+    def get_tasks(self, obj):
+        print(f"Getting tasks for project: {obj.id}")
+        tasks = obj.tasks.all()
+        print(f"Found {tasks.count()} tasks")
+        return TaskSerializer(tasks, many=True, context=self.context).data
 
 class TaskSerializer(serializers.ModelSerializer):
-    project = ProjectSerializer(read_only=True)
-    assigned_to = UserSerializer(read_only=True,many=True)
-    skills_required_for_task = SkillSerializer(many=True, read_only=True)
+    def __init__(self, *args, **kwargs):
+        print("TaskSerializer initialized")  # Debug
+        super().__init__(*args, **kwargs)
+    skills_required_for_task = SkillSerializer(many=True)
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all(),
+        required=False
+    )
+
+    def to_representation(self, instance):
+        print(f"Serializing task: {instance.id} - {instance.title}")
+        print(f"Task skills: {instance.skills_required_for_task.all()}")
+        print(f"Assigned users: {instance.assigned_to.all()}")
+        return super().to_representation(instance)
 
     class Meta:
         model = Task
         fields = [
-            'id', 'project', 'title', 'description', 'budget', 'deadline', 
-            'assigned_to', 'created_at', 'status', 'payment_status', 
-            'is_payment_updated', 'completed_at', 'skills_required_for_task'
+            'id', 'title', 'description', 'budget', 'deadline', 
+            'assigned_to', 'status', 'payment_status', 
+            'skills_required_for_task'
         ]
-
-
+        read_only_fields = ['status', 'payment_status']
 
 
 class TaskCreateSerializer(serializers.ModelSerializer):
     skills_required_for_task = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all(), many=True)
+    milestones = serializers.PrimaryKeyRelatedField(queryset=Milestone.objects.all(), many=True, required=False)
 
     class Meta:
         model = Task
-        fields = ['title', 'description', 'budget', 'deadline', 'status', 'skills_required_for_task']
+        fields = ['title', 'description', 'budget', 'deadline', 'status', 
+                 'skills_required_for_task', 'milestones']
 
 
 
 class ProjectCreateSerializer(serializers.ModelSerializer):
     tasks = TaskCreateSerializer(many=True, required=False)
-    skills_required = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all(), many=True, required=False)
+    skills_required = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
+    milestones = MilestoneCreateSerializer(many=True, required=False)
 
     class Meta:
         model = Project
-        fields = ['title', 'description', 'budget', 'deadline', 'domain', 'is_collaborative', 'skills_required', 'tasks']
+        fields = ['title', 'description', 'budget', 'deadline', 'domain', 
+                'is_collaborative', 'skills_required', 'milestones', 'tasks']
+        extra_kwargs = {
+            'domain': {'required': True}
+        }
 
     def create(self, validated_data):
-        tasks_data = validated_data.pop('tasks', [])
-        skills_data = validated_data.pop('skills_required', [])
-        
-        # Create the project instance
-        project = Project.objects.create(**validated_data)
-
-        # Now create the tasks if provided
-        for task_data in tasks_data:
-            Task.objects.create(project=project, **task_data)
-
-        return project
+        # Convert domain ID to Category instance
+        validated_data['domain'] = Category.objects.get(id=validated_data['domain'])
+        return super().create(validated_data)
 
 class SpendingDistributionByProjectSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source='project.title')  # Get the project title
@@ -150,3 +198,55 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'title','type', 'related_model_id', 'notification_text', 'is_read', 'created_at']
+
+# Basic serializers for nested objects
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+class SimpleSkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Skill
+        fields = ['id', 'name']
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name']
+
+# Response serializers (for returning data after creation)
+class MilestoneResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Milestone
+        fields = ['id', 'title', 'milestone_type', 'amount', 'due_date', 'is_automated', 'status']
+
+class TaskResponseSerializer(serializers.ModelSerializer):
+    skills_required_for_task = SimpleSkillSerializer(many=True, read_only=True)
+    assigned_to = SimpleUserSerializer(many=True, read_only=True)
+    milestones = MilestoneResponseSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Task
+        fields = [
+            'id', 'title', 'description', 'budget', 'deadline', 
+            'assigned_to', 'status', 'payment_status', 
+            'skills_required_for_task', 'milestones'
+        ]
+
+class ProjectResponseSerializer(serializers.ModelSerializer):
+    domain = CategorySerializer(read_only=True)
+    skills_required = SimpleSkillSerializer(many=True, read_only=True)
+    milestones = MilestoneResponseSerializer(many=True, read_only=True)
+    tasks = TaskResponseSerializer(many=True, read_only=True, source='tasks.all')
+    client = SimpleUserSerializer(read_only=True)
+    
+    class Meta:
+        model = Project
+        fields = [
+            'id', 'title', 'description', 'budget', 'deadline', 
+            'domain', 'is_collaborative', 'skills_required', 
+            'milestones', 'tasks', 'payment_strategy', 'client',
+            'status', 'created_at'
+        ]
+

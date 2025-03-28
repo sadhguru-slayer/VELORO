@@ -58,7 +58,16 @@ const PrivateRoute = ({ element: Component, allowedRoles = [], ...rest }) => {
     return null;
   };
 
-  // Authenticate user function
+  // Modify the role check to treat student as freelancer
+  const checkRole = (userRole) => {
+    // If user is a student, treat them as a freelancer for route permissions
+    if (userRole === 'student') {
+      return 'freelancer';
+    }
+    return userRole;
+  };
+
+  // Update authentication logic
   const authenticateUser = async () => {
     if (!token) {
       setAuthState(prev => ({ ...prev, loading: false }));
@@ -87,16 +96,24 @@ const PrivateRoute = ({ element: Component, allowedRoles = [], ...rest }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const { is_profiled, role, id } = response.data.user;
-      const hasPermission = allowedRoles.length === 0 || allowedRoles.includes(role);
+      const { is_profiled, role: userRole, id } = response.data.user;
+      const effectiveRole = checkRole(userRole); // Convert student to freelancer
+      const hasPermission = allowedRoles.length === 0 || allowedRoles.includes(effectiveRole);
 
       setAuthState({
         isAuthenticated: true,
         isProfiled: is_profiled,
-        role,
+        role: effectiveRole, // Use the effective role
         userId: id,
         loading: false,
         hasPermission,
+      });
+
+      // Store the effective role in cookies
+      Cookies.set('role', effectiveRole, { 
+        expires: 1, 
+        secure: true, 
+        sameSite: 'Strict' 
       });
 
       Cookies.set('userId', id, { 
@@ -144,7 +161,7 @@ const PrivateRoute = ({ element: Component, allowedRoles = [], ...rest }) => {
 
   if (loading) {
     // Show loading screen until authentication is completed
-    return <LoadingComponent text="Please wait while we verify your session..." />;
+    return <LoadingComponent text="Please wait while we verify your session..." role={role} />;
   }
 
   // Handle public routes
@@ -171,12 +188,13 @@ const PrivateRoute = ({ element: Component, allowedRoles = [], ...rest }) => {
   // Handle profile routes for authenticated users
   const currentId = routeId || userId;
   
+  console.log(role);
   if (location.pathname.includes('/profile/')) {
     if (role === 'client' && location.pathname.includes('/freelancer/')) {
-      return <FProfile {...rest} userId={currentId} role={role} isAuthenticated={true} isEditable={isEditable} />;
+      return <CProfile {...rest} userId={currentId} role={role} isAuthenticated={true} isEditable={isEditable} />;
     }
     if (role === 'freelancer' && location.pathname.includes('/client/')) {
-      return <CProfile {...rest} userId={currentId} role={role} isAuthenticated={true} isEditable={isEditable} />;
+      return <FProfile {...rest} userId={currentId} role={role} isAuthenticated={true} isEditable={isEditable} />;
     }
   }
 

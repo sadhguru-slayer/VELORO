@@ -9,7 +9,7 @@ import { BiSolidMessageRounded } from "react-icons/bi";
 import { FaUserClock } from "react-icons/fa6";
 import { FaTimes,FaCheck } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { FaUserPlus, FaRegBell, FaBell } from "react-icons/fa";
+import { FaUserPlus, FaRegBell, FaBell,FaGraduationCap  } from "react-icons/fa";
 import { 
   UserOutlined, 
   EnvironmentOutlined, 
@@ -22,12 +22,19 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   DashboardOutlined,
+  BookOutlined,
+  TrophyOutlined,
+  ExperimentOutlined,
+  ClockCircleOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
+
 import { Tooltip, Progress, Tabs, Card, Statistic, Tag, Avatar } from "antd";
 import { useMediaQuery } from 'react-responsive';
 const { TabPane } = Tabs;
+import { useParams } from 'react-router-dom';
 
-const OtherProfile = ({userId, role,editable}) => {
+const OtherProfile = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [clientInfo, setClientInfo] = useState({});
@@ -51,6 +58,11 @@ const OtherProfile = ({userId, role,editable}) => {
       total: 0
     });
     const isMobile = useMediaQuery({ maxWidth: 767 });
+    const [showAllSkills, setShowAllSkills] = useState(false);
+
+    const params = useParams();
+    const userId = params.id;
+
   
     const handlePaginationChange = (page) => {
       setCurrentPage(page);
@@ -58,35 +70,29 @@ const OtherProfile = ({userId, role,editable}) => {
     useEffect(() => {
       const fetchProfileDetails = async () => {
         const accessToken = Cookies.get('accessToken');
-        if (!userId || !accessToken) {
-            console.log("Waiting for userId or accessToken...");
-            return; 
-          }
-          setLoading(true);
+        if (!userId || !accessToken) return;
+        setLoading(true);
         try {
           const response = await axios.get('http://127.0.0.1:8000/api/client/get_profile_data',
             {
-                params: { userId: userId }, // Passing userId as query parameter
-                headers: {
-                  Authorization: `Bearer ${accessToken}`, // Passing the access token as Authorization header
-                },
-              });
+              params: { userId: userId },
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
           const data = response.data;
-          
-          seConnection_id(data.client_profile.connection_id)
+          console.log(data)
+          seConnection_id(data.profile.connection_id);
           setConnection_status(data.connection_status);
           setIsConnected(data.is_connected);
-          setClientInfo(data.client_profile);
+          setClientInfo(data.profile);
           setProjects(data.projects);
           setReviewsList(data.reviews_and_ratings.reviews);
           setConnectionCount(data.connection_Count);
           setAverageRating(data.reviews_and_ratings.average_rating);
         } catch (error) {
           console.log(error);
-        }finally {
-            setLoading(false); // Stop loading after request is completed
-          }
-
+        } finally {
+          setLoading(false);
+        }
       };
       fetchProfileDetails();
     }, [userId]);
@@ -183,48 +189,120 @@ const OtherProfile = ({userId, role,editable}) => {
       }
     };
 
+    // Add new student-specific stats
+    const getStudentStats = () => [
+      {
+        title: "Learning Progress",
+        value: 75,
+        icon: <BookOutlined />,
+        color: '#0d9488',
+        suffix: "%"
+      },
+      {
+        title: "Skills Mastered",
+        value: clientInfo.student_info?.skills?.length || 0,
+        icon: <ExperimentOutlined />,
+        color: '#6366f1'
+      },
+      {
+        title: "Projects Completed",
+        value: projectStats.completed,
+        icon: <TrophyOutlined />,
+        color: '#eab308'
+      },
+      {
+        title: "Graduation Year",
+        value: clientInfo.student_info?.academic_info.year_of_study || 'N/A',
+        icon: <FaGraduationCap  />,
+        color: '#ec4899'
+      }
+    ];
+
   return (
-    <div className={`w-full min-h-fit max-w-[1200px] min-w-[320px] mx-auto p-6 space-y-4 ${isMobile ? 'ml-0' : 'ml-14'}min-h-full h-fit `}>
-      {/* Profile Header */}
+    <div className={`w-full min-h-fit max-w-[1200px] min-w-[320px] mx-auto space-y-6 ${isMobile ? 'ml-0' : 'ml-14'} min-h-full h-fit`}>
+      {/* Enhanced Profile Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg shadow-md overflow-hidden"
+        className="bg-white rounded-2xl shadow-xl overflow-hidden"
       >
-        {/* Cover Photo */}
-        <div className="h-40 bg-gradient-to-r from-charcolBlue to-teal-500 relative">
-          <div className="absolute -bottom-12 left-6 flex items-end space-x-6">
-            <img 
-              src={clientInfo.profile_picture ? `http://127.0.0.1:8000${clientInfo.profile_picture}` : "https://www.w3schools.com/howto/img_avatar.png"} 
-              alt="Profile" 
-              className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-md"
-            />
+        {/* Improved Cover Photo with Gradient */}
+        <div className="h-48 bg-gradient-to-r from-violet-600 via-teal-500 to-emerald-400 relative">
+          <div className="absolute inset-0 bg-black/10" />
+          <div className="absolute -bottom-16 left-8 flex items-end space-x-6">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <img 
+                src={clientInfo.profile_picture ? `http://127.0.0.1:8000${clientInfo.profile_picture}` : "https://www.w3schools.com/howto/img_avatar.png"} 
+                alt="Profile" 
+                className="w-32 h-32 rounded-full border-4 border-white object-cover shadow-lg"
+              />
+            </motion.div>
           </div>
         </div>
 
-        {/* Profile Info */}
-        <div className="pt-16 px-6 pb-6">
+        {/* Enhanced Profile Info */}
+        <div className="pt-20 px-8 pb-8">
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div className="max-w-xl">
-              <h1 className="text-xl font-semibold text-charcolBlue">{clientInfo.name}</h1>
-              <div className="mt-2 space-y-2">
-                <div className="flex items-center text-gray-600">
-                  <MailOutlined className="mr-2 text-teal-500" />
-                  {clientInfo.email}
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-gray-800">{clientInfo.name}</h1>
+                {clientInfo.role === 'student' && (
+                  <Tag color="blue" icon={<FaGraduationCap />} className="px-3 py-1">
+                    Student Developer
+                  </Tag>
+                )}
+              </div>
+
+              {/* Student-specific info */}
+              {clientInfo.role === 'student' && clientInfo.student_info && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 space-y-2"
+                >
+                  <p className="text-gray-600 flex items-center gap-2">
+                    <FaGraduationCap className="text-violet-500" />
+                    {clientInfo?.student_info?.institution?.name} • {clientInfo?.student_info?.academic_info?.field_of_study}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(showAllSkills ? clientInfo?.student_info?.skills : clientInfo?.student_info?.skills?.slice(0, 3)).map((skill, index) => (
+                      <Tag 
+                        key={index}
+                        className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full"
+                      >
+                        {skill}
+                      </Tag>
+                    ))}
+                    {clientInfo?.student_info?.skills?.length > 3 && (
+                      <button
+                        onClick={() => setShowAllSkills(!showAllSkills)}
+                        className="text-teal-600 hover:text-teal-700 text-sm font-medium px-2"
+                      >
+                        {showAllSkills ? 'Show less' : `+${clientInfo?.student_info?.skills?.length - 3} more`}
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Existing contact info with improved styling */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center text-gray-600 bg-gray-50 p-2 rounded-lg">
+                  <MailOutlined className="mr-2 text-violet-500" />
+                  {clientInfo?.email}
                 </div>
-                <div className="flex items-center text-gray-600">
-                  <EnvironmentOutlined className="mr-2 text-teal-500" />
-                  {clientInfo.location}
-                </div>
-                <div className="flex items-center text-gray-600 cursor-pointer hover:text-teal-500 transition-colors" 
-                     onClick={() => navigate('/client/connections/')}>
-                  <LinkOutlined className="mr-2 text-teal-500" />
-                  {connectionCount} Connections
+                <div className="flex items-center text-gray-600 bg-gray-50 p-2 rounded-lg">
+                  <EnvironmentOutlined className="mr-2 text-violet-500" />
+                  {clientInfo?.location}
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons with improved styling */}
             <div className="flex items-center gap-3">
               {/* Follow Button */}
               <motion.button
@@ -300,18 +378,24 @@ const OtherProfile = ({userId, role,editable}) => {
             </div>
           </div>
 
+          {/* Enhanced Bio Section */}
           {clientInfo.bio && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <h3 className="text-sm font-medium text-charcolBlue mb-2">About</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{clientInfo.bio}</p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100"
+            >
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">About</h3>
+              <p className="text-gray-600 leading-relaxed">{clientInfo.bio}</p>
+            </motion.div>
           )}
         </div>
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards with conditional rendering for student/freelancer */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
+        {(clientInfo.role === 'student' ? getStudentStats() : [
           {
             title: "Total Projects",
             value: projectStats.total,
@@ -338,23 +422,198 @@ const OtherProfile = ({userId, role,editable}) => {
             suffix: "%",
             color: '#22c55e'
           }
-        ].map((stat, index) => (
-          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
-            <Statistic 
-              title={
-                <span className="text-charcolBlue font-medium flex items-center gap-2">
-                  {stat.icon}
-                  {stat.title}
-                </span>
-              }
-              value={stat.value}
-              precision={stat.suffix === "/5" ? 1 : stat.suffix === "%" ? 1 : 0}
-              suffix={stat.suffix}
-              valueStyle={{ color: stat.color }}
-            />
-          </Card>
+        ]).map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className="shadow-sm hover:shadow-lg transition-all duration-300">
+              <Statistic 
+                title={
+                  <span className="text-gray-700 font-medium flex items-center gap-2">
+                    {stat.icon}
+                    {stat.title}
+                  </span>
+                }
+                value={stat.value}
+                precision={stat.suffix === "%" ? 1 : 0}
+                suffix={stat.suffix}
+                valueStyle={{ color: stat.color }}
+              />
+            </Card>
+          </motion.div>
         ))}
       </div>
+
+      {/* Student Academic Details Section */}
+      {clientInfo.role === 'student' && clientInfo.student_info && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl shadow-lg overflow-hidden mt-6"
+        >
+          <div className="p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+              <FaGraduationCap className="text-teal-600" />
+              Academic Profile
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Institution Details */}
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
+                <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                  <BookOutlined className="text-blue-600" />
+                  Institution
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <BookOutlined className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-800">{clientInfo.student_info.institution.name}</p>
+                      <p className="text-sm text-gray-600">{clientInfo.student_info.institution.location}</p>
+                    </div>
+                  </div>
+                  {clientInfo.student_info.institution.website && (
+                    <a 
+                      href={clientInfo.student_info.institution.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 text-sm mt-2"
+                    >
+                      <LinkOutlined />
+                      Visit Website
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Academic Program Details */}
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
+                <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                  <ProjectOutlined className="text-teal-600" />
+                  Academic Program
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ProjectOutlined className="text-teal-600" />
+                    <span className="font-medium">{clientInfo.student_info.academic_info.course}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BookOutlined className="text-violet-600" />
+                    <span>{clientInfo.student_info.academic_info.field_of_study}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CalendarOutlined className="text-orange-600" />
+                    <span>{clientInfo.student_info.academic_info.year_of_study}</span>
+                  </div>
+                  <Tag color="blue" icon={<FaGraduationCap />} className="hover:scale-105 transition-transform">
+                    Graduating {clientInfo.student_info.academic_info.graduation_year}
+                  </Tag>
+                </div>
+              </div>
+
+              {/* Skills & Availability */}
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
+                <h4 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                  <ExperimentOutlined className="text-teal-600" />
+                  Skills & Availability
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Technical Skills</p>
+                    <div className="flex flex-wrap gap-2">
+                      {clientInfo.student_info.skills.map((skill, index) => (
+                        <Tag key={index} color="cyan" icon={<ExperimentOutlined />} className="hover:scale-105 transition-transform" >
+                          {skill}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-teal-50 p-2 rounded-lg">
+                    <ClockCircleOutlined className="text-teal-600" />
+                    <span className="text-sm">
+                      Available: {clientInfo.student_info.weekly_availability}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Academic Achievements */}
+              <div className="bg-gray-50/50 rounded-xl p-6 border border-gray-100">
+                <h4 className="text-lg font-semibold text-gray-700 mb-4">Achievements</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TrophyOutlined className="text-yellow-500" />
+                    <span>{clientInfo.student_info.completed_gigs} Completed Gigs</span>
+                  </div>
+                  {clientInfo.student_info.academic_achievements && (
+                    <div className="mt-2 text-gray-700">
+                      <p className="text-sm font-medium mb-2">Academic Achievements:</p>
+                      <p className="text-sm">{clientInfo.student_info.academic_achievements}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Certifications */}
+              <div className="bg-gray-50/50 rounded-xl p-6 border border-gray-100">
+                <h4 className="text-lg font-semibold text-gray-700 mb-4">Certifications</h4>
+                <div className="space-y-2">
+                  {clientInfo?.student_info?.certifications?.length > 0 ? (
+                    clientInfo?.student_info?.certifications?.map((cert, index) => (
+                      <div 
+                        key={index}
+                        className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-100"
+                      >
+                        <SafetyCertificateOutlined className="text-teal-600" />
+                        <span className="text-sm">{cert}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No certifications added yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Profile Status */}
+              <div className="bg-gray-50/50 rounded-xl p-6 border border-gray-100">
+                <h4 className="text-lg font-semibold text-gray-700 mb-4">Profile Status</h4>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-600">Profile Completion</span>
+                      <span className="text-sm font-medium">{clientInfo?.student_info?.profile_completion}%</span>
+                    </div>
+                    <Progress 
+                      percent={clientInfo?.student_info?.profile_completion} 
+                      strokeColor={{
+                        '0%': '#0ea5e9',
+                        '100%': '#0d9488',
+                      }}
+                      showInfo={false}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {clientInfo.student_info.is_verified ? (
+                      <Tag icon={<CheckCircleOutlined />} color="success">
+                        Verified Student
+                      </Tag>
+                    ) : (
+                      <Tag icon={<ClockCircleOutlined />} color="warning">
+                        Verification Pending
+                      </Tag>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Main Content Tabs */}
       <Card className="rounded-lg shadow-md">

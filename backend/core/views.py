@@ -32,8 +32,13 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-
-User = get_user_model()  # This will point to your custom User model if defined
+from django.db import transaction
+from .models import User  # This will point to your custom User model if defined
+from dateutil import parser
+from rest_framework import serializers
+from .serializers import ProjectResponseSerializer, TaskResponseSerializer
+import traceback
+from django.utils.dateparse import parse_date
 
 # Create your views here.
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -45,9 +50,9 @@ class IsprofiledDetails(APIView):
     def get(self,request):
         got_user = request.user
         if got_user.role == 'client':
-            profile_picture = ClientProfile.objects.get(user=got_user).profile_picture
+            profile_picture = ClientProfile.objects.get(user=got_user).profile_picture or None 
         else:
-            profile_picture = FreelancerProfile.objects.get(user=got_user).profile_picture
+            profile_picture = FreelancerProfile.objects.get(user=got_user).profile_picture or None
         is_profiled = got_user.is_profiled
         role = got_user.role
         usename = got_user.username
@@ -76,64 +81,50 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # Step 1: Get credentials from the request body
         username = request.data.get('username')
         password = request.data.get('password')
 
-        # Step 2: Validate email and password
         if not username or not password:
             return Response(
-                {
-                    "error": "Username and Password are required."
-                }
-                , status=status.HTTP_400_BAD_REQUEST)
+                {"error": "Username and Password are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        # Step 3: Authenticate the user
         user = authenticate(request, username=username, password=password)
         
         if not user:
-            return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Invalid credentials."}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Simplify role handling - map any other role to freelancer
+        frontend_role = 'client' if user.role == 'client' else 'freelancer'
         
-        # Step 4: Generate JWT Tokens
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        # Step 5: Set the CSRF token in a secure, HttpOnly cookie
-        csrf_token = get_token(request)  # CSRF token to prevent CSRF attacks
-
-        # Set cookies with a longer lifespan (e.g., 30 days)
-        response = Response({
+        # Add is_talentrise only if user is a student
+        response_data = {
             "message": "Login successful.",
             "access": access_token,
             "refresh": str(refresh),
-            "role": user.role,  # Add role in the response
-            "user_id": user.id  # Add role in the response
-        }, status=status.HTTP_200_OK)
+            "role": frontend_role,
+            "user_id": user.id
+        }
 
-        # Set CSRF token in cookie
-        response.set_cookie(
-            'csrftoken', csrf_token, 
-            max_age=timedelta(days=30),  # Set the lifespan of the CSRF cookie to 30 days
-            secure=True,  # Ensures cookies are only sent over HTTPS
-            httponly=True,  # Prevent JavaScript access to the cookie (mitigates XSS attacks)
-            samesite='Strict'  # CSRF protection - cookies will only be sent in first-party contexts
-        )
+        if user.role == 'student':
+            response_data["is_talentrise"] = True
 
-        # Also, set JWT cookies (if needed)
+        response = Response(response_data, status=status.HTTP_200_OK)
+
+        # Set cookies
         response.set_cookie(
             'accessToken', access_token,
-            max_age=timedelta(days=30),  # Set the lifespan of the JWT access token cookie
-            secure=True,  # Ensure cookies are only sent over HTTPS
-            httponly=True,  # Prevent JavaScript access to the cookie
-            samesite='Strict'  # CSRF protection
-        )
-
-        response.set_cookie(
-            'refreshToken', str(refresh),
-            max_age=timedelta(days=30),  # Set the lifespan of the JWT refresh token cookie
-            secure=True,  # Ensure cookies are only sent over HTTPS
-            httponly=True,  # Prevent JavaScript access to the cookie
-            samesite='Strict'  # CSRF protection
+            max_age=timedelta(days=30),
+            secure=True,
+            httponly=True,
+            samesite='Strict'
         )
 
         return response
@@ -141,74 +132,88 @@ class LoginView(APIView):
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
+    def generate_unique_username(self, email):
+        base_username = email.split('@')[0]
+        username = base_username
+        counter = 1
+        
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+            
+        return username
+
+    def generate_nickname(self, email):
+        # Generate a friendly nickname from the email
+        name_part = email.split('@')[0]
+        # Remove numbers and special characters for a cleaner nickname
+        clean_name = ''.join(c for c in name_part if c.isalpha())
+        # Capitalize first letter
+        return clean_name.capitalize()
+
     def post(self, request):
         data = request.data
-        print(data)
         
-        # Step 1: Email, Password, and Confirm Password
         if 'email' not in data or 'password' not in data or 'confirm_password' not in data:
-            return Response({"error": "Email, Password, and Confirm Password are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Email, Password, and Confirm Password are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         if data['password'] != data['confirm_password']:
-            return Response({"error": "Password and Confirm Password must match."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Password and Confirm Password must match."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         try:
             validate_password(data.get('password'))
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Step 2: Role (Client or Freelancer)
-        if 'role' not in data:
-            return Response({"error": "Role is required. Choose either 'Client' or 'Freelancer'."}, status=status.HTTP_400_BAD_REQUEST)
 
-        role = data['role']
-        if role not in ['Client', 'Freelancer']:
-            return Response({"error": "Role must be 'Client' or 'Freelancer'."}, status=status.HTTP_400_BAD_REQUEST)
+        # Generate unique username and nickname from email
+        username = self.generate_unique_username(data['email'])
+        nickname = self.generate_nickname(data['email'])
+        role = data.get('role', 'student').lower()  # Default to student if not specified
+        is_talentrise = data.get('is_talentrise', False)
 
-        # Step 3: Create user (email and password only)
-        user = User.objects.create_user(email=data['email'], username=data['username'],password=data['password'],role=role.lower())
-        
-        # Step 4: Transaction Block to ensure atomicity
-        with transaction.atomic():
-            # Step 5: Category and Skills for Freelancer
-            if role == 'Freelancer':  
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    email=data['email'],
+                    username=username,
+                    nickname=nickname,
+                    password=data['password'],
+                    role=role,
+                    is_talentrise=is_talentrise
+                )
                 
-                # Create Freelancer Profile
-                freelancer_profile = FreelancerProfile(user=user)
-                freelancer_profile.save()
+                # Create the appropriate profile based on role
+                if role == 'client':
+                    ClientProfile.objects.create(user=user,primary_email = data['email'])
+                else:
+                    FreelancerProfile.objects.create(user=user,primary_email = data['email'])
+                
+                # ... rest of the registration logic ...
 
-                # Set additional fields if provided
-                if 'location' in data:
-                    freelancer_profile.location = data['location']
-                if 'dob' in data:
-                    freelancer_profile.dob = data['dob']
-                if 'payment_info' in data:
-                    freelancer_profile.payment_info = data['payment_info']
-                freelancer_profile.save()
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
 
-            # Step 6: Create Client Profile if the role is Client
-            elif role == 'Client':
-                client_profile = ClientProfile(user=user)
-                client_profile.save()
+            return Response({
+                "message": "Student account created successfully!",
+                "access": access_token,
+                "refresh": str(refresh),
+                "role": "freelancer",  # Map student to freelancer for frontend
+                "is_talentrise": is_talentrise,
+                "username": username,
+                "nickname": nickname
+            }, status=status.HTTP_201_CREATED)
 
-                # Set additional fields if provided
-                if 'location' in data:
-                    client_profile.location = data['location']
-                if 'dob' in data:
-                    client_profile.dob = data['dob']
-                client_profile.save()
-
-        # Generate JWT Token
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-
-        return Response({
-            "message": "User and Profile created successfully!",
-            "access": access_token,
-            "refresh": str(refresh),
-            "role": user.role  # Add role information in response
-        }, status=status.HTTP_201_CREATED)
-
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
 
@@ -234,154 +239,199 @@ class LogoutView(APIView):
         return Response({"message": "Logout successful!"}, status=status.HTTP_200_OK)
 
 
-
+from financeapp.models import Wallet
 
 class CreateProjectView(APIView):
-    permission_classes = [IsAuthenticated]  # Only authenticated users can create projects
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        # Get the client (user) creating the project
+        print("CreateProjectView.post() called")
         client = request.user
-
-        # Extract data from the request
-        skills_data = request.data.get('skills_required', [])
-        is_collaborative = request.data.get('is_collaborative', False)
-        tasks = request.data.get('tasks', [])
         
-        # Check the user's membership and set the max task limit
-        if client.membership == 'free':
-            max_tasks = 2
-        elif client.membership == 'gold':
-            max_tasks = 3
-        elif client.membership == 'platinum':
-            max_tasks = 5
-        else:
-            max_tasks = 0  # Handle the case where the user doesn't have a valid membership
+        tasks_data = request.data.get('tasks', [])
+        project_milestones_data = request.data.get('milestones', [])
+        total_auto_payment = request.data.get('total_auto_payment', 0)
+        print(total_auto_payment)
+        if total_auto_payment > 0:
+            wallet_balance = Wallet.objects.get(user=client).balance
+            if wallet_balance < total_auto_payment:
+                return Response({"message": "Insufficient wallet balance."}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+            else:
+                wallet = Wallet.objects.get(user=client)
+                
+                wallet.hold_balance += total_auto_payment
+                wallet.save()
+        
+        # Validate membership limits
+        max_tasks = {'free': 2, 'gold': 3, 'platinum': 5}.get(client.membership, 0)
+        if len(tasks_data) > max_tasks:
+            return Response({"message": f"Task limit exceeded. Max {max_tasks} tasks allowed."}, 
+                          status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate the number of tasks based on the membership
-        if is_collaborative and len(tasks) > max_tasks:
-            return Response({
-                "message": f"Task limit exceeded. You can create up to {max_tasks} tasks based on your membership level."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Validate and get the domain
+        # Create Project with error handling
         try:
-            domain = Category.objects.get(id=request.data['domain'])
-        except Category.DoesNotExist:
-            return Response({"message": "Domain not found"}, status=status.HTTP_400_BAD_REQUEST)
+            # Parse the deadline string to a proper date object
+            deadline_str = request.data.get('deadline')
+            deadline = parse_date(deadline_str)
+            if not deadline:
+                return Response({"message": "Invalid deadline format"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            is_collaborative = request.data.get('is_collaborative', False)
+            
+            # Validate task titles if collaborative
+            if is_collaborative:
+                for task_data in tasks_data:
+                    if not task_data.get('title', '').strip():
+                        return Response({"message": "Task title cannot be empty for collaborative projects"}, 
+                                      status=status.HTTP_400_BAD_REQUEST)
+            
+            # Create the project with proper date object
+            project = Project.objects.create(
+                title=request.data['title'],
+                description=request.data['description'],
+                budget=request.data['budget'],
+                
+                deadline=deadline,
+                is_collaborative=is_collaborative,
+                domain=Category.objects.get(id=request.data['domain']),
+                client=client,
+                status='pending'
+            )
+            
+            # Handle Project Milestones
+            if project_milestones_data:
+                self.create_milestones(project, None, project_milestones_data)
+                project.update_payment_strategy()
 
-        # Create the Project instance but don't save yet
-        temp_project = Project(
-            title=request.data['title'],
-            description=request.data['description'],
-            budget=request.data['budget'],
-            deadline=request.data['deadline'],
-            is_collaborative=is_collaborative,
-            domain=domain,
-            client=client,
-            status='pending',
-        )
-
-        # Save the project instance first to get an ID (necessary for Many-to-Many relationships)
-        temp_project.save()
-
-        # Create an event based on the project deadline
-        event = Event(
-            user=client,
-            title=f"{temp_project.title} - Deadline",
-            type='Deadline',
-            start=temp_project.deadline
-        )
-        event.save()
-
-        # Handle the skills for the project
-        if skills_data:
-            try:
-                skills_required = Skill.objects.filter(id__in=[skill['value'] for skill in skills_data])
-                temp_project.skills_required.set(skills_required)
-            except Skill.DoesNotExist:
-                return Response({"message": "Some skills not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Handle tasks if it's a collaborative project
-        if is_collaborative and tasks:
+            # Handle Tasks only if collaborative
             task_instances = []
-            for task in tasks:
-                task_skill_data = task.get('skills_required_for_task', [])
+            if is_collaborative:
+                for task_data in tasks_data:
+                    # Parse task deadline
+                    task_deadline_str = task_data.get('deadline')
+                    task_deadline = parse_date(task_deadline_str) if task_deadline_str else deadline
+                    print(task_data.get('automated_payment', False))
+                    task = Task.objects.create(
+                        title=task_data.get('title', ''),
+                        description=task_data.get('description', ''),
+                        deadline=task_deadline,
+                        is_automated_payment=task_data.get('automated_payment', False),
+                        project=project,
+                        budget=task_data.get('budget', 0)
+                    )
+                    
+                    # Handle Task Milestones
+                    task_milestones_data = task_data.get('milestones', [])
+                    if task_milestones_data:
+                        self.create_milestones(None, task, task_milestones_data)
+                    
+                    task_instances.append(task)
+
+            # Set skills and create events
+            self.handle_skills_and_events(project, tasks_data, task_instances, client)
+            
+            # Use the dedicated response serializers
+            try:
+                print("Serializing project response...")
+                print(f"Project data before serialization: {project.__dict__}")
+                project_data = ProjectResponseSerializer(project).data
+                print("Project serialization successful!")
+                
+                # Refresh all task instances before serialization
+                task_instances = Task.objects.filter(project=project)
+                print(f"Found {task_instances.count()} tasks for serialization")
+                print(f"First task data: {task_instances.first().__dict__ if task_instances.exists() else None}")
+                
+                tasks_data = TaskResponseSerializer(task_instances, many=True).data
+                print("Task serialization successful!")
+                
+                return Response({
+                    "message": "Project created successfully",
+                    "project": project_data,
+                    "tasks": tasks_data
+                }, status=status.HTTP_201_CREATED)
+                
+            except Exception as serialize_error:
+                print(f"Serialization error: {str(serialize_error)}")
+                print(traceback.format_exc())
+                # Fall back to basic response if serialization fails
+                return Response({
+                    "message": "Project created successfully, but error in response formatting",
+                    "project_id": project.id,
+                    "project_title": project.title
+                }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            print(f"Project creation error: {str(e)}")
+            print(traceback.format_exc())
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def create_milestones(self, project, task, milestones_data):
+        for milestone_data in milestones_data:
+            # Handle empty due_date
+            due_date = milestone_data.get('due_date')
+            if not due_date:
+                # Set default to 1 week from now
+                due_date = timezone.now() + timezone.timedelta(weeks=1)
+            else:
                 try:
-                    # Create the task instance
-                    temp_task = Task(
-                        title=task['title'],
-                        description=task['description'],
-                        deadline=task['deadline'],
-                        project=temp_project,
-                        budget=task['budget']
-                    )
-                    temp_task.save()
+                    # Parse string date if provided
+                    due_date = parser.parse(due_date).date()
+                except (ValueError, TypeError):
+                    due_date = timezone.now() + timezone.timedelta(weeks=1)
 
-                    # Create an event for each task based on its deadline
-                    task_event = Event(
-                        user=client,
-                        title=f"{temp_task.title} - Deadline",
-                        start=temp_task.deadline
-                    )
-                    task_event.save()
-
-                    # Set skills required for the task
-                    if task_skill_data:
-                        skills_required_task = Skill.objects.filter(id__in=[skill['value'] for skill in task_skill_data])
-                        temp_task.skills_required_for_task.set(skills_required_task)
-
-                    task_instances.append(temp_task)
-                except KeyError as e:
-                    return Response({"message": f"Missing required field: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-                except Skill.DoesNotExist:
-                    return Response({"message": "Some skills not found for the task"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Serialize the tasks and project data
-            task_serializer = TaskSerializer(task_instances, many=True)
-            project_serializer = ProjectSerializer(temp_project)
-
-            # Activity log for project creation
-            Activity.objects.create(
-                user=client,
-                activity_type='project_created',
-                description=f'Created Project: {temp_project.title}',
-                related_model='project',
-                related_object_id=temp_project.id
+            Milestone.objects.create(
+                title=milestone_data.get('title', ''),
+                project=project,
+                task=task,
+                amount=milestone_data.get('amount', 0),
+                due_date=due_date,
+                milestone_type=milestone_data.get('milestone_type', 'hybrid'),
+                is_automated=milestone_data.get('is_automated', True)
             )
 
-            # Activity log for each task creation
-            for task in task_instances:
-                Activity.objects.create(
-                    user=client,
-                    activity_type='task_created',
-                    description=f'Created Task: {task.title} for Project: {temp_project.title}',
-                    related_model='task',
-                    related_object_id=task.id
-                )
+    def handle_skills_and_events(self, project, tasks_data, task_instances, client):
+        # Handle project skills
+        if skills_data := self.request.data.get('skills_required'):
+            # Ensure we have a list of skill IDs
+            skill_ids = [skill['value'] if isinstance(skill, dict) else skill 
+                        for skill in skills_data]
+            project.skills_required.set(Skill.objects.filter(id__in=skill_ids))
 
-            return Response({
-                "message": "Project and tasks created successfully.",
-                "project": project_serializer.data,
-                "tasks": task_serializer.data
-            }, status=status.HTTP_201_CREATED)
-
-        # Serialize only the project if no tasks were provided
-        project_serializer = ProjectSerializer(temp_project)
-
-        # Activity log for project creation
-        Activity.objects.create(
+        # Create project deadline event
+        Event.objects.create(
             user=client,
-            activity_type='project_created',
-            description=f'Created Project: {temp_project.title}',
-            related_model='project',
-            related_object_id=temp_project.id
+            title=f"{project.title} - Deadline",
+            type='Deadline',
+            start=project.deadline
         )
 
-        return Response({
-            "message": "Project created successfully.",
-            "project": project_serializer.data
-        }, status=status.HTTP_201_CREATED)
+        # Handle tasks
+        for task, task_data in zip(task_instances, tasks_data):
+            # Task skills
+            if task_skills := task_data.get('skills_required_for_task'):
+                # Ensure we have a list of skill IDs
+                skill_ids = [skill['value'] if isinstance(skill, dict) else skill 
+                            for skill in task_skills]
+                task.skills_required_for_task.set(Skill.objects.filter(id__in=skill_ids))
+            
+            # Task event
+            Event.objects.create(
+                user=client,
+                title=f"{task.title} - Deadline",
+                start=task.deadline
+            )
+            
+            # Activity logging
+            Activity.objects.create(
+                user=client,
+                activity_type='task_created',
+                description=f'Created Task: {task.title}',
+                related_model='task',
+                related_object_id=task.id
+            )
+
 
 
 class CategoryListView(APIView):

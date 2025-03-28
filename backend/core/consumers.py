@@ -16,50 +16,49 @@ User = get_user_model()
 
 class SearchConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("WebSocket connection received")
+        self.user = None
         await self.accept()
-        print("WebSocket connection accepted")
 
     async def disconnect(self, close_code):
-        print(f"WebSocket disconnected with code: {close_code}")
+        pass
 
     async def receive(self, text_data):
-        """Handle incoming WebSocket messages"""
-        data = json.loads(text_data)
+        try:
+            data = json.loads(text_data)
+            
+            # Handle authentication
+            if data.get("type") == "auth":
+                token = data.get("token")
+                self.user = await self.authenticate_user(token)
+                if self.user:
+                    await self.send(json.dumps({"message": "Authenticated"}))
+                else:
+                    await self.send(json.dumps({"error": "Invalid token"}))
+                return
 
-        # 🔹 Step 1: Authenticate user if token is sent
-        if data.get("type") == "auth":
-            token = data.get("token", None)
-            self.user = await self.authenticate_user(token)
+            # Ensure user is authenticated for searches
+            if not self.user:
+                token = data.get("token")
+                self.user = await self.authenticate_user(token)
+                if not self.user:
+                    await self.send(json.dumps({"error": "Unauthorized"}))
+                    return
 
-            if self.user:
-                await self.send(json.dumps({"message": "Authenticated"}))
-            else:
-                await self.send(json.dumps({"error": "Invalid token"}))
-                await self.close()
-            return
+            query = data.get("query", "").strip()
+            if len(query) < 2:
+                await self.send(json.dumps({"users": [], "projects": [], "categories": []}))
+                return
 
-        # 🔹 Step 2: Ensure the user is authenticated before searching
-        if not self.user:
-            await self.send(json.dumps({"error": "Unauthorized"}))
-            await self.close()
-            return
+            users, projects, categories = await self.perform_search(query)
+            await self.send(json.dumps({
+                "users": users,
+                "projects": projects,
+                "categories": categories
+            }))
 
-        query = data.get("query", "").strip()
-
-        if len(query) < 2:
-            await self.send(json.dumps({"users": [], "projects": [], "categories": []}))
-            return
-
-        users, projects, categories = await self.perform_search(query)
-
-        response_data = {
-            "users": users,
-            "projects": projects,
-            "categories": categories
-        }
-
-        await self.send(json.dumps(response_data))
+        except Exception as e:
+            print(f"Error in SearchConsumer: {str(e)}")
+            await self.send(json.dumps({"error": "An error occurred during search"}))
 
     @sync_to_async
     def authenticate_user(self, token):
@@ -76,6 +75,7 @@ class SearchConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def perform_search(self, query):
+        print("Performing search",query)
         """Perform search asynchronously using authenticated user"""
         if not self.user:
             return [], [], []  # Return empty results if not authenticated
@@ -96,10 +96,14 @@ class SearchConsumer(AsyncWebsocketConsumer):
             # Fetch the User instance using fuser['id']
             user_instance = User.objects.get(id=fuser['id'])
             
+            # Determine pathrole
+            pathrole = 'freelancer' if fuser['role'] in ['freelancer', 'student'] else 'client'
+            
             user_data = {
                 'id': fuser['id'],
                 'username': fuser['username'],
-                'role': fuser['role'],
+                'role': fuser['role'],  # Keep original role
+                'pathrole': pathrole,   # Add pathrole for routing
                 'profile_picture': None,  # Default value for profile_picture
             }
         

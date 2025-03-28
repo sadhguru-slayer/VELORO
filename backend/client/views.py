@@ -5,6 +5,13 @@ from core.models import Project, User
 from core.models import Skill
 from .models import Event
 from django.db.models import Count, Avg
+import json
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import status
+from Profile.models import VerificationDocument
+from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from Profile.serializers import ClientProfilePartialUpdateSerializer
 
 class CHomePageView(APIView):
     permission_classes = [IsAuthenticated]

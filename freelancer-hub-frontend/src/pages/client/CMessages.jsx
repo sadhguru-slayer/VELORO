@@ -18,12 +18,12 @@ const CMessages = ({ userId, role }) => {
       
       <div className={`
         flex-1 flex flex-col overflow-hidden
-        ${isMobile ? 'ml-0 pb-16' : 'ml-14'}
+        ${isMobile ? 'ml-0' : 'ml-14'}
       `}>
         <CHeader userId={userId} />
         
         <div className="flex-1 overflow-auto bg-gray-50">
-          <Outlet context={{ userId, role }} />
+          <Outlet context={{ userId, role,isMobile }} />
         </div>
       </div>
     </div>

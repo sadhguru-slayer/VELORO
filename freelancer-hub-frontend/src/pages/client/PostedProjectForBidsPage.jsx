@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Modal, Button, Input, Card, Pagination, Tooltip, Progress, 
   Statistic, Empty, Spin, Tag, Rate, Select, Avatar, Timeline,
-  Collapse, Badge
+  Collapse, Badge, Alert
 } from 'antd';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,7 +13,8 @@ import {
   CalendarOutlined, GlobalOutlined, LikeOutlined,
   DislikeOutlined, DownloadOutlined, FileTextOutlined,
   BulbOutlined, TrophyOutlined, SafetyOutlined,
-  EnvironmentOutlined, AimOutlined
+  EnvironmentOutlined, AimOutlined, InfoCircleOutlined,
+  UpOutlined, DownOutlined
 } from '@ant-design/icons';
 import CSider from '../../components/client/CSider';
 import CHeader from '../../components/client/CHeader';
@@ -169,7 +170,7 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
         );
         const isCollaborative = response.data.is_collaborative;
         setProject(response.data);
-        console.log(response.data.tasks);
+        console.log(response.data);
       } catch (error) {
         console.log(error);
       } finally {
@@ -200,7 +201,7 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
     fetchBidsDetails();
     fetchProjectDetails();
   }, [projectId]);
-
+  
   const handleFilterChange = (key, value) => {
     setSelectedFilters((prevFilters) => ({
       ...prevFilters,
@@ -208,7 +209,137 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
     }));
   };
 
-  // Project Overview Section
+  // Add new component for Milestone Display
+  const MilestoneCard = ({ milestone, type = 'project' }) => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-lg shadow-md p-4 border-l-4 hover:shadow-lg transition-all duration-200"
+        style={{
+          borderLeftColor: milestone.milestone_type === 'progress' ? '#10b981' : 
+                          milestone.milestone_type === 'payment' ? '#6366f1' : '#8b5cf6'
+        }}
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <h4 className="font-medium text-gray-900">{milestone.title}</h4>
+            <div className="flex items-center gap-2 mt-1">
+              <Tag color={
+                milestone.milestone_type === 'progress' ? 'success' :
+                milestone.milestone_type === 'payment' ? 'blue' : 'purple'
+              }>
+                {milestone.milestone_type === 'hybrid' ? 'Progress & Payment' :
+                 `${milestone.milestone_type.charAt(0).toUpperCase()}${milestone.milestone_type.slice(1)} Only`}
+              </Tag>
+              <span className="text-sm text-gray-500">
+                Due: {new Date(milestone.due_date).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+          {(milestone.milestone_type === 'payment' || milestone.milestone_type === 'hybrid') && (
+            <div className="text-right">
+              <div className="text-lg font-semibold text-gray-900">₹{milestone.amount}</div>
+              {milestone.is_automated && (
+                <Tooltip title="Payment will be processed automatically">
+                  <Tag color="cyan" className="mt-1">Auto-payment</Tag>
+                </Tooltip>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="mt-3">
+          <Progress 
+            percent={milestone.status === 'paid' ? 100 : 
+                    milestone.status === 'approved' ? 75 : 
+                    milestone.status === 'pending' ? 25 : 0}
+            status={milestone.status === 'paid' ? 'success' : 'active'}
+            size="small"
+          />
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Add new component for Task Display with Milestones
+  const TaskCard = ({ task, showMilestones = true }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+      <motion.div
+        layout
+        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+      >
+        <div 
+          className="p-4 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <Tag color={task.status === 'completed' ? 'success' : 'processing'}>
+                  {task.status}
+                </Tag>
+                <span className="text-sm text-gray-500">
+                  Budget: ₹{task.budget}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {task.automated_payment && !task.milestones?.length && (
+                <Tooltip title="Payment will be automated on completion">
+                  <Tag color="cyan">Auto-payment</Tag>
+                </Tooltip>
+              )}
+              <motion.button
+                animate={{ rotate: isExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </motion.button>
+            </div>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {isExpanded && showMilestones && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="px-4 pb-4"
+            >
+              <div className="border-t border-gray-100 pt-4 mt-2">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Task Milestones</h4>
+                {task.milestones?.length > 0 ? (
+                  <div className="space-y-3">
+                    {task.milestones.map((milestone, index) => (
+                      <MilestoneCard 
+                        key={index} 
+                        milestone={milestone} 
+                        type="task"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Empty 
+                    description="No milestones set for this task" 
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  };
+
+  // Update ProjectOverview component
   const ProjectOverview = () => (
     <motion.div
       variants={containerVariants}
@@ -216,32 +347,102 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
       animate="visible"
       className="space-y-6"
     >
-      {/* Project Stats Grid */}
+      {/* Project Summary Card */}
+      <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Column - Project Details */}
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold mb-4 text-teal-700">
+              About This Project
+            </h3>
+            <div className="prose max-w-none text-gray-600 mb-6">
+              <div dangerouslySetInnerHTML={{ __html: project?.description }} />
+            </div>
+            
+            {/* Skills Required */}
+            <div className="bg-teal-50 p-4 rounded-lg">
+              <h4 className="font-medium text-teal-700 mb-2">Skills Required</h4>
+              <div className="flex flex-wrap gap-2">
+                {project?.skills_required?.map((skill, index) => (
+                  <Tag key={index} className="bg-teal-100 text-teal-700 border-none px-3 py-1">
+                    {skill.name}
+                  </Tag>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Key Project Stats */}
+          <div className="lg:w-1/3 space-y-4">
+            <Card className="border-teal-100 shadow-sm">
+              <Statistic
+                title={<span className="text-teal-700">Project Budget</span>}
+                value={project?.budget}
+                prefix="₹"
+                precision={2}
+                className="text-teal-700"
+              />
+              <div className="mt-4">
+                <Progress
+                  percent={((project?.total_spent || 0) / project?.budget) * 100}
+                  status="active"
+                  strokeColor={{
+                    '0%': '#14B8A6',
+                    '100%': '#0F766E',
+                  }}
+                />
+                <div className="text-sm text-teal-600 mt-1">
+                  Spent: ₹{project?.total_spent || 0}
+                </div>
+              </div>
+            </Card>
+
+            <Card className="border-teal-100 shadow-sm">
+              <Statistic
+                title={<span className="text-teal-700">Time Remaining</span>}
+                value={Math.ceil((new Date(project?.deadline) - new Date()) / (1000 * 60 * 60 * 24))}
+                suffix="days"
+                prefix={<CalendarOutlined className="text-teal-600" />}
+              />
+              <div className="text-sm text-teal-600 mt-2">
+                Deadline: {new Date(project?.deadline).toLocaleDateString()}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {
-            title: "Total Bids",
-            value: projectStats.totalBids,
-            icon: <TeamOutlined />,
-            color: "bg-violet-500"
+            title: "Tasks",
+            value: `${project?.tasks?.filter(t => t.status === 'completed').length || 0}/${project?.tasks?.length || 0}`,
+            icon: <ProjectOutlined />,
+            color: "bg-teal-600",
+            subtext: "Completed"
           },
           {
-            title: "Average Bid",
-            value: `₹${projectStats.averageBid}`,
+            title: "Progress",
+            value: `${Math.round(project?.get_progress || 0)}%`,
+            icon: <CheckCircleOutlined />,
+            color: "bg-teal-700",
+            subtext: "Overall Completion"
+          },
+          {
+            title: "Milestones",
+            value: (project?.milestones?.filter(m => m.status === 'completed').length || 0) + 
+                   '/' + (project?.milestones?.length || 0),
+            icon: <SafetyOutlined />,
+            color: "bg-teal-800",
+            subtext: "Completed"
+          },
+          {
+            title: "Payment Status",
+            value: project?.payment_status === 'completed' ? 'Paid' : 'In Progress',
             icon: <DollarOutlined />,
-            color: "bg-teal-500"
-          },
-          {
-            title: "Time Left",
-            value: "5 days",
-            icon: <ClockCircleOutlined />,
-            color: "bg-amber-500"
-          },
-          {
-            title: "Success Rate",
-            value: "75%",
-            icon: <TrophyOutlined />,
-            color: "bg-emerald-500"
+            color: "bg-teal-900",
+            subtext: `${((project?.total_spent || 0) / project?.budget * 100).toFixed(0)}% Released`
           }
         ].map((stat, index) => (
           <motion.div
@@ -252,56 +453,182 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
             <div className="flex items-center justify-between">
               <div className="text-3xl opacity-80">{stat.icon}</div>
               <div className="text-right">
+                <div className="text-lg font-bold">{stat.value}</div>
                 <div className="text-sm opacity-80">{stat.title}</div>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-xs opacity-70">{stat.subtext}</div>
               </div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Project Description Card */}
+      {/* Tasks and Milestones Overview */}
       <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <FileTextOutlined className="text-violet-500" />
-          Project Description
-        </h3>
-        <div className="prose max-w-none text-gray-600">
-          <div dangerouslySetInnerHTML={{ __html: project?.description }} />
+        {/* Project Level Milestones */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-1 h-6 bg-teal-600 rounded-full"></div>
+            <h3 className="text-xl font-semibold text-teal-700">Project Milestones</h3>
         </div>
-      </motion.div>
+          
+          <div className="bg-teal-50/50 rounded-lg p-4 mb-4">
+            <p className="text-teal-700">
+              <InfoCircleOutlined className="mr-2" />
+              Project milestones are high-level goals that track overall project progress
+            </p>
+          </div>
 
-      {/* Project Requirements */}
-      <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <BulbOutlined className="text-amber-500" />
-          Project Requirements
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {project?.milestones?.length > 0 ? (
+            <div className="space-y-4">
+              {project.milestones.map((milestone, index) => (
+                <div 
+                  key={index} 
+                  className="border border-teal-100 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start">
           <div>
-            <h4 className="text-lg font-medium mb-3">Required Skills</h4>
-            <div className="flex flex-wrap gap-2">
-              {project?.skills?.map((skill, index) => (
-                <Tag key={index} color="blue" className="px-3 py-1 rounded-full">
-                  {skill}
+                      <h4 className="font-medium text-teal-700">{milestone.title}</h4>
+                      <Tag color={milestone.milestone_type === 'progress' ? 'blue' : 'cyan'}>
+                        {milestone.milestone_type === 'hybrid' ? 'Progress & Payment' :
+                         `${milestone.milestone_type.charAt(0).toUpperCase()}${milestone.milestone_type.slice(1)} Only`}
                 </Tag>
+                    </div>
+                    {(milestone.milestone_type === 'payment' || milestone.milestone_type === 'hybrid') && (
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-teal-700">₹{milestone.amount}</div>
+                      </div>
+                    )}
+                  </div>
+                  <Progress 
+                    percent={milestone.status === 'completed' ? 100 : 
+                            milestone.status === 'in_progress' ? 50 : 25}
+                    strokeColor={{
+                      '0%': '#14B8A6',
+                      '100%': '#0F766E',
+                    }}
+                    className="mt-2"
+                  />
+                </div>
               ))}
             </div>
+          ) : (
+            <Alert
+              message="No Project-Level Milestones"
+              description="This project uses task-based milestone tracking"
+              type="info"
+              className="border-teal-100"
+            />
+          )}
           </div>
-          <div>
-            <h4 className="text-lg font-medium mb-3">Project Scope</h4>
-            <Timeline>
+
+        {/* Task Level Milestones */}
+        <div className="mt-12">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+            <h3 className="text-xl font-semibold text-blue-700">Tasks & Their Milestones</h3>
+          </div>
+
+          <div className="bg-blue-50/50 rounded-lg p-4 mb-4">
+            <p className="text-blue-700">
+              <InfoCircleOutlined className="mr-2" />
+              Tasks are individual work items, each with their own set of milestones
+            </p>
+          </div>
+
+          <div className="space-y-6">
               {project?.tasks?.map((task, index) => (
-                <Timeline.Item 
-                  key={index}
-                  color="blue"
-                  dot={<AimOutlined style={{ fontSize: '16px' }} />}
-                >
-                  <div className="font-medium">{task.title}</div>
-                  <div className="text-sm text-gray-500">{task.description}</div>
-                </Timeline.Item>
-              ))}
-            </Timeline>
+              <div key={index} className="border border-blue-100 rounded-lg overflow-hidden">
+                {/* Task Header */}
+                <div className="bg-blue-50/50 p-4 border-b border-blue-100">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium text-blue-700 text-lg">{task.title}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Tag color={task.status === 'completed' ? 'success' : 'processing'}>
+                          {formatText(task.status)}
+                        </Tag>
+                        <span className="text-blue-600">
+                          Budget: ₹{task.budget}
+                        </span>
+                      </div>
+                    </div>
+                    <Button 
+                      type="text"
+                      icon={task.expanded ? <UpOutlined /> : <DownOutlined />}
+                      onClick={() => toggleTask(index)}
+                      className="text-blue-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Task Milestones */}
+                <div className="p-4">
+                  <div className="space-y-3">
+                    {task.milestones?.map((milestone, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-100">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            milestone.status === 'completed' ? 'bg-blue-500' : 'bg-gray-300'
+                          }`} />
+                          <div>
+                            <div className="font-medium text-blue-700">{milestone.title}</div>
+                            <div className="text-sm text-blue-600">
+                              Due: {new Date(milestone.due_date).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {milestone.milestone_type !== 'progress' && (
+                            <div className="text-sm font-medium text-blue-700">
+                              ₹{milestone.amount}
+                            </div>
+                          )}
+                          <Tag color={
+                            milestone.status === 'completed' ? 'success' : 
+                            milestone.status === 'in_progress' ? 'processing' : 
+                            'default'
+                          }>
+                            {formatText(milestone.status)}
+                          </Tag>
+                        </div>
+                      </div>
+                    ))}
+                    {!task.milestones?.length && (
+                      <div className="text-center p-4 text-gray-500">
+                        No milestones set for this task
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Payment Strategy Info */}
+        <div className="mt-8 p-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-lg">
+          <h4 className="font-medium text-teal-700 mb-2">Payment Structure</h4>
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <div className="font-medium text-blue-700 mb-1">
+                {project?.milestones?.some(m => m.milestone_type !== 'progress') ?
+                  "Project-based Payments" :
+                  project?.tasks?.some(task => task.milestones?.length > 0) ?
+                  "Task-based Payments" :
+                  "Task Completion Payments"}
+              </div>
+              <p className="text-gray-600 text-sm">
+                {project?.milestones?.some(m => m.milestone_type !== 'progress') ?
+                  "Payments are tied to project milestone completion" :
+                  project?.tasks?.some(task => task.milestones?.length > 0) ?
+                  "Payments are released as task milestones are achieved" :
+                  "Payments are made automatically when tasks are completed"}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-gray-600">Total Budget</div>
+              <div className="text-xl font-semibold text-teal-700">₹{project?.budget}</div>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -309,7 +636,15 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
   );
 
   // Bids Section
-  const BidsSection = () => (
+  const BidsSection = () => {
+    const [currentPage, setCurrentPage] = useState(1);
+    
+    const handlePageChange = (page) => {
+      setCurrentPage(page);
+      // You would typically fetch bids for the specific page here
+    };
+
+    return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
@@ -444,10 +779,11 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
         ))}
       </AnimatePresence>
 
-      {/* Pagination */}
+        {/* Fixed Pagination */}
       <div className="flex justify-center mt-6">
         <Pagination
-          current={1}
+            current={currentPage}
+            onChange={handlePageChange}
           total={50}
           pageSize={5}
           showSizeChanger={false}
@@ -456,6 +792,15 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
       </div>
     </motion.div>
   );
+  };
+
+  // Determine available tabs based on project status
+  const getAvailableTabs = () => {
+    if (project?.status === 'ongoing' || project?.status === 'completed') {
+      return ['overview', 'analytics'];
+    }
+    return ['overview', 'bids', 'analytics'];
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -497,11 +842,17 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
                     {project?.title}
                   </h1>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Tag color="violet">{formatText(project?.status)}</Tag>
+                    <Tag color={
+                      project?.status === 'pending' ? 'blue' :
+                      project?.status === 'ongoing' ? 'teal' : 
+                      'green'
+                    }>
+                      {formatText(project?.status)}
+                    </Tag>
                     <span className="text-gray-500">•</span>
                     <span className="text-gray-500">
                       Posted {project?.created_at}
-                    </span>
+                        </span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -510,33 +861,33 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
                   </Button>
                   <Button 
                     type="primary" 
-                    className="bg-violet-500 hover:bg-violet-600"
+                    className="bg-teal-500 hover:bg-teal-600"
                   >
                     Edit Project
                   </Button>
-                </div>
-              </div>
-            </div>
-
+                            </div>
+                          </div>
+                        </div>
+                        
             {/* Tab Navigation */}
             <div className="bg-white rounded-xl shadow-lg p-2">
               <div className="flex overflow-x-auto">
-                {['overview', 'bids', 'analytics'].map((tab) => (
-                  <Button
+                {getAvailableTabs().map((tab) => (
+                            <Button 
                     key={tab}
                     type={activeTab === tab ? 'primary' : 'text'}
                     onClick={() => setActiveTab(tab)}
                     className={`flex-1 rounded-lg ${
                       activeTab === tab 
-                        ? 'bg-violet-500 text-white' 
+                        ? 'bg-teal-500 text-white' 
                         : 'text-gray-600'
                     }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </Button>
+                            </Button>
                 ))}
               </div>
-            </div>
+              </div>
 
             {/* Tab Content */}
             <AnimatePresence mode="wait">
@@ -548,15 +899,8 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === 'overview' && <ProjectOverview />}
-                {activeTab === 'bids' && <BidsSection />}
-                {activeTab === 'analytics' && (
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-xl font-semibold mb-6">
-                      Project Analytics
-                    </h3>
-                    {/* Add analytics content here */}
-                  </div>
-                )}
+                {activeTab === 'bids' && project?.status === 'pending' && <BidsSection />}
+                {activeTab === 'analytics' && <ProjectAnalytics project={project} />}
               </motion.div>
             </AnimatePresence>
           </motion.div>
@@ -766,6 +1110,374 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
         }
       `}</style>
     </div>
+  );
+};
+
+// Update the ProjectAnalytics component to accept project as a prop
+const ProjectAnalytics = ({ project }) => {
+  const [timeframe, setTimeframe] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const analyticsContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const analyticsItemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1
+    }
+  };
+
+  useEffect(() => {
+    // This would fetch real analytics data in production
+    setIsLoading(true);
+    setTimeout(() => {
+      setAnalyticsData({
+        budget: {
+          allocated: project?.budget || 0,
+          spent: project?.total_spent || 0,
+          remaining: (project?.budget || 0) - (project?.total_spent || 0)
+        },
+        tasks: {
+          total: project?.tasks?.length || 0,
+          completed: project?.tasks?.filter(t => t.status === 'completed').length || 0,
+          in_progress: project?.tasks?.filter(t => t.status !== 'completed').length || 0
+        },
+        milestones: {
+          project: project?.milestones?.length || 0,
+          task: project?.tasks?.reduce((acc, task) => acc + (task.milestones?.length || 0), 0),
+          completed: (
+            (project?.milestones?.filter(m => m.status === 'paid').length || 0) +
+            project?.tasks?.reduce((acc, task) => 
+              acc + (task.milestones?.filter(m => m.status === 'paid').length || 0), 0)
+          )
+        },
+        timeline: {
+          total_days: Math.ceil((new Date(project?.deadline) - new Date(project?.created_at)) / (1000 * 60 * 60 * 24)),
+          days_elapsed: Math.ceil((new Date() - new Date(project?.created_at)) / (1000 * 60 * 60 * 24)),
+          days_remaining: Math.ceil((new Date(project?.deadline) - new Date()) / (1000 * 60 * 60 * 24))
+        }
+      });
+      setIsLoading(false);
+    }, 1000);
+  }, [timeframe]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // You would normally fetch data for the specific page here
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6 flex justify-center items-center h-64">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      variants={analyticsContainerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      {/* Analytics Controls */}
+      <div className="bg-white rounded-xl shadow-lg p-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-gray-800">Project Analytics</h3>
+          <Select 
+            value={timeframe} 
+            onChange={setTimeframe}
+            className="w-32"
+          >
+            <Option value="week">Last Week</Option>
+            <Option value="month">Last Month</Option>
+            <Option value="all">All Time</Option>
+          </Select>
+        </div>
+      </div>
+
+      {/* Budget Analysis */}
+      <motion.div variants={analyticsItemVariants} className="bg-white rounded-xl shadow-lg p-6">
+        <h4 className="text-lg font-medium text-teal-700 mb-4">Budget Analysis</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <Card className="border-teal-100">
+            <Statistic
+              title="Total Budget"
+              value={analyticsData?.budget.allocated}
+              prefix="₹"
+              precision={2}
+              valueStyle={{ color: '#0F766E' }}
+            />
+          </Card>
+          <Card className="border-teal-100">
+            <Statistic
+              title="Total Spent"
+              value={analyticsData?.budget.spent}
+              prefix="₹"
+              precision={2}
+              valueStyle={{ color: '#0F766E' }}
+            />
+          </Card>
+          <Card className="border-teal-100">
+            <Statistic
+              title="Remaining Budget"
+              value={analyticsData?.budget.remaining}
+              prefix="₹"
+              precision={2}
+              valueStyle={{ color: '#0F766E' }}
+            />
+          </Card>
+        </div>
+        <Progress 
+          percent={Math.round((analyticsData?.budget.spent / analyticsData?.budget.allocated) * 100) || 0}
+          strokeColor={{
+            '0%': '#14B8A6',
+            '100%': '#0F766E',
+          }}
+          format={percent => `${percent}% utilized`}
+        />
+      </motion.div>
+
+      {/* Task Progress Analytics */}
+      <motion.div variants={analyticsItemVariants} className="bg-white rounded-xl shadow-lg p-6">
+        <h4 className="text-lg font-medium text-teal-700 mb-4">Task Progress</h4>
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <Card className="border-blue-100">
+                <Statistic
+                  title="Total Tasks"
+                  value={analyticsData?.tasks.total}
+                  valueStyle={{ color: '#0369A1' }}
+                />
+              </Card>
+              <Card className="border-blue-100">
+                <Statistic
+                  title="Completed Tasks"
+                  value={analyticsData?.tasks.completed}
+                  valueStyle={{ color: '#0369A1' }}
+                />
+              </Card>
+              <Card className="border-blue-100">
+                <Statistic
+                  title="Completion Rate"
+                  value={analyticsData?.tasks.total ? 
+                    Math.round((analyticsData.tasks.completed / analyticsData.tasks.total) * 100) : 0}
+                  suffix="%"
+                  valueStyle={{ color: '#0369A1' }}
+                />
+              </Card>
+            </div>
+            <Progress 
+              percent={analyticsData?.tasks.total ? 
+                Math.round((analyticsData.tasks.completed / analyticsData.tasks.total) * 100) : 0}
+              strokeColor={{
+                '0%': '#60A5FA',
+                '100%': '#2563EB',
+              }}
+            />
+          </div>
+          <div className="md:w-1/3">
+            {/* Task Status Pie Chart */}
+            <div className="bg-white rounded-lg p-4 h-full flex items-center justify-center">
+              <div className="w-full h-48 relative">
+                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                  <div className="text-4xl font-bold text-blue-600">
+                    {analyticsData?.tasks.completed}
+                  </div>
+                  <div className="text-sm text-gray-500">of {analyticsData?.tasks.total}</div>
+                </div>
+                <div className="w-full h-full" style={{
+                  background: `conic-gradient(
+                    #2563EB ${analyticsData?.tasks.completed / analyticsData?.tasks.total * 100}%, 
+                    #E5E7EB ${analyticsData?.tasks.completed / analyticsData?.tasks.total * 100}% 100%
+                  )`,
+                  borderRadius: '9999px'
+                }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Milestone Progress */}
+      <motion.div variants={analyticsItemVariants} className="bg-white rounded-xl shadow-lg p-6">
+        <h4 className="text-lg font-medium text-teal-700 mb-4">Milestone Analysis</h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-teal-100">
+            <Statistic
+              title="Project Milestones"
+              value={analyticsData?.milestones.project}
+              valueStyle={{ color: '#0F766E' }}
+            />
+          </Card>
+          <Card className="border-blue-100">
+            <Statistic
+              title="Task Milestones"
+              value={analyticsData?.milestones.task}
+              valueStyle={{ color: '#0369A1' }}
+            />
+          </Card>
+          <Card className="border-green-100">
+            <Statistic
+              title="Completed Milestones"
+              value={analyticsData?.milestones.completed}
+              valueStyle={{ color: '#047857' }}
+            />
+          </Card>
+        </div>
+
+        <div className="bg-gray-50 rounded-lg p-4">
+          <h5 className="font-medium text-gray-700 mb-2">Milestone Completion Timeline</h5>
+          <div className="h-60 relative">
+            {/* This would be a real chart in production - using placeholder for now */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              {project?.milestones?.length === 0 && project?.tasks?.every(t => !t.milestones?.length) ? (
+                <Empty description="No milestones to analyze" />
+              ) : (
+                <div className="w-full h-full p-4">
+                  {/* Timeline visualization - simplified version */}
+                  <div className="w-full h-2 bg-gray-200 rounded-full relative">
+                    {/* Project start */}
+                    <div className="absolute -top-6 left-0 text-xs text-gray-500">
+                      Start
+                    </div>
+                    <div className="absolute bottom-full left-0 w-1 h-4 bg-teal-500"></div>
+                    
+                    {/* Project deadline */}
+                    <div className="absolute -top-6 right-0 text-xs text-gray-500">
+                      Deadline
+                    </div>
+                    <div className="absolute bottom-full right-0 w-1 h-4 bg-teal-500"></div>
+                    
+                    {/* Today marker */}
+                    <div className="absolute bottom-full" style={{
+                      left: `${(analyticsData?.timeline.days_elapsed / analyticsData?.timeline.total_days) * 100}%`
+                    }}>
+                      <div className="w-1 h-4 bg-orange-500"></div>
+                      <div className="absolute -top-6 -translate-x-1/2 text-xs text-gray-500">Today</div>
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <div className="absolute top-0 left-0 h-full bg-teal-500 rounded-full" style={{
+                      width: `${Math.min(100, (project?.get_progress || 0))}%`
+                    }}></div>
+                  </div>
+                  
+                  {/* Milestone markers would go here in a real implementation */}
+                  <div className="mt-12">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Project Start: {project?.created_at}</span>
+                      <span>Project Deadline: {project?.deadline}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Time Analysis */}
+      <motion.div variants={analyticsItemVariants} className="bg-white rounded-xl shadow-lg p-6">
+        <h4 className="text-lg font-medium text-teal-700 mb-4">Time Analysis</h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-teal-100">
+            <Statistic
+              title="Total Project Days"
+              value={analyticsData?.timeline.total_days}
+              suffix="days"
+              valueStyle={{ color: '#0F766E' }}
+            />
+          </Card>
+          <Card className="border-teal-100">
+            <Statistic
+              title="Days Elapsed"
+              value={analyticsData?.timeline.days_elapsed}
+              suffix="days"
+              valueStyle={{ color: '#0F766E' }}
+            />
+          </Card>
+          <Card className="border-teal-100">
+            <Statistic
+              title="Days Remaining"
+              value={analyticsData?.timeline.days_remaining}
+              suffix="days"
+              valueStyle={{ color: '#0F766E' }}
+            />
+          </Card>
+        </div>
+        
+        <div className="bg-gray-50 rounded-lg p-4">
+          <h5 className="font-medium text-gray-700 mb-2">Time vs. Progress</h5>
+          <Progress 
+            percent={Math.round((analyticsData?.timeline.days_elapsed / analyticsData?.timeline.total_days) * 100)}
+            status="active"
+            strokeColor={{
+              '0%': '#14B8A6',
+              '100%': '#0F766E',
+            }}
+            format={percent => `${percent}% of time elapsed`}
+          />
+          <div className="h-4"></div>
+          <Progress 
+            percent={Math.round(project?.get_progress || 0)}
+            status="active"
+            strokeColor={{
+              '0%': '#60A5FA',
+              '100%': '#2563EB',
+            }}
+            format={percent => `${percent}% of project completed`}
+          />
+          
+          <div className="mt-4 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Time efficiency:</span>
+              <span className="font-medium text-teal-700">
+                {analyticsData?.timeline.days_elapsed > 0 
+                  ? Math.round(((project?.get_progress || 0) / 
+                      (analyticsData.timeline.days_elapsed / analyticsData.timeline.total_days * 100)) * 100)
+                  : 0}%
+              </span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {(project?.get_progress || 0) > 
+              (analyticsData?.timeline.days_elapsed / analyticsData?.timeline.total_days * 100)
+                ? "Project is ahead of schedule"
+                : "Project is behind schedule"}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Example of fixed pagination warning */}
+      {analyticsData?.milestones?.project > 5 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            current={currentPage}
+            onChange={handlePageChange}
+            total={analyticsData.milestones.project}
+            pageSize={5}
+            showSizeChanger={false}
+            className="shadow-lg rounded-full bg-white px-4 py-2"
+          />
+        </div>
+      )}
+    </motion.div>
   );
 };
 

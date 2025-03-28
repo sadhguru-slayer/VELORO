@@ -1,7 +1,7 @@
 from django.shortcuts import render,get_object_or_404
 # Create your views here.
 from .serializers import EventSerializer,ActivitySerializer
-from core.serializers import ProjectSerializer,TaskSerializer,SpendingDistributionByProjectSerializer
+from core.serializers import ProjectSerializer,TaskSerializer,SpendingDistributionByProjectSerializer,ProjectResponseSerializer,TaskResponseSerializer
 from .models import Event,Activity
 from core.models import Project,Task,Payment
 from rest_framework.permissions import IsAuthenticated,AllowAny
@@ -562,8 +562,8 @@ class ProjectDetailsAPIView(APIView):
             tasks = Task.objects.filter(project=project)
             
             # Serialize the project and task data
-            project_data = ProjectSerializer(project).data
-            tasks_data = TaskSerializer(tasks, many=True).data
+            project_data = ProjectResponseSerializer(project).data
+            tasks_data = TaskResponseSerializer(tasks, many=True).data
             
             # Add the tasks to the project data
             project_data['tasks'] = tasks_data
