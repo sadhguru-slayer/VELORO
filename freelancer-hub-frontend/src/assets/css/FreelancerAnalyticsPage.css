@@ -1,0 +1,85 @@
+/* Enhanced DatePicker Styling */
+.analytics-datepicker.ant-picker {
+    @apply bg-white/90 backdrop-blur-sm border border-white/20 rounded-xl;
+  }
+  
+  .analytics-datepicker .ant-picker-input > input {
+    @apply text-white placeholder-white/70;
+  }
+  
+  .analytics-datepicker .ant-picker-suffix {
+    @apply text-white/70;
+  }
+  
+  /* Enhanced Select Styling */
+  .analytics-select.ant-select {
+    @apply bg-white/90 backdrop-blur-sm rounded-xl;
+  }
+  
+  .analytics-select .ant-select-selector {
+    @apply border-white/20 !important;
+  }
+  
+  .analytics-select .ant-select-selection-item {
+    @apply text-white;
+  }
+  
+  /* Card Enhancements */
+  .stat-card {
+    @apply relative overflow-hidden bg-white rounded-xl border-none shadow-md 
+      hover:shadow-lg transition-all duration-300;
+  }
+  
+  .stat-card::before {
+    content: '';
+    @apply absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/5 to-transparent
+      rounded-full transform translate-x-8 -translate-y-8;
+  }
+  
+  /* Chart Enhancements */
+  .chart-container {
+    @apply relative bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300;
+  }
+  
+  /* Progress Bar Styling */
+  .custom-progress .ant-progress-bg {
+    @apply bg-gradient-to-r from-violet-500 to-indigo-500;
+  }
+  
+  /* Timeline Styling */
+  .custom-timeline .ant-timeline-item-tail {
+    @apply border-l-2 border-violet-200;
+  }
+  
+  .custom-timeline .ant-timeline-item-head {
+    @apply bg-violet-500 border-violet-500;
+  }
+  
+  /* Animation Keyframes */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .floating-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  /* Glassmorphism Effects */
+  .glass-card {
+    @apply bg-white/90 backdrop-blur-md;
+  }
+  
+  /* Enhanced Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-violet-300 rounded-full hover:bg-violet-400 transition-colors duration-200;
+  }

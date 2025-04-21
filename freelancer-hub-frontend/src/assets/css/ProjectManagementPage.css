@@ -1,0 +1,213 @@
+/* Softer Search Input */
+.project-search-input {
+  @apply bg-white/10 backdrop-blur-sm border-white/10 text-white/90 placeholder-white/50 
+    rounded-xl transition-all duration-200;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.project-search-input:hover {
+  @apply bg-white/15 border-white/20;
+}
+
+.project-search-input:focus {
+  @apply bg-white/15 border-white/20;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Softer Status Select */
+.project-status-select {
+  @apply bg-white/10 backdrop-blur-sm border-white/10 text-white/90 rounded-xl;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Refined Table */
+.project-table {
+  @apply border-none;
+}
+
+.project-table .ant-table-thead > tr > th {
+  @apply bg-gray-50/50 text-gray-600 font-medium border-b border-gray-100;
+}
+
+.project-table .ant-table-tbody > tr > td {
+  @apply border-b border-gray-100/50 text-gray-600;
+}
+
+/* Refined Project Card */
+.project-card {
+  @apply bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 
+    transition-all duration-300 overflow-hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.project-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transform: translateY(-2px);
+}
+
+/* Refined Modal */
+.project-modal .ant-modal-content {
+  @apply rounded-2xl overflow-hidden border border-gray-100 bg-white/95 backdrop-blur-sm;
+}
+
+.project-modal .ant-modal-header {
+  @apply border-b border-gray-100/50 bg-gray-50/50 px-6 py-4;
+}
+
+/* Refined Tabs */
+.project-tabs .ant-tabs-nav::before {
+  @apply border-gray-200/50;
+}
+
+.project-tabs .ant-tabs-tab {
+  @apply text-gray-500 transition-all duration-200;
+}
+
+.project-tabs .ant-tabs-tab:hover {
+  @apply text-violet-500;
+}
+
+.project-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  @apply text-violet-500;
+}
+
+.project-tabs .ant-tabs-ink-bar {
+  @apply bg-violet-400;
+}
+
+/* Refined Pagination */
+.custom-pagination .ant-pagination-item {
+  @apply border-gray-200/50 rounded-lg transition-all duration-200;
+}
+
+.custom-pagination .ant-pagination-item:hover {
+  @apply border-violet-300 text-violet-500;
+}
+
+.custom-pagination .ant-pagination-item-active {
+  @apply border-violet-400 bg-violet-400/10 text-violet-500;
+}
+
+/* Softer Status Tags */
+.status-tag {
+  @apply px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-tag-pending {
+  @apply bg-orange-50/50 text-orange-500 border-orange-100/50;
+}
+
+.status-tag-ongoing {
+  @apply bg-blue-50/50 text-blue-500 border-blue-100/50;
+}
+
+.status-tag-completed {
+  @apply bg-green-50/50 text-green-500 border-green-100/50;
+}
+
+/* Softer Search Input */
+.project-search-input {
+    @apply bg-white/10 backdrop-blur-sm border-white/10 text-white/90 placeholder-white/50 
+      rounded-xl transition-all duration-200;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  
+  .project-search-input:hover {
+    @apply bg-white/15 border-white/20;
+  }
+  
+  .project-search-input:focus {
+    @apply bg-white/15 border-white/20;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Softer Status Select */
+  .project-status-select {
+    @apply bg-white/10 backdrop-blur-sm border-white/10 text-white/90 rounded-xl;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Refined Table */
+  .project-table {
+    @apply border-none;
+  }
+  
+  .project-table .ant-table-thead > tr > th {
+    @apply bg-gray-50/50 text-gray-600 font-medium border-b border-gray-100;
+  }
+  
+  .project-table .ant-table-tbody > tr > td {
+    @apply border-b border-gray-100/50 text-gray-600;
+  }
+  
+  /* Refined Project Card */
+  .project-card {
+    @apply bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 
+      transition-all duration-300 overflow-hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  }
+  
+  .project-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transform: translateY(-2px);
+  }
+  
+  /* Refined Modal */
+  .project-modal .ant-modal-content {
+    @apply rounded-2xl overflow-hidden border border-gray-100 bg-white/95 backdrop-blur-sm;
+  }
+  
+  .project-modal .ant-modal-header {
+    @apply border-b border-gray-100/50 bg-gray-50/50 px-6 py-4;
+  }
+  
+  /* Refined Tabs */
+  .project-tabs .ant-tabs-nav::before {
+    @apply border-gray-200/50;
+  }
+  
+  .project-tabs .ant-tabs-tab {
+    @apply text-gray-500 transition-all duration-200;
+  }
+  
+  .project-tabs .ant-tabs-tab:hover {
+    @apply text-violet-500;
+  }
+  
+  .project-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    @apply text-violet-500;
+  }
+  
+  .project-tabs .ant-tabs-ink-bar {
+    @apply bg-violet-400;
+  }
+  
+  /* Refined Pagination */
+  .custom-pagination .ant-pagination-item {
+    @apply border-gray-200/50 rounded-lg transition-all duration-200;
+  }
+  
+  .custom-pagination .ant-pagination-item:hover {
+    @apply border-violet-300 text-violet-500;
+  }
+  
+  .custom-pagination .ant-pagination-item-active {
+    @apply border-violet-400 bg-violet-400/10 text-violet-500;
+  }
+  
+  /* Softer Status Tags */
+  .status-tag {
+    @apply px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .status-tag-pending {
+    @apply bg-orange-50/50 text-orange-500 border-orange-100/50;
+  }
+  
+  .status-tag-ongoing {
+    @apply bg-blue-50/50 text-blue-500 border-blue-100/50;
+  }
+  
+  .status-tag-completed {
+    @apply bg-green-50/50 text-green-500 border-green-100/50;
+  }

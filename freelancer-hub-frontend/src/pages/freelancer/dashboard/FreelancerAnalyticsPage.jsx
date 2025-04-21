@@ -9,7 +9,7 @@ import {
 } from "@ant-design/icons";
 import { faker } from "@faker-js/faker";
 import { motion, AnimatePresence } from "framer-motion";
-
+import '../../../assets/css/FreelancerAnalyticsPage.css';
 const FreelancerAnalyticsPage = () => {
   
   const [timeRange, setTimeRange] = useState("week");
@@ -208,119 +208,194 @@ const FreelancerAnalyticsPage = () => {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Enhanced Header Section */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h2 className="text-2xl font-bold text-violet-900 mb-2">Analytics Dashboard</h2>
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-violet-50 p-6 rounded-xl shadow-lg gap-6">
-          <div className="flex flex-col md:w-1/2">
-            <h1 className="text-3xl font-extrabold text-violet-900 mb-2">Freelancer Analytics</h1>
-            <p className="text-gray-600 text-lg">Comprehensive insights into your performance, earnings, and growth</p>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-8 shadow-lg">
+          {/* Decorative Elements */}
+          <div className="absolute inset-0">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full 
+              filter blur-3xl mix-blend-overlay -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-400/10 rounded-full 
+              filter blur-3xl mix-blend-overlay translate-x-1/2 translate-y-1/2"></div>
           </div>
-          <div className="flex flex-col md:flex-row gap-4 mt-6 md:mt-0 w-full md:w-auto">
-            <RangePicker
-              value={dateRange}
-              onChange={setDateRange}
-              className="w-full md:w-72 border-violet-300 rounded-xl p-2 focus:ring-violet-400 transition-all duration-300"
-            />
-            <Select
-              value={timeRange}
-              onChange={setTimeRange}
-              className="w-full md:w-32 border-violet-300 rounded-xl focus:ring-violet-400 transition-all duration-300"
-              options={[
-                { value: "week", label: "This Week" },
-                { value: "month", label: "This Month" },
-                { value: "quarter", label: "This Quarter" }
-              ]}
-            />
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              className="bg-violet-600 hover:bg-violet-700 text-white w-full md:w-auto rounded-xl shadow-md transform hover:scale-105 transition-all duration-300"
-            >
-              Download Report
-            </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                setLoading(true);
-                setTimeout(() => setLoading(false), 1000);
-              }}
-              className="w-full md:w-auto rounded-xl border-violet-600 border-2 hover:border-violet-700 text-violet-600 hover:text-violet-700 transition-all duration-300"
-            >
-              Refresh
-            </Button>
+
+          {/* Header Content */}
+          <div className="relative z-10">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="flex flex-col">
+                <h1 className="text-3xl font-bold text-white mb-2">Analytics Dashboard</h1>
+                <p className="text-indigo-100 text-lg">
+                  Track your performance and growth metrics
+                </p>
+              </div>
+              
+              <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                <RangePicker
+                  value={dateRange}
+                  onChange={setDateRange}
+                  className="analytics-datepicker w-full md:w-72"
+                />
+                <Select
+                  value={timeRange}
+                  onChange={setTimeRange}
+                  className="analytics-select w-full md:w-32"
+                  options={[
+                    { value: "week", label: "This Week" },
+                    { value: "month", label: "This Month" },
+                    { value: "quarter", label: "This Quarter" }
+                  ]}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="primary"
+                    icon={<DownloadOutlined />}
+                    className="bg-white text-violet-600 hover:bg-violet-50 hover:text-violet-700 
+                      border-none shadow-md w-full md:w-auto"
+                  >
+                    Export
+                  </Button>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => {
+                      setLoading(true);
+                      setTimeout(() => setLoading(false), 1000);
+                    }}
+                    className="bg-violet-500/20 text-white hover:bg-violet-500/30 
+                      border-white/20 w-full md:w-auto"
+                  >
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
+
       <Spin spinning={loading}>
-        {/* Key Metrics */}
+        {/* Enhanced Key Metrics Section */}
         <Row gutter={[16, 16]} className="mb-8">
+          {/* Enhanced Stat Cards */}
           <Col xs={24} sm={12} lg={6}>
-            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
-              <Card className="h-full bg-gradient-to-br from-violet-50 to-white shadow-sm hover:shadow-md transition-shadow">
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              transition={{ type: "spring", stiffness: 300 }}
+              className="h-full"
+            >
+              <Card 
+                className="h-full overflow-hidden relative bg-white border-none shadow-md
+                  hover:shadow-lg transition-all duration-300"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full 
+                  transform translate-x-8 -translate-y-8"></div>
                 <Statistic
-                  title={<span className="text-violet-700 font-medium">Total Earnings</span>}
+                  title={
+                    <span className="text-gray-600 font-medium flex items-center gap-2">
+                      <DollarOutlined className="text-violet-500" />
+                      Total Earnings
+                    </span>
+                  }
                   value={analyticsData.earnings.total}
-                  prefix={<DollarOutlined className="text-violet-600" />}
+                  valueStyle={{ color: '#1F2937', fontWeight: '600' }}
                   suffix={
-                    <Tooltip title="Growth from last period">
-                      <span className="text-green-500 text-sm">
-                        {analyticsData.earnings.trend}
-                      </span>
-                    </Tooltip>
+                    <Tag color="success" className="ml-2">
+                      {analyticsData.earnings.trend}
+                    </Tag>
                   }
                 />
-                <p className="text-sm text-violet-600 mt-2">
+                <p className="text-sm text-gray-500 mt-2">
                   Hourly Rate: {analyticsData.earnings.hourlyRate}
                 </p>
               </Card>
             </motion.div>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
-              <Card className="h-full bg-gradient-to-br from-violet-50 to-white shadow-sm hover:shadow-md transition-shadow">
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              transition={{ type: "spring", stiffness: 300 }}
+              className="h-full"
+            >
+              <Card 
+                className="h-full overflow-hidden relative bg-white border-none shadow-md
+                  hover:shadow-lg transition-all duration-300"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full 
+                  transform translate-x-8 -translate-y-8"></div>
                 <Statistic
-                  title={<span className="text-violet-700 font-medium">Project Success Rate</span>}
+                  title={
+                    <span className="text-gray-600 font-medium flex items-center gap-2">
+                      <CheckCircleOutlined className="text-violet-500" />
+                      Project Success Rate
+                    </span>
+                  }
                   value={analyticsData.projectMetrics.completionRate}
+                  valueStyle={{ color: '#1F2937', fontWeight: '600' }}
                   suffix="%"
-                  prefix={<CheckCircleOutlined className="text-violet-600" />}
                 />
-                <p className="text-sm text-violet-600 mt-2">
+                <p className="text-sm text-gray-500 mt-2">
                   Active Projects: {analyticsData.projectMetrics.activeProjects}
                 </p>
               </Card>
             </motion.div>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
-              <Card className="h-full bg-gradient-to-br from-violet-50 to-white shadow-sm hover:shadow-md transition-shadow">
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              transition={{ type: "spring", stiffness: 300 }}
+              className="h-full"
+            >
+              <Card 
+                className="h-full overflow-hidden relative bg-white border-none shadow-md
+                  hover:shadow-lg transition-all duration-300"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full 
+                  transform translate-x-8 -translate-y-8"></div>
                 <Statistic
-                  title={<span className="text-violet-700 font-medium">Bid Success Rate</span>}
+                  title={
+                    <span className="text-gray-600 font-medium flex items-center gap-2">
+                      <ThunderboltOutlined className="text-violet-500" />
+                      Bid Success Rate
+                    </span>
+                  }
                   value={analyticsData.bidding.successRate}
+                  valueStyle={{ color: '#1F2937', fontWeight: '600' }}
                   suffix="%"
-                  prefix={<ThunderboltOutlined className="text-violet-600" />}
                 />
-                <p className="text-sm text-violet-600 mt-2">
+                <p className="text-sm text-gray-500 mt-2">
                   Response Time: {analyticsData.bidding.avgResponseTime}
                 </p>
               </Card>
             </motion.div>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
-              <Card className="h-full bg-gradient-to-br from-violet-50 to-white shadow-sm hover:shadow-md transition-shadow">
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              transition={{ type: "spring", stiffness: 300 }}
+              className="h-full"
+            >
+              <Card 
+                className="h-full overflow-hidden relative bg-white border-none shadow-md
+                  hover:shadow-lg transition-all duration-300"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full 
+                  transform translate-x-8 -translate-y-8"></div>
                 <Statistic
-                  title={<span className="text-violet-700 font-medium">Dispute Rate</span>}
+                  title={
+                    <span className="text-gray-600 font-medium flex items-center gap-2">
+                      <WarningOutlined className="text-violet-500" />
+                      Dispute Rate
+                    </span>
+                  }
                   value={analyticsData.projectMetrics.disputeRate}
+                  valueStyle={{ color: '#1F2937', fontWeight: '600' }}
                   suffix="%"
-                  prefix={<WarningOutlined className="text-violet-600" />}
                 />
-                <p className="text-sm text-violet-600 mt-2">
+                <p className="text-sm text-gray-500 mt-2">
                   Resolution Rate: {analyticsData.disputes.resolutionRate}
                 </p>
               </Card>
@@ -328,22 +403,27 @@ const FreelancerAnalyticsPage = () => {
           </Col>
         </Row>
 
-        {/* Charts Section */}
+        {/* Enhanced Charts Section */}
         <Row gutter={[16, 16]} className="mb-8">
           <Col xs={24} lg={16}>
-            <Card title="Weekly Performance Trends" className="h-full shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex justify-end mb-4">
-                <Select
-                  defaultValue="bids"
-                  className="w-40"
-                  options={[
-                    { value: "bids", label: "Bidding Activity" },
-                    { value: "earnings", label: "Earnings" },
-                    { value: "satisfaction", label: "Client Satisfaction" }
-                  ]}
-                  onChange={(value) => setSelectedMetric(value)}
-                />
-              </div>
+            <Card 
+              title={
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-800 font-semibold">Performance Trends</span>
+                  <Select
+                    defaultValue="bids"
+                    className="w-40"
+                    options={[
+                      { value: "bids", label: "Bidding Activity" },
+                      { value: "earnings", label: "Earnings" },
+                      { value: "satisfaction", label: "Client Satisfaction" }
+                    ]}
+                    onChange={(value) => setSelectedMetric(value)}
+                  />
+                </div>
+              }
+              className="shadow-md hover:shadow-lg transition-shadow duration-300"
+            >
               <div className="h-80">
                 <Line
                   ref={lineChartRef}
@@ -426,7 +506,7 @@ const FreelancerAnalyticsPage = () => {
           </Col>
         </Row>
 
-        {/* Project and Quality Metrics */}
+        {/* Enhanced Project Distribution and Quality Metrics */}
         <Row gutter={[16, 16]} className="mb-8">
           <Col xs={24} lg={12}>
             <Card title="Project Distribution" className="h-full">
@@ -469,17 +549,17 @@ const FreelancerAnalyticsPage = () => {
           </Col>
         </Row>
 
-        {/* Dispute Management and Risk Analysis */}
+        {/* Enhanced Dispute Management Section */}
         <Row gutter={[16, 16]} className="mb-8">
           <Col xs={24} lg={12}>
             <Card 
               title={
-                <div className="flex items-center">
-                  <WarningOutlined className="text-red-500 mr-2" />
-                  <span>Dispute Management</span>
+                <div className="flex items-center gap-2">
+                  <WarningOutlined className="text-red-500" />
+                  <span className="text-gray-800 font-semibold">Dispute Management</span>
                 </div>
               }
-              className="h-full"
+              className="shadow-md hover:shadow-lg transition-shadow duration-300"
             >
               <Timeline items={disputeTimeline} />
               <div className="mt-4">
@@ -504,12 +584,12 @@ const FreelancerAnalyticsPage = () => {
           <Col xs={24} lg={12}>
             <Card 
               title={
-                <div className="flex items-center">
-                  <ThunderboltOutlined className="text-violet-500 mr-2" />
-                  <span>Risk Analysis & Recommendations</span>
+                <div className="flex items-center gap-2">
+                  <ThunderboltOutlined className="text-violet-500" />
+                  <span className="text-gray-800 font-semibold">Risk Analysis & Recommendations</span>
                 </div>
               }
-              className="h-full"
+              className="shadow-md hover:shadow-lg transition-shadow duration-300"
             >
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={8}>

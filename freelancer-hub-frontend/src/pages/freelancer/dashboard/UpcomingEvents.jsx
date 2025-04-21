@@ -263,11 +263,27 @@ const UpcomingEvents = () => {
     showBaseModal(); // Show the modal for update/delete options
   };
 
+  // Add this function to check if a date is in the past
+  const isPastDate = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate < today;
+  };
+
+  // Modify the handleDateClick function
   const handleDateClick = (e) => {
-    setNewEvent(''); // Reset the event title input
-    setSelectedEvent(null); // Reset the selectedEvent to ensure a fresh event for creation
-    setSelectedDate(e.dayEl); // Set the selected date
-    showCreateEventModal(); // Show the modal for creating a new event
+    const clickedDate = new Date(e.dateStr);
+    if (isPastDate(clickedDate)) {
+      message.warning("Cannot create events for past dates");
+      return;
+    }
+    
+    setNewEvent('');
+    setSelectedEvent(null);
+    setSelectedDate(e.dayEl);
+    showCreateEventModal();
   };
 
   const formatDate = (date) => {
@@ -275,32 +291,41 @@ const UpcomingEvents = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 bg-gray-50/50 min-h-screen">
+      {/* Refined Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h2 className="text-2xl font-bold text-violet-900 mb-2">Upcoming Events</h2>
-        {/* Rest of your component content */}
+        <h2 className="text-2xl font-semibold text-violet-800/90 mb-2">Upcoming Events</h2>
+        <p className="text-gray-500">Manage your schedule and important deadlines</p>
       </motion.div>
-      <div className="calendar-container rounded-lg shadow-md overflow-hidden mb-6">
+
+      {/* Enhanced Calendar Container */}
+      <div className="calendar-container bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-violet-100/30 overflow-hidden mb-8">
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
           initialView="dayGridMonth"
           events={events.Meeting.concat(events.Deadline, events.Others)}
           height="auto"
           headerToolbar={{
-            start: 'prev,next', // Left buttons
-            center: 'title', // Month title
-            end: 'today,timeGridWeek,dayGridMonth' // Right buttons including Month
+            start: 'prev,next today',
+            center: 'title',
+            end: 'timeGridWeek,dayGridMonth'
           }}
           eventClick={(info) => handleEventClick(info.event)}
           dateClick={handleDateClick}
+          dayCellClassNames={(arg) => {
+            return isPastDate(arg.date) ? 'past-date' : '';
+          }}
+          validRange={{
+            start: new Date() // This will hide all past dates
+          }}
           eventContent={(eventInfo) => ({
             html: `
-              <div class="flex items-center p-1 rounded ${getEventTypeColor(eventInfo.event.extendedProps.type)} text-white">
-                <span class="text-sm font-medium">${eventInfo.event.title}</span>
+              <div class="event-content ${getEventTypeColor(eventInfo.event.extendedProps.type)}">
+                <span class="event-title">${eventInfo.event.title}</span>
               </div>
             `
           })}
@@ -559,81 +584,191 @@ const UpcomingEvents = () => {
 
       {/* Custom Header Layout */}
       <style jsx>{`
-        .custom-modal .ant-modal-content {
-          border-radius: 1rem;
-          overflow: hidden;
+        /* Enhanced Calendar Styles */
+        .calendar-container {
+          transition: all 0.3s ease;
         }
-        
-        .custom-modal .ant-modal-header {
-          background-color: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
-          padding: 1rem;
+
+        .calendar-container:hover {
+          box-shadow: 0 4px 20px rgba(139, 92, 246, 0.05);
         }
-        
-        .custom-table .ant-table-thead > tr > th {
-          background-color: #f8fafc;
-          color: #64748b;
-          font-weight: 600;
-        }
-        
-        .custom-table .ant-table-tbody > tr:hover > td {
-          background-color: #f1f5f9;
-        }
-        
-        .calendar-container .fc-theme-standard {
-          border-radius: 0.5rem;
-          overflow: hidden;
-        }
-        
-        .calendar-container .fc-header-toolbar {
-          display: grid;
-          grid-template-columns: 1fr 1fr; /* Two columns for left and right */
-          grid-template-rows: auto auto auto; /* Three rows for buttons and title */
-          gap: 10px; /* Space between items */
-          align-items: center; /* Center items vertically */
-          padding: 1rem; /* Padding around the header */
+
+        /* Header Toolbar */
+        .calendar-container .fc-toolbar {
+          padding: 1.5rem;
+          background: linear-gradient(to right, rgba(139, 92, 246, 0.03), rgba(139, 92, 246, 0.08));
         }
 
         .calendar-container .fc-toolbar-title {
-          grid-column: 2; /* Place title in the second column */
-          text-align: right; /* Align title to the right */
-          font-size: 1.5rem; /* Adjust size */
-          font-weight: bold; /* Make it bold */
-          text-transform: capitalize; /* Capitalize the first letter */
+          color: rgb(79, 70, 229, 0.9);
+          font-size: 1.25rem;
+          font-weight: 600;
         }
 
-        .calendar-container .fc-button {
-          text-transform: capitalize; /* Capitalize the first letter of buttons */
-        }
-
-        .calendar-container .fc-button-today {
-          grid-column: 1; /* Place Today button under left buttons */
-          grid-row: 2; /* Place in the second row */
-          justify-self: start; /* Align to the start of the column */
-        }
-
-        .calendar-container .fc-button-timeGridWeek {
-          grid-column: 2; /* Place Week button under the title */
-          grid-row: 3; /* Place in the third row */
-          justify-self: end; /* Align to the end of the column */
-        }
-
+        /* Button Styles */
         .calendar-container .fc-button-primary {
-          background-color: #0d9488;
-          border-color: #0d9488;
+          background: rgb(139, 92, 246, 0.1) !important;
+          border: 1px solid rgba(139, 92, 246, 0.2) !important;
+          color: rgb(139, 92, 246, 0.8) !important;
+          font-weight: 500;
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          transition: all 0.2s ease;
         }
 
         .calendar-container .fc-button-primary:hover {
-          background-color: #0f766e;
-          border-color: #0f766e;
+          background: rgb(139, 92, 246, 0.15) !important;
+          border-color: rgba(139, 92, 246, 0.3) !important;
+          color: rgb(139, 92, 246, 0.9) !important;
         }
 
-        .fc-daygrid-day-number {
-          font-size: 0.9rem; /* Adjust the size of the day numbers */
+        .calendar-container .fc-button-primary:not(:disabled):active,
+        .calendar-container .fc-button-primary:not(:disabled).fc-button-active {
+          background: rgb(139, 92, 246, 0.2) !important;
+          border-color: rgba(139, 92, 246, 0.4) !important;
+          color: rgb(139, 92, 246) !important;
         }
 
-        .fc-daygrid-event {
-          font-size: 0.8rem; /* Adjust the size of the event text */
+        /* Calendar Grid */
+        .calendar-container .fc-theme-standard td,
+        .calendar-container .fc-theme-standard th {
+          border-color: rgba(139, 92, 246, 0.08);
+        }
+
+        .calendar-container .fc-day-today {
+          background: rgba(139, 92, 246, 0.05) !important;
+        }
+
+        .calendar-container .fc-day-today .fc-daygrid-day-number {
+          background: rgba(139, 92, 246, 0.1);
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: rgb(139, 92, 246);
+        }
+
+        /* Event Styles */
+        .event-content {
+          margin: 1px;
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          transition: all 0.2s ease;
+        }
+
+        .event-content:hover {
+          transform: translateY(-1px);
+        }
+
+        .event-title {
+          color: white;
+          font-weight: 500;
+        }
+
+        /* Header Cells */
+        .calendar-container .fc-col-header-cell {
+          padding: 0.75rem 0;
+          background: rgba(139, 92, 246, 0.03);
+        }
+
+        .calendar-container .fc-col-header-cell-cushion {
+          color: rgb(79, 70, 229, 0.8);
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+
+        /* Day Numbers */
+        .calendar-container .fc-daygrid-day-number {
+          color: rgb(107, 114, 128);
+          font-size: 0.875rem;
+          padding: 0.5rem;
+        }
+
+        /* Week Numbers */
+        .calendar-container .fc-daygrid-week-number {
+          background: rgba(139, 92, 246, 0.05);
+          color: rgb(139, 92, 246);
+          border-radius: 0.25rem;
+          padding: 0.25rem;
+          font-size: 0.75rem;
+        }
+
+        /* More Events Popover */
+        .calendar-container .fc-more-popover {
+          border: 1px solid rgba(139, 92, 246, 0.1);
+          border-radius: 0.5rem;
+          box-shadow: 0 4px 20px rgba(139, 92, 246, 0.05);
+          background: white;
+        }
+
+        .calendar-container .fc-more-popover .fc-popover-header {
+          background: rgba(139, 92, 246, 0.05);
+          color: rgb(139, 92, 246);
+          padding: 0.5rem;
+          font-weight: 500;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 640px) {
+          .calendar-container .fc-toolbar {
+            padding: 1rem;
+          }
+
+          .calendar-container .fc-toolbar-title {
+            font-size: 1rem;
+          }
+
+          .calendar-container .fc-button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+          }
+        }
+
+        /* Past Date Styling */
+        .calendar-container .past-date {
+          background-color: rgba(243, 244, 246, 0.5) !important;
+          cursor: not-allowed !important;
+        }
+
+        .calendar-container .past-date .fc-daygrid-day-number {
+          color: rgb(156, 163, 175) !important;
+          opacity: 0.7;
+        }
+
+        /* Prevent hover effects on past dates */
+        .calendar-container .past-date:hover {
+          background-color: rgba(243, 244, 246, 0.5) !important;
+        }
+
+        /* Style for future dates */
+        .calendar-container .fc-day-future {
+          cursor: pointer;
+        }
+
+        .calendar-container .fc-day-future:hover {
+          background-color: rgba(139, 92, 246, 0.05) !important;
+        }
+
+        /* Additional styles for better visual feedback */
+        .calendar-container .fc-day-future.fc-day-today {
+          background-color: rgba(139, 92, 246, 0.1) !important;
+        }
+
+        .calendar-container .fc-day-future.fc-day-today:hover {
+          background-color: rgba(139, 92, 246, 0.15) !important;
+        }
+
+        /* Style for events in past dates */
+        .calendar-container .past-date .event-content {
+          opacity: 0.7;
+          cursor: default;
         }
       `}</style>
     </div>

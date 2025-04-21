@@ -34,31 +34,29 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
   const [walletBalance, setWalletBalance] = useState(null);
   const [isLoadingWallet, setIsLoadingWallet] = useState(true);
 
-  // Quick actions menu items
+  // Updated Quick Actions with new color scheme
   const quickActions = [
     {
       icon: <FaPlus className="text-lg" />,
       label: 'Post Project',
       path: '/client/post-project',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
+      color: 'text-client-primary',
+      bgColor: 'bg-client-primary/10',
     },
     {
       icon: <MdDashboard className="text-lg" />,
       label: 'Dashboard',
       path: '/client/dashboard',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-client-primary',
+      bgColor: 'bg-client-primary/10',
     },
     {
       icon: <IoMdBriefcase className="text-lg" />,
       label: 'My Projects',
       path: '/client/dashboard/projects',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      color: 'text-client-primary',
+      bgColor: 'bg-client-primary/10',
     },
-    
-    
   ];
 
   // WebSocket connection for notifications
@@ -264,7 +262,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
           <input
             type="text"
             placeholder="Search projects, freelancers, or skills..."
-            className="w-full px-4 py-3 pl-10 pr-16 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            className="w-full px-4 py-3 pl-10 pr-16 rounded-lg border border-client-border focus:border-client-primary focus:ring-1 focus:ring-client-primary/20"
             value={searchTerm}
             onChange={handleSearch}
             autoFocus
@@ -310,8 +308,8 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                             className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
-                            <FaUserCircle className="text-teal-500 text-xl" />
+                          <div className="w-10 h-10 rounded-full bg-client-primary/10 flex items-center justify-center">
+                            <FaUserCircle className="text-client-primary text-xl" />
                           </div>
                         )}
                         <div>
@@ -371,6 +369,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
     );
   };
 
+  //fetch wallet balance
   useEffect(() => {
     const fetchWalletBalance = async () => {
       try {
@@ -406,7 +405,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
       return (
         <div className="px-4 py-3 bg-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FaWallet className="text-teal-600" />
+            <FaWallet className="text-client-primary" />
             <span className="text-sm text-gray-600">Balance:</span>
           </div>
           {isLoadingWallet ? (
@@ -429,7 +428,7 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
           onClick={() => navigate('/client/wallet')}
         >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200">
-            <FaWallet className="text-teal-600" />
+            <FaWallet className="text-client-primary" />
             {isLoadingWallet ? (
               <Spin size="small" />
             ) : (
@@ -445,22 +444,20 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
 
   return (
     <>
-      <header className="sticky top-0 bg-white border-b border-gray-200 h-16 flex items-center p-4 px-6 justify-between shadow-sm z-10">
-        {/* Logo Section - Always visible */}
-      <div className="flex items-center">
+      <header className="sticky top-0 bg-white border-b border-client-border h-16 flex items-center p-4 px-6 justify-between shadow-client-sm z-50">
+        {/* Logo Section */}
+        <div className="flex items-center">
           <Link 
             to="/" 
-            className="text-xl font-bold tracking-wide text-gray-800 hover:text-teal-600 transition-colors"
+            className="text-xl font-bold tracking-wide text-client-primary hover:text-client-primary-light transition-colors"
           >
-            Veloro
+            Talintz
           </Link>
         </div>
 
-        {/* Conditional rendering based on authentication status */}
         {shouldShowRestricted() ? (
-          // Restricted view for explicitly non-authenticated users
+          // Restricted view styling updated
           <div className="flex items-center gap-6 ml-auto">
-            {/* Blurred/Locked Quick Actions */}
             <div className="relative hidden md:flex items-center gap-4">
               {quickActions.map((action) => (
                 <motion.div
@@ -477,27 +474,25 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                     onClick={() => navigate('/login')}
                     className="absolute inset-0 flex items-center justify-center bg-white/30 backdrop-blur-sm rounded-lg cursor-pointer"
                   >
-                    <FaLock className="text-gray-400" />
+                    <FaLock className="text-client-text-secondary" />
                   </motion.div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Login Button */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/login')}
-              className="flex items-center gap-2 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-all duration-300"
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-client-bg-gradient-start to-client-bg-gradient-end text-white rounded-xl hover:shadow-client-button-hover transition-all duration-300"
             >
               Sign In
             </motion.button>
           </div>
         ) : (
-          // Full header for all other cases
           <>
-            {/* Quick Actions */}
-            <div className="hidden md:flex items-center gap-2 ml-8">
+            {/* Quick Actions with updated styling */}
+            <div className="hidden md:flex items-center gap-3 ml-8">
               {quickActions.map((action) => (
                 <Tooltip 
                   key={action.path} 
@@ -508,39 +503,39 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => navigate(action.path)}
-                    className={`relative p-2 rounded-lg ${action.bgColor} ${
-                      location.pathname === action.path ? 'ring-2 ring-offset-2 ring-teal-500' : ''
-                    } hover:shadow-md transition-all duration-200`}
+                    className={`relative p-2.5 rounded-xl ${action.bgColor} ${
+                      location.pathname === action.path 
+                        ? 'ring-2 ring-offset-2 ring-client-primary/30' 
+                        : ''
+                    } hover:shadow-client-sm transition-all duration-200`}
                   >
-                    <span className={`${action.color}`}>
-                      {action.icon}
-                    </span>
+                    <span className={action.color}>{action.icon}</span>
                   </motion.button>
                 </Tooltip>
               ))}
-          </div>
+            </div>
 
-      {/* Search Bar */}
+            {/* Enhanced Search Bar */}
             <div className="relative hidden md:block flex-1 max-w-2xl mx-12">
               <div className="relative">
-        <input
-          type="text"
+                <input
+                  type="text"
                   placeholder="Search projects, freelancers, or skills..."
-                  className="w-full px-4 py-2 pl-10 pr-4 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all duration-200 bg-gray-50 hover:bg-white"
-          value={searchTerm}
-          onChange={handleSearch}
-        />
-                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  className="w-full px-4 py-2.5 pl-10 pr-4 rounded-xl border border-client-border focus:border-client-primary focus:ring-1 focus:ring-client-primary/20 transition-all duration-200 bg-client-bg-primary hover:bg-white"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+                <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-client-text-secondary" />
               </div>
 
-        {/* Search Results Dropdown - Desktop */}
+              {/* Search Results Dropdown with updated styling */}
               <AnimatePresence>
                 {showResults && searchTerm.length >= 2 && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute z-[100] top-full left-0 right-0 bg-white mt-1 rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+                    className="absolute z-[100] top-full left-0 right-0 bg-white mt-2 rounded-xl shadow-client-md border border-client-border overflow-hidden"
                   >
                     <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
                       {/* Users Section */}
@@ -562,18 +557,18 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                                     className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                                    <FaUserCircle className="text-teal-500" />
+                                  <div className="w-8 h-8 rounded-full bg-client-primary/10 flex items-center justify-center">
+                                    <FaUserCircle className="text-client-primary" />
                                   </div>
                                 )}
-              <div>
+                                <div>
                                   <p className="font-medium text-gray-900">{user.username}</p>
                                   <p className="text-sm text-gray-500 capitalize">{user.role}</p>
-                  </div>
+                                </div>
                               </motion.div>
-                ))}
-              </div>
-  </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
 
                       {/* Projects Section */}
@@ -595,8 +590,8 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                                   }}
                                 />
                               </motion.div>
-                ))}
-              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
@@ -604,267 +599,190 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
                       {!searchResults.users.length && !searchResults.projects.length && (
                         <div className="p-8 text-center">
                           <p className="text-gray-500">No results found for "{searchTerm}"</p>
-              </div>
-            )}
-          </div>
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
-        )}
+                )}
               </AnimatePresence>
-      </div>
-
-      {/* Actions Section */}
-      <div className="flex items-center gap-6">
-        {/* Hide wallet on mobile */}
-        <div className="hidden md:block">
-          <WalletDisplay />
-        </div>
-        
-        {/* Mobile Search Button */}
-        <div className="md:hidden">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsMobileSearchOpen(true)}
-            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100"
-          >
-            <FaSearch className="text-lg" />
-          </motion.button>
-        </div>
-        
-        {/* Notifications */}
-        <Tooltip title="Notifications">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative cursor-pointer group"
-            onClick={() => navigate('/client/notifications')}
-          >
-            <div className="relative">
-              <FaBell className={`text-xl text-gray-600 group-hover:text-teal-600 transition-colors
-                ${location.pathname === '/client/notifications' ? 'text-teal-600 ' : 'text-gray-600'}
-                `} />
-              {notificationsCount > 0 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-sm"
-                >
-                  {notificationsCount > 99 ? '99+' : notificationsCount}
-                </motion.div>
-              )}
-              <motion.div
-                className="absolute inset-0 rounded-full bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                initial={false}
-                whileHover={{
-                  scale: 1.8,
-                  opacity: 0.15,
-                }}
-              />
-            </div>
-          </motion.div>
-        </Tooltip>
-
-        {/* Add Messages Icon */}
-        <Tooltip title="Messages">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative cursor-pointer group"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMessagesOpen(!isMessagesOpen);
-            }}
-          >
-            <div className="relative">
-              <RiMessage3Fill className={`text-xl text-gray-600 group-hover:text-teal-600 transition-colors
-                ${location.pathname.includes('/client/messages') ? 'text-teal-600 ' : 'text-gray-600'}
-                `} />
-              {unreadMessages > 0 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-2 -right-2 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-sm"
-                >
-                  {unreadMessages > 99 ? '99+' : unreadMessages}
-                </motion.div>
-              )}
-              <motion.div
-                className="absolute inset-0 rounded-full bg-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                initial={false}
-                whileHover={{
-                  scale: 1.8,
-                  opacity: 0.15,
-                }}
-              />
             </div>
 
-            {/* Dropdown Menu */}
-            <AnimatePresence>
-              {isMessagesOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-50 border border-gray-200"
-                  onClick={(e) => e.stopPropagation()}
+            {/* Actions Section with updated styling */}
+            <div className="flex items-center gap-6">
+              {/* Wallet Display */}
+              <div className="hidden md:block">
+                <WalletDisplay />
+              </div>
+
+              {/* Mobile Search Button */}
+              <div className="md:hidden">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsMobileSearchOpen(true)}
+                  className="p-2.5 rounded-xl bg-client-bg-primary text-client-text-secondary hover:bg-client-accent-gray-lighter"
                 >
-                  <div className="py-2">
-                    <Link
-                      to="/client/messages/direct"
-                      className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100
-                        ${location.pathname === '/client/messages/direct' ? 'text-teal-600 ' : 'text-gray-600'}
-                        `}
-                      onClick={() => setIsMessagesOpen(false)}
-                    >
-                      <FaEnvelope className="w-4 h-4 mr-3" />
-                      Direct Messages
-                      {unreadDirectMessages > 0 && (
-                        <span className={`ml-auto bg-teal-500 text-white text-xs px-2 py-1 rounded-full
-                          ${location.pathname === '/client/messages/direct' ? 'text-teal-600 ' : 'text-gray-600'}
-                          `}
-                        >
-                          {unreadDirectMessages > 99 ? '99+' : unreadDirectMessages}
-                        </span>
-                      )}
-                    </Link>
-                    <Link
-                      to="/client/messages/groups"
-                      className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100
-                        ${location.pathname === '/client/messages/groups' ? 'text-teal-600 ' : 'text-gray-600'}
-                        `}
-                      onClick={() => setIsMessagesOpen(false)}
-                    >
-                      <FaUsers className="w-4 h-4 mr-3" />
-                      Group Chats
-                      {unreadGroupMessages > 0 && (
-                        <span className={`ml-auto bg-teal-500 text-white text-xs px-2 py-1 rounded-full
-                          ${location.pathname === '/client/messages/groups' ? 'text-teal-600 ' : 'text-gray-600'}
-                          `}
-                        >
-                          {unreadGroupMessages > 99 ? '99+' : unreadGroupMessages}
-                        </span>
-                      )}
-                    </Link>
-                    <Link
-                      to="/client/messages/settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsMessagesOpen(false)}
-                    >
-                      <FaCog className="w-4 h-4 mr-3" />
-                      Chat Settings
-                    </Link>
+                  <FaSearch className="text-lg" />
+                </motion.button>
+              </div>
+
+              {/* Notifications with updated styling */}
+              <Tooltip title="Notifications">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative cursor-pointer group"
+                  onClick={() => navigate('/client/notifications')}
+                >
+                  <div className="relative p-2 rounded-xl hover:bg-client-bg-primary transition-colors">
+                    <FaBell className={`text-xl ${
+                      location.pathname === '/client/notifications' 
+                        ? 'text-client-primary' 
+                        : 'text-client-text-secondary group-hover:text-client-primary'
+                    } transition-colors`} />
+                    {notificationsCount > 0 && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 bg-client-status-error text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-client-sm"
+                      >
+                        {notificationsCount > 99 ? '99+' : notificationsCount}
+                      </motion.div>
+                    )}
                   </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </Tooltip>
+              </Tooltip>
 
-        {/* Profile Dropdown */}
-        <div className="relative profile-dropdown">
-          <Tooltip title="Profile & Settings">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsProfiledClicked(!isProfiledClicked)}
-              className="cursor-pointer"
-            >
-              <FaUserCircle className="text-2xl text-gray-600 hover:text-teal-600 transition-colors" />
-            </motion.div>
-          </Tooltip>
-
-          <AnimatePresence>
-            {isProfiledClicked && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden z-[100]"
-              >
-                <div className="py-2">
-                  <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-                        {user?.profile_picture ? (
-                          <img 
-                            src={`http://localhost:8000${user.profile_picture}`} 
-                            alt="" 
-                            className="w-10 h-10 object-cover rounded-full"
-                          />
-                        ) : (
-                          <FaUserCircle className="text-white text-2xl" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                        <p className="text-xs text-gray-500 truncate max-w-[200px]">{user?.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      <span>Online</span>
-                    </div>
+              {/* Messages Icon with updated styling */}
+              <Tooltip title="Messages">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative cursor-pointer group"
+                  onClick={() => setIsMessagesOpen(!isMessagesOpen)}
+                >
+                  <div className="relative p-2 rounded-xl hover:bg-client-bg-primary transition-colors">
+                    <RiMessage3Fill className={`text-xl ${
+                      location.pathname.includes('/client/messages') 
+                        ? 'text-client-primary' 
+                        : 'text-client-text-secondary group-hover:text-client-primary'
+                    } transition-colors`} />
+                    {unreadMessages > 0 && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 bg-client-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-client-sm"
+                      >
+                        {unreadMessages > 99 ? '99+' : unreadMessages}
+                      </motion.div>
+                    )}
                   </div>
+                </motion.div>
+              </Tooltip>
 
-                  {/* Add wallet display for mobile */}
-                  <div className="md:hidden">
-                    <WalletDisplay isCompact={true} />
-                  </div>
-
-                  <div className="py-2">
-                    <motion.button
-                      whileHover={{ x: 4 }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
-                      onClick={() => { 
-                        setIsProfiledClicked(false);
-                        navigate(`/client/profile/${userId}`);
-                      }}
-                    >
-                      <span className="text-gray-900">Profile</span>
-                    </motion.button>
-                    
-                    <motion.button
-                      whileHover={{ x: 4 }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
-                      onClick={() => {
-                        setIsProfiledClicked(false);
-                        navigate('/settings');
-                      }}
-                    >
-                      <span className="text-gray-900">Settings</span>
-                    </motion.button>
-                  </div>
-
-                  <div className="my-2 border-t border-gray-200" />
-                  
-                  <motion.button
-                    whileHover={{ x: 4 }}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-red-600"
-                    onClick={() => {
-                      handleLogout();
-                      setIsProfiledClicked(false);
-                    }}
+              {/* Profile Dropdown with updated styling */}
+              <div className="relative profile-dropdown">
+                <Tooltip title="Profile & Settings">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsProfiledClicked(!isProfiledClicked)}
+                    className="cursor-pointer p-2 rounded-xl hover:bg-client-bg-primary transition-colors"
                   >
-                    <span>Logout</span>
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                    <FaUserCircle className="text-2xl text-client-text-secondary hover:text-client-primary transition-colors" />
+                  </motion.div>
+                </Tooltip>
 
-       
-  </div>
+                {/* Profile Dropdown Menu */}
+                <AnimatePresence>
+                  {isProfiledClicked && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 mt-2 w-64 rounded-xl bg-white shadow-client-md border border-client-border overflow-hidden z-[100]"
+                    >
+                      <div className="py-2">
+                        <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-client-primary to-client-primary-light flex items-center justify-center">
+                              {user?.profile_picture ? (
+                                <img 
+                                  src={`http://localhost:8000${user.profile_picture}`} 
+                                  alt="" 
+                                  className="w-10 h-10 object-cover rounded-full"
+                                />
+                              ) : (
+                                <FaUserCircle className="text-white text-2xl" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                              <p className="text-xs text-gray-500 truncate max-w-[200px]">{user?.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span>Online</span>
+                          </div>
+                        </div>
+
+                        {/* Add wallet display for mobile */}
+                        <div className="md:hidden">
+                          <WalletDisplay isCompact={true} />
+                        </div>
+
+                        <div className="py-2">
+                          <motion.button
+                            whileHover={{ x: 4 }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                            onClick={() => { 
+                              setIsProfiledClicked(false);
+                              navigate(`/client/profile/${userId}`);
+                            }}
+                          >
+                            <span className="text-gray-900">Profile</span>
+                          </motion.button>
+                          
+                          <motion.button
+                            whileHover={{ x: 4 }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3"
+                            onClick={() => {
+                              setIsProfiledClicked(false);
+                              navigate('/settings');
+                            }}
+                          >
+                            <span className="text-gray-900">Settings</span>
+                          </motion.button>
+                        </div>
+
+                        <div className="my-2 border-t border-gray-200" />
+                        
+                        <motion.button
+                          whileHover={{ x: 4 }}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-red-600"
+                          onClick={() => {
+                            handleLogout();
+                            setIsProfiledClicked(false);
+                          }}
+                        >
+                          <span>Logout</span>
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
           </>
         )}
-    </header>
-      
+      </header>
+
       <AnimatePresence>
         {isMobileSearchOpen && <MobileSearch />}
       </AnimatePresence>
       
-      {/* Custom Scrollbar Styles */}
+      {/* Updated styles */}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -875,15 +793,14 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
         }
         
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #94a3b8;
+          background-color: var(--client-secondary);
           border-radius: 3px;
         }
         
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: #64748b;
+          background-color: var(--client-secondary-dark);
         }
 
-        /* Add these new styles */
         .header-icon {
           position: relative;
           transition: all 0.2s ease;
@@ -905,13 +822,13 @@ const CHeader = ({ isAuthenticated = true, isEditable = true, userId }) => {
 
         @keyframes pulse {
           0% {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 0 0 rgba(27, 43, 101, 0.4);
           }
           70% {
-            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            box-shadow: 0 0 0 10px rgba(27, 43, 101, 0);
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            box-shadow: 0 0 0 0 rgba(27, 43, 101, 0);
           }
         }
       `}</style>

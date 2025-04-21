@@ -71,6 +71,11 @@ const clientRoutes = [
     allowedRoles: ['client']
   },
   {
+    path: "workspace/:projectId/project-detail",
+    component: lazy(() => import('./pages/client/ProjectWorkSpace')),
+    allowedRoles: ['client']
+  },
+  {
     path: "notifications",
     component: lazy(() => import('./pages/client/CNotifications')),
     allowedRoles: ['client']
@@ -441,6 +446,17 @@ const App = () => {
             path="/register" 
             element={token ? <Navigate to={`/${userRole}/homepage`} replace /> : <RegisterPage />} 
           />
+
+          <Route path="/cs/*">
+            <Route index element={<Navigate to="homepage" replace />} />
+            <Route path="homepage" element={<HomePage />} />
+            <Route 
+              path="register" 
+              element={token ? <Navigate to={`/${userRole}/homepage`} replace /> : <RegisterPage />} 
+            />
+          </Route>
+          
+
 
           {/* Client Routes */}
           <Route path="/client/*">

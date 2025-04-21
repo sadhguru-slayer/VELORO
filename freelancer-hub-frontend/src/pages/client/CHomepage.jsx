@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { Card, Button, Statistic, Timeline, Progress, Row, Col, Avatar, message, Empty, Tag } from 'antd';
+import { 
+  Card, Button, Statistic, Timeline, Progress, Row, Col, Avatar, 
+  message, Empty, Tag, Tooltip, Badge, Skeleton, Dropdown, Menu,
+  Divider
+} from 'antd';
 import { Line } from 'react-chartjs-2';
 import CHeader from "../../components/client/CHeader";
 import CSider from "../../components/client/CSider";
@@ -17,9 +21,19 @@ import {
   CheckCircleOutlined,
   ThunderboltOutlined,
   TrophyOutlined,
+  UserOutlined,
+  BellOutlined,
+  FilterOutlined,
+  EllipsisOutlined,
+  ArrowRightOutlined,
+  LineChartOutlined,
+  CalendarOutlined,
+  FileProtectOutlined,
+  SettingOutlined,
+  MoreOutlined
 } from '@ant-design/icons';
 import { useMediaQuery } from 'react-responsive';
-import { FaStar, FaRegStar, FaStarHalfAlt } from "react-icons/fa";
+import { FaStar, FaRegStar, FaStarHalfAlt, FaBriefcase, FaChartLine, FaUserTie } from "react-icons/fa";
 
 
 // Chart.js imports
@@ -30,8 +44,9 @@ import {
   PointElement,
   LineElement,
   Title,
-  Tooltip,
-  Legend
+  Tooltip as ChartTooltip,
+  Legend,
+  Filler
 } from 'chart.js';
 
 // Registering required Chart.js components
@@ -41,8 +56,9 @@ ChartJS.register(
   PointElement,
   LineElement,
   Title,
-  Tooltip,
-  Legend
+  ChartTooltip,
+  Legend,
+  Filler
 );
 
 
@@ -62,15 +78,20 @@ const CHomepage = ({ userId, role }) => {
     datasets: [{
       label: 'Project Investment Trend',
       data: [],
-      borderColor: '#14b8a6',
-      backgroundColor: 'rgba(20, 184, 166, 0.1)',
-      fill: true
+      borderColor: '#1B2B65',
+      backgroundColor: 'rgba(27, 43, 101, 0.05)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2
     }]
   });
 
   const [user, setUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const isTablet = useMediaQuery({ minWidth: 768, maxWidth: 1023 });
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -110,7 +131,6 @@ const CHomepage = ({ userId, role }) => {
           }
         });
 
-        // Log the responses to debug
         // Update clientData with new structure
         setClientData({
           activeProjects: response.data.active_projects,
@@ -128,7 +148,6 @@ const CHomepage = ({ userId, role }) => {
 
         setSpendingTrend(spendingResponse.data);
 
-
         setLoading(false);
       } catch (error) {
         console.error('Error fetching homepage data:', error);
@@ -142,12 +161,19 @@ const CHomepage = ({ userId, role }) => {
 
 
   const handleProfileMenu = (profileComponent) => {
-    
     if (location.pathname !== '/client/profile') {
       navigate(`/client/profile/${userId}`, { state: { profileComponent } });
     }
   };
 
+  // Options menu for card actions
+  const moreMenu = (
+    <Menu>
+      <Menu.Item key="1" icon={<FilterOutlined />}>Filter Data</Menu.Item>
+      <Menu.Item key="2" icon={<SettingOutlined />}>Settings</Menu.Item>
+      <Menu.Item key="3" icon={<FileProtectOutlined />}>Export Report</Menu.Item>
+    </Menu>
+  );
 
   const renderStars = (rating) => (
     <div className="flex items-center gap-1">
@@ -163,10 +189,9 @@ const CHomepage = ({ userId, role }) => {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-client-bg-primary">
       <CSider 
         userId={userId} 
-        
         role={role} 
         dropdown={true} 
         collapsed={true} 
@@ -178,138 +203,178 @@ const CHomepage = ({ userId, role }) => {
         ${isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}
       `}>
         <CHeader userId={userId}/>
-        <div className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
-          {/* Hero Section - Made responsive */}
+        
+        <div className="flex-1 overflow-auto bg-[#F8FAFD] p-5 md:p-8">
+          {/* Premium Breadcrumb Navigation */}
+          <div className="flex items-center text-client-text-secondary text-sm mb-8">
+            <span className="hover:text-client-primary cursor-pointer transition-colors duration-200">Dashboard</span>
+            <span className="mx-2 text-client-secondary">›</span>
+            <span className="text-client-primary font-medium">Home</span>
+          </div>
+          
+          {/* Enhanced Welcome Section with Premium Gradient */}
+          <div className="mb-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-500 p-6 md:p-12 shadow-xl mb-6 md:mb-8"
-          >
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-            <div className="relative z-5 flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="w-full md:max-w-2xl">
-                <h1 className="text-2xl md:text-4xl font-bold text-white mb-3 md:mb-4">
-                  Welcome back, {user?.username}! 👋
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-client-bg-gradient-start via-client-bg-gradient-middle to-client-bg-gradient-end shadow-client-lg mb-8"
+            >
+              <div className="absolute inset-0 bg-[url('/patterns/subtle-dots.png')] opacity-5"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent"></div>
+              <div className="relative z-10 p-10 md:p-12">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                  <div className="flex items-center gap-6">
+                    {userLoading ? (
+                      <Skeleton.Avatar active size={96} className="flex-shrink-0" />
+                    ) : (
+                      user && user.profile_picture && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="relative"
+                        >
+                          <Avatar 
+                            src={`http://localhost:8000${user.profile_picture}`}
+                            alt="Profile Photo"
+                            size={96}
+                            className="border-4 border-white/20 shadow-2xl flex-shrink-0"
+                          />
+                          <Badge 
+                            status="success" 
+                            className="absolute bottom-1 right-1 w-4 h-4 border-2 border-[#2A4178]" 
+                          />
+                        </motion.div>
+                      )
+                    )}
+                    <div>
+                      <span className="text-[#A3B8F6] text-sm font-medium mb-2 block">Welcome back</span>
+                      <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
+                        {user?.username || 'User'} 
               </h1>
-                <p className="text-base md:text-xl text-teal-50 mb-6 md:mb-8 leading-relaxed">
-                  Your workspace is ready. Start exploring talented freelancers and bring your ideas to life.
+                      <p className="text-[#CBD5E0] text-base md:text-lg font-light">
+                        Manage your projects and connect with top talent
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => navigate('/client/post-project')}
-                    className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-white text-teal-600 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                      className="px-6 py-3 bg-white text-client-primary rounded-xl font-semibold shadow-client-button hover:shadow-client-button-hover transition-all duration-300 flex items-center gap-2 group"
                   >
-                    <RocketOutlined />
-                    Post a Project
+                      <FaBriefcase className="text-sm transition-transform group-hover:scale-110" />
+                      New Project
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => navigate('/client/find-talent')}
-                    className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-teal-700/30 text-white rounded-xl font-semibold hover:bg-teal-700/40 transition-all duration-300 flex items-center justify-center gap-2"
+                      className="px-6 py-3 bg-[#2A4178] text-white rounded-xl font-semibold hover:bg-[#395693] transition-all duration-300 flex items-center gap-2 group border border-white/10"
                   >
-                    <TeamOutlined />
+                      <FaUserTie className="text-sm transition-transform group-hover:scale-110" />
                     Find Talent
                   </motion.button>
               </div>
               </div>
-              <div className="flex flex-col items-center gap-4">
-                {userLoading ? (
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-200 animate-pulse" />
-                ) : (
-                  user && user.profile_picture && (
-                    <motion.img
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.2 }}
-                      src={`http://localhost:8000${user.profile_picture}`}
-                      alt="Profile Photo"
-                      className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white/30"
-                    />
-                  )
-                )}
-            </div>
-          </div>
-          </motion.div>
 
-          {/* Stats Grid - Made responsive */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-            {[
-              {
-                title: "Active Projects",
-                value: clientData.activeProjects,
-                icon: "📊",
-                desc: "Ongoing projects",
-                color: "from-blue-500 to-blue-600",
-                onClick: () => navigate('/client/dashboard', { state: { component: 'projects' } })
-              },
-              {
-                title: "Pending Tasks",
-                value: `${clientData.pendingTasks}`,
-                icon: "✓",
-                desc: "Tasks to complete",
-                color: "from-teal-500 to-teal-600"
-              },
-              {
-                title: "Total Investment",
-                value: `₹${clientData.totalSpent}`,
-                icon: "💰",
-                desc: "Total spent",
-                color: "from-purple-500 to-purple-600"
-              },
-              {
-                title: "Response Rate",
-                value: "2.5h",
-                icon: "⚡",
-                desc: "Average response time",
-                color: "from-orange-500 to-orange-600"
-              }
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                onClick={stat.onClick}
-                className={`relative overflow-hidden bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 ${
-                  stat.onClick ? 'cursor-pointer' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">{stat.title}</p>
-                    <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
-                    <p className="text-sm text-gray-400 mt-1">{stat.desc}</p>
+                {/* Premium Stats Bar */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10 bg-white/5 backdrop-blur-md rounded-xl p-6 border border-client-border-light">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2A4178] to-[#395693] flex items-center justify-center text-white shadow-lg">
+                      <ProjectOutlined className="text-xl" />
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-sm font-medium">Active Projects</p>
+                      <p className="text-white text-2xl font-bold">{clientData.activeProjects}</p>
+                    </div>
                   </div>
-                  <div className={`text-3xl p-3 rounded-xl bg-gradient-to-r ${stat.color} text-white`}>
-                    {stat.icon}
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2A4178] to-[#395693] flex items-center justify-center text-white shadow-lg">
+                      <CheckCircleOutlined className="text-xl" />
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-sm font-medium">Pending Tasks</p>
+                      <p className="text-white text-2xl font-bold">{clientData.pendingTasks}</p>
             </div>
           </div>
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 to-emerald-400 opacity-50"></div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2A4178] to-[#395693] flex items-center justify-center text-white shadow-lg">
+                      <DollarOutlined className="text-xl" />
+                    </div>
+                  <div>
+                      <p className="text-white/70 text-sm font-medium">Total Investment</p>
+                      <p className="text-white text-2xl font-bold">₹{clientData.totalSpent.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2A4178] to-[#395693] flex items-center justify-center text-white shadow-lg">
+                      <ClockCircleOutlined className="text-xl" />
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-sm font-medium">Response Time</p>
+                      <p className="text-white text-2xl font-bold">2.5h</p>
+                    </div>
+            </div>
+          </div>
+              </div>
               </motion.div>
-            ))}
               </div>
 
-          {/* Market Insights & Trending Skills - Made responsive */}
-          <Row gutter={[16, 16]} className="mb-6 md:mb-8">
-            <Col xs={24} lg={16}>
+          {/* Main Content - Made responsive */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Investment Analytics Chart - 2 cols */}
+            <div className="lg:col-span-2">
               <Card 
                 title={
-                  <div className="flex items-center gap-2">
-                    <TrophyOutlined className="text-teal-500" />
-                    <span>Investment Analytics</span>
+                  <div className="flex items-center gap-2 text-client-text-primary">
+                    <LineChartOutlined className="text-client-primary" />
+                    <span className="font-semibold">Investment Analytics</span>
               </div>
                 }
-                className="rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 h-[400px] md:h-full"
+                className="rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border-0"
                 extra={
-                  <Button type="link" onClick={() => navigate('/client/dashboard')}>
-                    View Details
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-[#666]">Total: ₹{clientData.totalSpent.toLocaleString()}</span>
+                    <Dropdown overlay={moreMenu} trigger={['click']}>
+                      <Button 
+                        type="text" 
+                        icon={<EllipsisOutlined />} 
+                        className="flex items-center justify-center hover:bg-[#f0f2f5]"
+                      />
+                    </Dropdown>
+                  </div>
                 }
+                bodyStyle={{ padding: '10px 0' }}
               >
-                <div className="h-[300px] md:h-[400px]">
+                <div className="flex flex-col h-full">
+                  <div className="px-6 pb-4">
+                    <div className="flex items-center justify-between text-sm text-[#666] mb-2">
+                      <div className="flex items-center gap-6">
+                        <span className="flex items-center gap-1">
+                          <span className="inline-block w-3 h-3 bg-[#003366] rounded-full"></span>
+                          Current Period
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="inline-block w-3 h-3 bg-[#C0C0C0] rounded-full"></span>
+                          Previous Period
+                        </span>
+                      </div>
+                      <div>
+                        <select className="bg-[#f5f7fa] border border-[#e0e0e0] rounded-md px-2 py-1 text-sm">
+                          <option value="monthly">Monthly</option>
+                          <option value="quarterly">Quarterly</option>
+                          <option value="yearly">Yearly</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-[300px] md:h-[320px] px-4">
                   <Line
                     data={spendingTrend}
                     options={{
@@ -318,7 +383,7 @@ const CHomepage = ({ userId, role }) => {
                       plugins: {
                         legend: { display: false },
                         tooltip: {
-                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backgroundColor: 'rgba(0, 51, 102, 0.8)',
                           padding: 12,
                           titleFont: { 
                             size: 14, 
@@ -331,7 +396,7 @@ const CHomepage = ({ userId, role }) => {
                           },
                           callbacks: {
                             label: function(context) {
-                              return `₹ ${context.parsed.y}`;
+                                return `₹ ${context.parsed.y.toLocaleString()}`;
                             }
                           }
                         }
@@ -340,7 +405,7 @@ const CHomepage = ({ userId, role }) => {
                         y: {
                           beginAtZero: true,
                           grid: { 
-                            color: 'rgba(0, 0, 0, 0.05)',
+                              color: 'rgba(0, 0, 0, 0.04)',
                             drawBorder: false
                           },
                           border: {
@@ -354,19 +419,8 @@ const CHomepage = ({ userId, role }) => {
                               family: "'Inter', sans-serif"
                             },
                             callback: function(value) {
-                              return '₹ ' + value;
-                            }
-                          },
-                          title: {
-                            display: true,
-                            text: 'Investment (₹)',
-                            color: '#64748b',
-                            font: {
-                              size: 13,
-                              family: "'Inter', sans-serif",
-                              weight: '500'
-                            },
-                            padding: { bottom: 10 }
+                                return '₹ ' + value.toLocaleString();
+                              }
                           }
                         },
                         x: {
@@ -381,17 +435,6 @@ const CHomepage = ({ userId, role }) => {
                               size: window.innerWidth < 768 ? 10 : 12,
                               family: "'Inter', sans-serif"
                             }
-                          },
-                          title: {
-                            display: true,
-                            text: 'Timeline',
-                            color: '#64748b',
-                            font: {
-                              size: 13,
-                              family: "'Inter', sans-serif",
-                              weight: '500'
-                            },
-                            padding: { top: 10 }
                           }
                         }
                       },
@@ -399,31 +442,65 @@ const CHomepage = ({ userId, role }) => {
                         intersect: false,
                         mode: 'index'
                       },
+                        elements: {
+                          point: {
+                            radius: 3,
+                            hoverRadius: 5
+                          },
+                          line: {
+                            tension: 0.4
+                          }
+                      },
                       animation: {
                         duration: 1000,
                         easing: 'easeInOutQuart'
                       }
                     }}
                   />
+                  </div>
+                  
+                  <div className="mt-auto pt-4 px-6 flex justify-between items-center border-t border-[#f0f2f5]">
+                    <div className="text-sm">
+                      <span className="text-[#666]">Monthly Growth: </span>
+                      <span className="font-medium text-green-600">+12.3%</span>
+                    </div>
+                    <Button 
+                      type="link"
+                      onClick={() => navigate('/client/dashboard')}
+                      className="text-[#003366] hover:text-[#0055b3] font-medium flex items-center gap-1"
+                    >
+                      View Details <ArrowRightOutlined />
+                    </Button>
+                  </div>
                 </div>
               </Card>
-            </Col>
-            <Col xs={24} lg={8}>
+            </div>
+
+            {/* Trending Skills - 1 col */}
               <Card 
                 title={
-                  <div className="flex items-center gap-2">
-                    <ThunderboltOutlined className="text-yellow-500" />
-                    <span>Trending Skills</span>
+                <div className="flex items-center gap-2 text-client-text-primary">
+                  <ThunderboltOutlined className="text-client-primary" />
+                  <span className="font-semibold">Trending Skills</span>
               </div>
                 }
-                className="rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+              className="rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border-0"
+              extra={
+                <Dropdown overlay={moreMenu} trigger={['click']}>
+                  <Button 
+                    type="text" 
+                    icon={<EllipsisOutlined />} 
+                    className="flex items-center justify-center hover:bg-[#f0f2f5]"
+                  />
+                </Dropdown>
+              }
                 bodyStyle={{ 
                   height: '350px',
                   overflow: 'hidden',
-                  padding: '16px 8px'
+                padding: '0'
                 }}
               >
-                <div className="h-full overflow-y-auto pr-2 skills-container">
+              <div className="h-full overflow-y-auto pr-2 skills-container p-4">
                   {clientData.trendingSkills.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-gray-400">
                       <Empty 
@@ -432,22 +509,22 @@ const CHomepage = ({ userId, role }) => {
                   />
                 </div>
                   ) : (
-                    <div className="space-y-3">
+                  <div className="space-y-4">
                       {clientData?.trendingSkills.map((skill, index) => (
                         <motion.div 
                           key={index} 
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-all duration-300"
+                        className="bg-[#F9FAFB] p-4 rounded-lg hover:bg-[#F0F4F8] transition-all duration-300 border border-[#E5E7EB] hover:border-[#C0C0C0]"
                         >
                           <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium text-gray-700 text-sm">
+                          <span className="font-medium text-[#333333]">
                               {skill.name}
                             </span>
                             <Tag 
-                              color={skill.demand > 75 ? 'teal' : skill.demand > 50 ? 'blue' : 'default'}
-                              className="min-w-[70px] text-center text-xs"
+                            color={skill.demand > 75 ? '#003366' : skill.demand > 50 ? '#0055b3' : '#C0C0C0'}
+                            className="min-w-[70px] text-center text-xs font-medium rounded-md"
                             >
                               {skill.demand}% demand
                             </Tag>
@@ -456,64 +533,84 @@ const CHomepage = ({ userId, role }) => {
                             percent={skill.demand} 
                             showInfo={false}
                             strokeColor={{
-                              '0%': '#14b8a6',
-                              '100%': '#0d9488',
+                            '0%': 'var(--client-primary)',
+                            '100%': 'var(--client-primary-light)',
                             }}
-                            trailColor="#e2e8f0"
+                          trailColor="var(--client-secondary-light)"
                             strokeWidth={6}
                             className="custom-progress"
                           />
+                        <div className="flex justify-between items-center mt-2 text-xs text-[#666]">
+                          <span>Top matches: {Math.round(skill.demand / 10)}</span>
+                          <span>Growth: +{Math.round(skill.demand / 5)}%</span>
+                        </div>
                         </motion.div>
                       ))}
             </div>
                   )}
           </div>
               </Card>
-            </Col>
-          </Row>
+          </div>
 
-          {/* Featured Freelancers - Made responsive */}
+          {/* Top Rated Freelancers Section */}
           <Card 
             title={
-              <div className="flex items-center gap-2">
-                <StarOutlined className="text-yellow-500" />
-                <span className="text-base">Top Rated Freelancers</span>
+              <div className="flex items-center gap-2 text-client-text-primary">
+                <StarOutlined className="text-client-primary" />
+                <span className="font-semibold">Top Rated Freelancers</span>
               </div>
             }
             extra={
-              <Button type="link" size="small" onClick={() => navigate('/client/search-freelancers')}>
+              <Button 
+                type="text" 
+                className="text-client-primary hover:text-client-primary-light font-medium"
+                onClick={() => navigate('/client/search-freelancers')}
+              >
                 View All
               </Button>
             }
-            className="mb-6 md:mb-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+            className="mb-8 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border-0"
           >
-            <Row gutter={[12, 12]}>
+            <Row gutter={[16, 16]}>
               {clientData.topFreelancers.map((freelancer, index) => (
-                <Col xs={12} sm={12} lg={6} key={freelancer.id}>
+                <Col xs={12} sm={12} md={8} lg={6} key={freelancer.id}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="bg-white p-3 sm:p-4 rounded-lg border border-gray-100 hover:border-teal-500 transition-all duration-300"
+                    className="bg-white p-4 rounded-lg border border-[#E5E7EB] hover:border-[#C0C0C0] hover:shadow-md transition-all duration-300"
+                    onClick={() => navigate(`/client/freelancer/${freelancer.id}`)}
+                    style={{ cursor: 'pointer' }}
                   >
                     <div className="flex flex-col items-center text-center">
+                      <div className="relative">
                       <Avatar 
-                        size={window.innerWidth < 640 ? 50 : 80}
-                        src={freelancer.avatar ? `http://localhost:8000${freelancer.avatar}` : 'default-avatar-url'}
-                        className="mb-2 sm:mb-4 ring-2 ring-teal-500 ring-offset-2"
-                      />
-                      <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
+                          size={80}
+                          src={freelancer.avatar ? `http://localhost:8000${freelancer.avatar}` : null}
+                          icon={!freelancer.avatar && <UserOutlined />}
+                          className="mb-3 border-2 border-[#f0f2f5]"
+                        />
+                        {index < 3 && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#003366] text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md">
+                            {index + 1}
+                          </div>
+                        )}
+                      </div>
+                      <h4 className="font-semibold text-[#333333] mb-1">
                         {freelancer.name}
                       </h4>
-                      <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
+                      <p className="text-sm text-[#666666] mb-2 line-clamp-1">
                         {freelancer.specialization}
                       </p>
-                      <div className="flex items-center gap-1 sm:gap-2 bg-teal-50 px-2 sm:px-3 py-1 rounded-full">
+                      <div className="flex items-center gap-1 mb-2">
                         {renderStars(freelancer.rating)}
-                        <span className="text-teal-700 font-medium text-xs sm:text-sm">
+                        <span className="text-[#003366] font-medium text-sm ml-1">
                           {freelancer.rating}
                         </span>
-                        
+                      </div>
+                      <div className="w-full flex justify-between items-center mt-2 pt-2 border-t border-[#f0f2f5] text-xs">
+                        <span className="text-[#666]">₹{freelancer.hourlyRate || '800'}/hr</span>
+                        <span className="text-[#666]">{freelancer.completedProjects || '12'} projects</span>
             </div>
           </div>
                   </motion.div>
@@ -522,45 +619,57 @@ const CHomepage = ({ userId, role }) => {
             </Row>
           </Card>
 
-          {/* Success Stories - Made responsive */}
+          {/* Success Stories Section */}
           <Card 
             title={
-              <div className="flex items-center gap-2">
-                <CheckCircleOutlined className="text-green-500" />
-                <span>Recent Success Stories</span>
+              <div className="flex items-center gap-2 text-client-text-primary">
+                <TrophyOutlined className="text-client-primary" />
+                <span className="font-semibold">Recent Success Stories</span>
               </div>
             }
-            className="rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border-0"
+            extra={
+              <Dropdown overlay={moreMenu} trigger={['click']}>
+                <Button 
+                  type="text" 
+                  icon={<EllipsisOutlined />} 
+                  className="flex items-center justify-center hover:bg-[#f0f2f5]"
+                />
+              </Dropdown>
+            }
           >
             <Timeline mode={window.innerWidth < 768 ? "left" : "alternate"}>
               {clientData.recentSuccess.map((story, index) => (
                 <Timeline.Item 
-                  key={story.id}
-                  color="green"
-                  dot={<CheckCircleOutlined className="text-teal-500" />}
+                  key={index}
+                  color="#003366"
+                  dot={<CheckCircleOutlined className="text-[#003366]" />}
                 >
                   <motion.div
                     initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="bg-white p-6 rounded-xl shadow-sm"
+                    className="bg-white p-6 rounded-xl shadow-sm border border-[#E5E7EB] hover:border-[#C0C0C0] hover:shadow-md transition-all duration-200"
                   >
-                    <h4 className="font-semibold text-gray-900 mb-2">{story.title}</h4>
-                    <p className="text-gray-600 mb-3" dangerouslySetInnerHTML={{ __html: story.description }} />
+                    <h4 className="font-semibold text-[#333333] mb-3">{story.title}</h4>
+                    <p className="text-[#555555] mb-4 text-sm leading-relaxed line-clamp-3" 
+                      dangerouslySetInnerHTML={{ __html: story.description }} 
+                    />
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-teal-600 font-medium">
+                      <span className="text-[#003366] font-medium">
                         By {story.freelancers.map(freelancer => (
+                          <Tooltip title={`View ${freelancer.username}'s profile`} key={freelancer.id}>
                           <Link 
-                            key={freelancer.id} 
                             to={`/client/profile/${freelancer.id}`} 
                             className="hover:underline"
                           >
                             {freelancer.username}
                           </Link>
-                        )).reduce((prev, curr) => [prev, ', ', curr])}
+                          </Tooltip>
+                        )).reduce((prev, curr) => [prev, ', ', curr], [])}
                       </span>
-                      <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full">
-                        ₹{story.budget}
+                      <span className="bg-[#F0F4F8] text-[#003366] px-3 py-1 rounded-full font-medium">
+                        ₹{story.budget.toLocaleString()}
                       </span>
                     </div>
                   </motion.div>
@@ -571,78 +680,69 @@ const CHomepage = ({ userId, role }) => {
         </div>
       </div>
 
-      {/* Custom Styles */}
+      {/* Enhanced Custom Styles */}
       <style jsx global>{`
-        .custom-progress .ant-progress-inner {
-          background-color: #e2e8f0;
-        }
-        
-        .custom-progress .ant-progress-bg {
-          height: 8px !important;
-        }
-
-        @media (max-width: 767px) {
-          .main-content {
-            padding-bottom: 4rem !important;
-          }
-          
-          /* Ensure bottom content is visible above nav */
-          .ant-card:last-child,
-          .timeline-section {
-            margin-bottom: 5rem;
-          }
-        }
-      `}</style>
-      <style jsx>{`
-        .custom-progress .ant-progress-inner {
-          border-radius: 999px;
-        }
-        
-        .ant-card-body {
-          height: calc(100% - 58px); /* Subtracting card header height */
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .ant-card-body > div {
-          flex: 1;
+        .ant-card {
+          border-radius: 1rem;
+          border: none;
+          box-shadow: var(--shadow-client-sm);
+          transition: all 0.3s ease;
         }
 
-        .skills-container {
-          scrollbar-width: thin;
-          scrollbar-color: #CBD5E1 transparent;
-          -webkit-overflow-scrolling: touch;
+        .ant-card:hover {
+          box-shadow: var(--shadow-client-md);
         }
 
-        .skills-container::-webkit-scrollbar {
-          width: 4px;
+        .ant-card-head {
+          border-bottom: 1px solid rgba(27, 43, 101, 0.08);
+          padding: 20px 24px;
         }
 
-        .skills-container::-webkit-scrollbar-track {
-          background: transparent;
+        .ant-card-head-title {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: var(--client-text-primary);
         }
 
-        .skills-container::-webkit-scrollbar-thumb {
-          background-color: #CBD5E1;
-          border-radius: 20px;
+        .ant-progress-bg {
+          background: linear-gradient(to right, var(--client-primary), var(--client-primary-light));
         }
 
-        .skills-container::-webkit-scrollbar-thumb:hover {
-          background-color: #94A3B8;
+        .ant-btn {
+          border-radius: 0.75rem;
+          height: 2.75rem;
+          padding: 0 1.5rem;
+          font-weight: 500;
+          transition: all 0.3s ease;
         }
 
-        @media (max-width: 640px) {
-          .ant-card-body {
-            padding: 12px 8px;
-          }
-          
-          .ant-card-head-title {
-            font-size: 14px;
-          }
-          
-          .ant-card-extra {
-            font-size: 12px;
-          }
+        .ant-btn-primary {
+          background: linear-gradient(to right, var(--client-primary), var(--client-primary-light));
+          border: none;
+          box-shadow: var(--shadow-client-button);
+        }
+
+        .ant-btn-primary:hover {
+          background: linear-gradient(to right, var(--client-primary-dark), var(--client-primary));
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-client-button-hover);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #F8FAFD;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #CBD5E0;
+          border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #A0AEC0;
         }
       `}</style>
     </div>

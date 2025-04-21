@@ -2,9 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView, useAnimation, useMotionValue, useAnimationFrame, useMotionValueEvent } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView, useAnimate, useAnimation, useMotionValue, useVelocity, useAnimationFrame } from 'framer-motion';
+import LoadingComponent from '../components/LoadingComponent';
 import { verifyToken, refreshToken } from '../utils/auth';
 import { IoLogIn } from "react-icons/io5";
+import { Suspense, lazy } from 'react';
 
 import { 
   FaRocket, FaUsers, FaCog, FaChartLine, 
@@ -83,63 +85,7 @@ const Floating3DElement = ({ x, y, baseDelay, children, className, depth = 1 }) 
 };
 
 // Lazy load 3D components
-// const Scene3D = lazy(() => import('../components/Scene3D'));
-
-// At the top of the file, add a custom smooth scroll hook 
-const useSmoothScroll = () => {
-  useEffect(() => {
-    // Implement smooth scrolling
-    const handleLinkClick = (e) => {
-      if (e.target.tagName === 'A' && e.target.getAttribute('href')?.startsWith('#')) {
-        e.preventDefault();
-        const targetId = e.target.getAttribute('href').substring(1);
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-          const offsetTop = targetElement.getBoundingClientRect().top + window.pageYOffset;
-          window.scrollTo({
-            top: offsetTop,
-            behavior: 'smooth'
-          });
-        }
-      }
-    };
-
-    document.addEventListener('click', handleLinkClick);
-    return () => document.removeEventListener('click', handleLinkClick);
-  }, []);
-};
-
-// Optimize the horizontal scroll hook with smoother transitions and better snap points
-const useHorizontalScroll = (containerRef) => {
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
-
-  // Smoother transform with improved timing
-  const horizontalScrollX = useTransform(
-    scrollYProgress,
-    [0, 0.1, 0.9, 1], // Better control points
-    ["0%", "0%", "-75%", "-75%"] // Smoother transitions with delayed start/end
-  );
-
-  return { horizontalScrollX, scrollYProgress };
-};
-
-// Optimize the sticky parallax hook with less aggressive transforms
-const useStickyParallax = (ref) => {
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"]
-  });
-  
-  // Less intense parallax values
-  const opacity = useTransform(scrollYProgress, [0, 0.8, 0.9, 1], [1, 1, 0.9, 0.8]);
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1, 1.02, 1.05]); // Reduced scale values
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]); // Less vertical movement
-  
-  return { opacity, scale, y, scrollYProgress };
-};
+const Scene3D = lazy(() => import('../components/Scene3D'));
 
 const HomePage = () => {
   // All state hooks first
@@ -153,10 +99,12 @@ const HomePage = () => {
   const heroRef = useRef(null);
   const featuresContainerRef = useRef(null);
   const stepsContainerRef = useRef(null);
+  const testimonialsContainerRef = useRef(null);
   
   // All custom hooks next
   const [featuresRef, featuresControls] = useInViewAnimation();
   const [stepsRef, stepsControls] = useInViewAnimation();
+  const [testimonialsRef, testimonialsControls] = useInViewAnimation();
   
   // Scroll progress hooks
   const { scrollYProgress } = useScroll({
@@ -168,13 +116,16 @@ const HomePage = () => {
   const heroY = useTransform(scrollYProgress, [0, 0.2], [0, -30]);
   const featuresY = useTransform(scrollYProgress, [0.1, 0.3], [30, 0]);
   const stepsY = useTransform(scrollYProgress, [0.4, 0.6], [30, 0]);
+  const testimonialsY = useTransform(scrollYProgress, [0.6, 0.8], [30, 0]);
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
-  // const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.98]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.98]);
   const featuresScale = useTransform(scrollYProgress, [0.1, 0.3, 0.4], [0.98, 1, 1]);
   const stepsScale = useTransform(scrollYProgress, [0.3, 0.5, 0.6], [0.98, 1, 1]);
+  const testimonialsScale = useTransform(scrollYProgress, [0.5, 0.7, 0.8], [0.98, 1, 1]);
   const heroRotate = useTransform(scrollYProgress, [0, 0.2], [0, -1]);
   const featuresRotate = useTransform(scrollYProgress, [0.1, 0.3], [-1, 0]);
   const stepsRotate = useTransform(scrollYProgress, [0.4, 0.6], [-1, 0]);
+  const testimonialsRotate = useTransform(scrollYProgress, [0.6, 0.8], [-1, 0]);
   
   // MODIFIED: Use a static background color instead of transform
   const navbarBg = "rgba(255, 255, 255, 0.8)";
@@ -183,43 +134,12 @@ const HomePage = () => {
   const navItems = [
     { name: 'Home', ref: heroRef },
     { name: 'Features', ref: featuresContainerRef },
-    { name: 'How It Works', ref: stepsContainerRef }
+    { name: 'How It Works', ref: stepsContainerRef },
+    { name: 'Testimonials', ref: testimonialsContainerRef }
   ];
 
   // Add cursor tracking
   const { mouseX, mouseY, smoothMouseX, smoothMouseY } = useCursorTracking();
-
-  // Add refs for new scroll features
-  const horizontalSectionRef = useRef(null);
-  const stickyHeroRef = useRef(null);
-  const featuresWrapperRef = useRef(null);
-  const timelineRef = useRef(null);
-  
-  // Add scroll hooks for advanced effects
-  const { horizontalScrollX } = useHorizontalScroll(horizontalSectionRef);
-  const { opacity: heroOpacity, scale: heroScale, y: heroParallaxY } = useStickyParallax(stickyHeroRef);
-  
-  // Optimize main scroll progress with higher stiffness and damping for smoother transitions
-  const { scrollYProgress: mainScrollProgress } = useScroll({ restDelta: 0.001 }); // Add restDelta for smoother progress
-  const smoothMainScrollProgress = useSpring(mainScrollProgress, { 
-    stiffness: 50, // Lower stiffness for smoother motion
-    damping: 40,   // Higher damping to reduce oscillation
-    mass: 0.8      // Reduced mass for less momentum
-  });
-  
-  // Improve timeline section to avoid skipping
-  useMotionValueEvent(smoothMainScrollProgress, "change", (latest) => {
-    // Wider range to ensure complete animations
-    if (latest > 0.35 && latest < 0.75) {
-      const timelineProgress = (latest - 0.35) / 0.4; // normalize to 0-1 range with wider bounds
-      const stepIndex = Math.min(Math.floor(timelineProgress * updatedSteps.length), updatedSteps.length - 1);
-      
-      // Only update if actually changing to avoid rerenders
-      if (stepIndex !== currentTimelineStep) {
-        setCurrentTimelineStep(stepIndex);
-      }
-    }
-  });
 
   // All useEffect hooks
   useEffect(() => {
@@ -330,9 +250,6 @@ const HomePage = () => {
   const heroContentY = useTransform(smoothMouseY, [0, 1], [-10, 10]);
   const heroDepth = useTransform(smoothMouseX, [0, 1], [1.05, 0.95]);
 
-  // Add the smooth scroll hook
-  useSmoothScroll();
-
   return (
     <div ref={containerRef} className="relative max-h-fit h-fit overflow-hidden bg-[#F9FAFB] perspective-1000">
       {/* Animated Background with 3D Layers */}
@@ -373,33 +290,14 @@ const HomePage = () => {
         </div>
       </motion.div>
 
-      {/* Optimized Navigation Bar - reduce transform complexity */}
+      {/* Navigation Bar with Glassmorphism Effect */}
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10
+                  bg-white/20 shadow-lg shadow-violet-500/5"
         style={{ 
-          backgroundColor: useTransform(
-            smoothMainScrollProgress,
-            [0, 0.1],
-            ["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.9)"]
-          ),
           backdropFilter: "blur(12px)",
-          boxShadow: useTransform(
-            smoothMainScrollProgress,
-            [0, 0.1],
-            ["0 0 0 rgba(124, 58, 237, 0)", "0 4px 20px rgba(124, 58, 237, 0.15)"]
-          ),
-          // Replace transform with opacity for better performance
-          opacity: useTransform(
-            smoothMainScrollProgress,
-            [0, 0.05],
-            [0, 1]
-          ),
-          // Use fixed position instead of transform for better performance
-          top: 0,
+          WebkitBackdropFilter: "blur(12px)",
         }}
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -410,7 +308,7 @@ const HomePage = () => {
               className="flex items-center"
             >
               <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-violet-800 to-teal-600 bg-clip-text text-transparent">
-                Veloro
+                Talintz
               </Link>
             </motion.div>
 
@@ -558,74 +456,54 @@ const HomePage = () => {
         </AnimatePresence>
       </motion.nav>
 
-      {/* Simplified Hero Section - reduced animations */}
+      {/* REMOVED: Standalone progress bar */}
+
+      {/* Hero Section - Streamlined with Professional Appeal */}
       <motion.section 
-        ref={stickyHeroRef}
-        className="relative min-h-screen flex items-center overflow-hidden will-change-transform"
+        ref={heroRef}
         style={{
-          opacity: heroOpacity,
-        }}
-      >
-        <motion.div 
-          className="absolute inset-0 -z-10 overflow-hidden transform-gpu"
-          style={{
+          y: heroY, 
             scale: heroScale,
-            y: heroParallaxY,
+          rotateX: heroRotate
           }}
+        className="relative min-h-screen flex items-center overflow-hidden will-change-transform"
         >
-          {/* Simplified background with fewer animated elements */}
+        {/* Simplified Background with subtle movement */}
+        <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-violet-50/80 via-white/90 to-white/70"></div>
           
-          {/* Reduced number of animated background elements */}
+          {/* Simplified abstract shapes with reduced motion */}
           <motion.div
-            className="absolute -top-20 -right-20 w-[60%] h-[60%] rounded-full bg-violet-200/20 filter blur-[120px]"
-            style={{
-              // Use simpler transform with less aggressive values
-              y: useTransform(smoothMainScrollProgress, [0, 0.5], ["0%", "-10%"]),
-              // Avoid multiple transforms for better performance
-            }}
-            // Replace animating scale with static scale
-            initial={{ scale: 1 }}
+            className="absolute -top-20 -right-20 w-[40%] h-[40%] rounded-full bg-violet-200/20 filter blur-[80px]"
+            animate={{ scale: [1, 1.03, 1], opacity: [0.3, 0.4, 0.3] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div 
-            className="absolute -bottom-20 -left-20 w-[60%] h-[60%] rounded-full bg-teal-200/20 filter blur-[120px]"
-            style={{
-              // Use simpler transform with less aggressive values
-              y: useTransform(smoothMainScrollProgress, [0, 0.5], ["0%", "10%"]),
-            }}
-            // Replace animating scale with static scale
-            initial={{ scale: 1 }}
+            className="absolute -bottom-20 -left-20 w-[40%] h-[40%] rounded-full bg-teal-200/20 filter blur-[80px]"
+            animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           />
-        </motion.div>
+        </div>
         
-        {/* Hero content with simplified transforms */}
+        {/* Content container */}
         <div className="container mx-auto px-6 py-16 md:py-24 z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
-            {/* Simplified left column animations */}
-            <motion.div 
-              className="lg:col-span-7 order-2 lg:order-1 transform-gpu"
-              initial={{ opacity: 0, y: 50 }} // Reduced distance
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }} // Simpler easing
-              style={{
-                // Simplify transforms to only what's necessary
-                opacity: useTransform(smoothMainScrollProgress, [0, 0.4], [1, 0.2]),
-              }}
-            >
+            {/* Left column: Text content (wider) */}
+            <div className="lg:col-span-7 order-2 lg:order-1">
               {/* Badge */}
-              <div className="inline-flex items-center px-3 py-1 mb-6 rounded-full bg-violet-100 border border-violet-200 transform-gpu">
+              <div className="inline-flex items-center px-3 py-1 mb-6 rounded-full bg-violet-100 border border-violet-200">
                 <span className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-600 to-teal-500 mr-2"></span>
-                <span className="text-sm font-medium text-violet-800">Introducing Veloro</span>
+                <span className="text-sm font-medium text-violet-800">Introducing Talint</span>
               </div>
               
-              {/* Headline - Enhanced with 3D text */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-slate-900 leading-tight text-3d">
+              {/* Headline - Strong and clear value proposition */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-slate-900 leading-tight">
                 The <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">Smarter Way</span> to Collaborate on Projects
               </h1>
               
               {/* Subheadline - Focus on trust and solution */}
               <p className="text-lg md:text-xl text-slate-700 mb-8 max-w-2xl">
-                Veloro brings freelancers and clients together with powerful collaboration tools, secure workflows, and AI-driven insights — launching soon to transform how teams work.
+                Talintz brings freelancers and clients together with powerful collaboration tools, secure workflows, and AI-driven insights — launching soon to transform how teams work.
               </p>
               
               {/* Trust indicators rather than historical stats */}
@@ -642,7 +520,7 @@ const HomePage = () => {
                   <div className="flex items-center justify-center h-10 w-10 mb-2 rounded-full bg-violet-100 mx-auto">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-violet-600">
                       <path d="M16.5 7.5h-9v9h9v-9z" />
-                      <path fillRule="evenodd" d="M8.25 2.25A.75.75 0 019 3v.75h2.25V3a.75.75 0 011.5 0v.75H15V3a.75.75 0 011.5 0v.75h.75a3 3 0 013 3v.75H21A.75.75 0 0121 9h-.75v2.25H21a.75.75 0 010 1.5h-.75v.75h.75a3 3 0 013 3v.75H21a.75.75 0 010 1.5h-.75v2.25H21a.75.75 0 010 1.5h-.75v.75a3 3 0 01-3 3h-.75V21a.75.75 0 01-1.5 0v-.75h-2.25V21a.75.75 0 01-1.5 0v-.75H9V21a.75.75 0 01-1.5 0v-.75h-.75a3 3 0 01-3-3v-.75H3A.75.75 0 013 15h.75v-2.25H3a.75.75 0 010-1.5h.75V9H3a.75.75 0 010-1.5h.75v-.75a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM6 6.75A.75.75 0 016.75 6h10.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V6.75z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M8.25 2.25A.75.75 0 019 3v.75h2.25V3a.75.75 0 011.5 0v.75H15V3a.75.75 0 011.5 0v.75h.75a3 3 0 013 3v.75H21A.75.75 0 0121 9h-.75v2.25H21a.75.75 0 010 1.5h-.75V15H21a.75.75 0 010 1.5h-.75v.75a3 3 0 01-3 3h-.75V21a.75.75 0 01-1.5 0v-.75h-2.25V21a.75.75 0 01-1.5 0v-.75H9V21a.75.75 0 01-1.5 0v-.75h-.75a3 3 0 01-3-3v-.75H3A.75.75 0 013 15h.75v-2.25H3a.75.75 0 010-1.5h.75V9H3a.75.75 0 010-1.5h.75v-.75a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM6 6.75A.75.75 0 016.75 6h10.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V6.75z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <p className="text-center text-sm font-medium text-slate-800">AI-Powered Insights</p>
@@ -660,7 +538,7 @@ const HomePage = () => {
               {/* Early access form - build anticipation */}
               <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5 border border-violet-100/40 shadow-sm mb-8 max-w-xl">
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">Join the Waitlist</h3>
-                <p className="text-sm text-slate-600 mb-4">Be among the first to experience Veloro when we launch.</p>
+                <p className="text-sm text-slate-600 mb-4">Be among the first to experience Talintz when we launch.</p>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input 
                     type="email" 
@@ -708,19 +586,10 @@ const HomePage = () => {
                 </span>
               </motion.button>
               </div>
-            </motion.div>
+            </div>
             
-            {/* Simplified right column animation */}
-            <motion.div 
-              className="lg:col-span-5 order-1 lg:order-2 transform-gpu"
-              style={{
-                // Reduce the number of transforms
-                opacity: useTransform(smoothMainScrollProgress, [0, 0.4], [1, 0.2]),
-                // Use more moderate rotation values 
-                rotateY: useTransform(smoothMouseX, [0, 1], [-5, 5]), // Reduced from [-10, 10]
-                rotateX: useTransform(smoothMouseY, [0, 1], [2, -2]), // Reduced from [5, -5]
-              }}
-            >
+            {/* Right column: Visual content (platform preview) */}
+            <div className="lg:col-span-5 order-1 lg:order-2">
               <div className="relative">
                 {/* Platform mockup showcase */}
                 <div className="relative bg-white backdrop-filter backdrop-blur-sm shadow-xl rounded-2xl border border-violet-100/60 overflow-hidden">
@@ -730,12 +599,12 @@ const HomePage = () => {
                       <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                       <div className="w-3 h-3 rounded-full bg-green-400"></div>
                     </div>
-                    <div className="mx-auto text-sm font-medium text-slate-500">Veloro Collaboration Dashboard</div>
+                    <div className="mx-auto text-sm font-medium text-slate-500">Talintz Collaboration Dashboard</div>
                   </div>
                   <div className="pt-12 p-2">
                     <img 
                       src="https://placehold.co/600x400/f5f3ff/6d28d9?text=Veloro+Platform+Preview&font=open-sans" 
-                      alt="Veloro Platform Preview" 
+                      alt="Talintz Platform Preview" 
                       className="w-full h-auto rounded-lg"
                     />
                   </div>
@@ -792,294 +661,457 @@ const HomePage = () => {
                   <span className="text-sm font-medium bg-gradient-to-r from-violet-700 to-teal-600 inline-block text-transparent bg-clip-text">Coming Soon</span>
                 </div>
               </div>
-            </motion.div>
+            </div>
+          </div>
+          
+          {/* Trust indicators - logos section */}
+          <div className="mt-16 md:mt-24 border-t border-slate-200/50 pt-10">
+            <p className="text-center text-sm text-slate-500 mb-6">BACKED BY INDUSTRY EXPERTS</p>
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60">
+              <svg width="124" height="24" viewBox="0 0 124 24" className="text-slate-400">
+                <rect width="124" height="24" fill="currentColor" fillOpacity="0.2" rx="4"/>
+              </svg>
+              <svg width="94" height="24" viewBox="0 0 94 24" className="text-slate-400">
+                <rect width="94" height="24" fill="currentColor" fillOpacity="0.2" rx="4"/>
+              </svg>
+              <svg width="144" height="24" viewBox="0 0 144 24" className="text-slate-400">
+                <rect width="144" height="24" fill="currentColor" fillOpacity="0.2" rx="4"/>
+              </svg>
+              <svg width="104" height="24" viewBox="0 0 104 24" className="text-slate-400">
+                <rect width="104" height="24" fill="currentColor" fillOpacity="0.2" rx="4"/>
+              </svg>
+            </div>
           </div>
         </div>
       </motion.section>
 
-      {/* Improved Horizontal Scrolling Features Section with better sticky behavior */}
-      <section 
-        ref={horizontalSectionRef} 
-        className="relative h-[400vh] overflow-hidden"
+      {/* Features Section with 3D Cards */}
+      <motion.section 
+        ref={featuresContainerRef}
+        style={{ 
+          y: featuresY, 
+          scale: featuresScale,
+          rotateX: featuresRotate
+        }}
+        className="relative py-20 z-10 will-change-transform overflow-x-hidden perspective-1000"
       >
-        {/* Add will-change to optimize performance */}
-        <div className="sticky top-0 h-screen flex items-center overflow-hidden will-change-transform">
-          <motion.div 
-            className="flex flex-nowrap items-stretch gap-8 px-[10vw] transform-gpu"
-            style={{ x: horizontalScrollX }}
-            // Add transition to ensure smooth movement
-            transition={{ ease: "linear" }}
+        <div className="max-w-7xl mx-auto px-4">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-violet-800 to-teal-700 bg-clip-text text-transparent mb-8"
           >
-            {/* Feature cards - simplify hover animations */}
+            Why Choose Talintz
+          </motion.h2>
+          
+          <motion.div 
+            ref={featuresRef}
+            initial="hidden"
+            animate={featuresControls}
+            variants={sectionVariants}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 perspective-1000"
+          >
             {updatedFeatures.map((feature, index) => (
               <motion.div
                 key={index}
-                className="flex-shrink-0 w-[80vw] md:w-[45vw] lg:w-[30vw] h-full p-8 bg-white/90 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg transform-gpu"
+                variants={itemVariants}
                 style={{
                   transformStyle: "preserve-3d",
+                  x: useTransform(
+                    smoothMouseX, 
+                    [0, 1], 
+                    [index === 0 ? -10 : index === 2 ? 10 : 0, index === 0 ? 10 : index === 2 ? -10 : 0]
+                  ),
+                  y: useTransform(
+                    smoothMouseY, 
+                    [0, 1], 
+                    [-5, 5]
+                  )
                 }}
                 whileHover={{ 
-                  z: 20, // Reduced value
-                  scale: 1.02, // Simpler transform
+                  z: 30,
+                  rotateY: [0, 2, -2, 0],
+                  transition: { duration: 0.5 }
                 }}
+                className="p-6 bg-white/80 backdrop-blur-lg rounded-xl border border-white/20 hover:bg-white/90 
+                  transition-all duration-300 shadow-lg group h-full transform-gpu"
               >
-                {/* Simplified 3D transforms with better performance */}
-                <motion.div
-                  className="w-16 h-16 flex items-center justify-center rounded-xl 
-                    bg-gradient-to-r from-violet-600 to-teal-500 mb-6 text-white text-2xl transform-gpu"
-                  style={{ 
-                    // Use single transform property for better performance
-                    translateZ: 20, // Reduced value
-                  }}
+                <div className="w-12 h-12 flex items-center justify-center rounded-xl 
+                  bg-gradient-to-r from-violet-600 to-teal-500 mb-4 text-white text-xl transform-gpu"
+                  style={{ transformStyle: "preserve-3d", translateZ: 20 }}
                 >
                   {feature.icon}
-                </motion.div>
-                
-                {/* Simplified feature content */}
-                <h3 className="text-2xl font-semibold bg-gradient-to-r from-violet-700 to-indigo-600 
-                  bg-clip-text text-transparent mb-4">
+                </div>
+                <h3 className="text-lg font-semibold bg-gradient-to-r from-violet-700 to-indigo-600 
+                  bg-clip-text text-transparent mb-3 transform-gpu"
+                  style={{ transformStyle: "preserve-3d", translateZ: 15 }}
+                >
                   {feature.title}
                 </h3>
-                
-                <p className="text-slate-600 mb-6 text-lg">
+                <p className="text-slate-600 transform-gpu"
+                  style={{ transformStyle: "preserve-3d", translateZ: 10 }}
+                >
                   {feature.description}
                 </p>
                 
+                {/* Feature badge */}
                 {feature.tier && (
-                  <div className="mt-auto inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-violet-100 text-violet-800">
+                  <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-violet-100/70 text-violet-800">
                     {feature.tier === 'all' ? 'All Tiers' : `${feature.tier}+`}
                   </div>
                 )}
               </motion.div>
             ))}
-            
-            {/* Final call-to-action card */}
-            <motion.div
-              className="flex-shrink-0 w-[80vw] md:w-[45vw] lg:w-[30vw] h-full p-8 bg-gradient-to-br from-violet-600/90 to-teal-500/90 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg text-white flex flex-col justify-center items-center transform-gpu"
-            >
-              <h3 className="text-3xl font-bold mb-6 text-center">Ready to Experience More?</h3>
-              <p className="text-lg mb-8 text-white/80 text-center">
-                Discover all the powerful features Veloro has to offer
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.03 }} // Reduced scale
-                whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-white rounded-full text-violet-700 font-semibold shadow-xl"
-              >
-                Explore All Features
-              </motion.button>
-            </motion.div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Improved Timeline Section with better sticky behavior */}
-      <section ref={timelineRef} className="relative py-20 min-h-[120vh]"> {/* Slightly reduced height */}
-        <motion.div 
-          className="sticky top-[20vh] px-6 max-w-7xl mx-auto transform-gpu"
-          style={{
-            // More gradual opacity transition
-            opacity: useTransform(
-              smoothMainScrollProgress,
-              [0.35, 0.4, 0.7, 0.75],
-              [0, 1, 1, 0]
-            )
-          }}
-        >
-          <motion.h2
-            className="text-3d text-3xl md:text-5xl font-bold text-center bg-gradient-to-r from-violet-800 to-teal-700 bg-clip-text text-transparent mb-16"
-          >
-            Your Project Journey
-          </motion.h2>
-          
-          {/* Smoother timeline progress bar */}
-          <div className="relative h-2 bg-violet-100/50 rounded-full mb-16 overflow-hidden">
-            <motion.div 
-              className="absolute left-0 top-0 h-full bg-gradient-to-r from-violet-600 to-teal-500 rounded-full transform-gpu"
-              style={{ 
-                width: useTransform(
-                  smoothMainScrollProgress,
-                  [0.35, 0.7], // Expanded range
-                  ["0%", "100%"]
-                )
-              }}
-              // Add transition for smoother animation
-              transition={{ ease: "linear" }}
-            />
             
-            {/* Simplified timeline step indicators */}
-            {updatedSteps.map((_, index) => (
-              <motion.div 
-                key={index}
-                className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 transition-all duration-300 ${
-                  index <= currentTimelineStep 
-                    ? "bg-gradient-to-r from-violet-600 to-teal-500 border-white" 
-                    : "bg-white border-violet-200"
-                }`}
-                style={{ 
-                  left: `${(index / (updatedSteps.length - 1)) * 100}%`,
-                  transform: "translate(-50%, -50%)",
-                  boxShadow: index <= currentTimelineStep ? "0 0 15px rgba(124, 58, 237, 0.5)" : "none"
-                }}
-              />
-            ))}
-          </div>
-          
-          {/* Current step content with simplified animations */}
-          <AnimatePresence mode="wait">
+          {/* Stats Section with floating effect */}
+          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 perspective-1000">
+            {updatedStats.map((stat, index) => (
             <motion.div
-              key={currentTimelineStep}
-              initial={{ opacity: 0, y: 15 }} // Reduced distance
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }} // Reduced distance
-              transition={{ duration: 0.4 }} // Shorter duration
-              className="max-w-3xl mx-auto bg-white/80 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-lg transform-gpu"
-            >
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-r from-violet-600 to-teal-500 flex items-center justify-center text-white text-2xl font-bold">
-                  {currentTimelineStep + 1}
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-violet-800 mb-3">
-                    {updatedSteps[currentTimelineStep].title}
-                  </h3>
-                  <p className="text-slate-700 text-lg">
-                    {updatedSteps[currentTimelineStep].description}
-                  </p>
-                </div>
-              </div>
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                style={{
+                  x: useTransform(smoothMouseX, [0, 1], [-5, 5]),
+                  y: useTransform(smoothMouseY, [0, 1], [-5, 5]),
+                  rotate: useTransform(
+                    [smoothMouseX, smoothMouseY],
+                    ([x, y]) => (x - 0.5) * (y - 0.5) * 3
+                  )
+                }}
+                className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 transform-gpu"
+              >
+                <motion.p 
+                  className="text-4xl font-bold bg-gradient-to-r from-violet-700 to-teal-600 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 + 0.2 }}
+                >
+                  {stat.value}
+                </motion.p>
+                <motion.p 
+                  className="text-slate-600 mt-2 font-medium"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 + 0.3 }}
+                >
+                  {stat.label}
+                </motion.p>
             </motion.div>
-          </AnimatePresence>
-        </motion.div>
-      </section>
+            ))}
+        </div>
+        </div>
+      </motion.section>
 
-      {/* Optimize Stats Section */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 to-teal-500/5 -z-10" />
-        
+      {/* How It Works Section */}
+      <motion.section 
+        ref={stepsContainerRef}
+          style={{
+          y: stepsY, 
+          scale: stepsScale,
+          rotateX: stepsRotate
+        }}
+        className="relative py-20 bg-gradient-to-b from-violet-900/5 to-transparent will-change-transform overflow-x-hidden"
+      >
         <div className="max-w-7xl mx-auto px-4">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-10%" }} // Increased margin
-            transition={{ duration: 0.5 }}
-            className="text-3d text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-violet-800 to-teal-700 bg-clip-text text-transparent mb-16"
+            viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-violet-800 to-teal-700 bg-clip-text text-transparent mb-6"
           >
-            Platform Impact
+            Seamless Collaboration Flow
           </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-slate-600 text-center mb-16 max-w-2xl mx-auto"
+          >
+            Our intuitive platform guides you through every step of the project lifecycle
+          </motion.p>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 perspective-1200">
-            {updatedStats.map((stat, index) => (
-              <motion.div
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative">
+            {/* Connecting line */}
+            <div className="hidden md:block absolute top-1/4 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500/20 via-teal-500/20 to-violet-500/20" />
+            
+            {updatedSteps.map((step, index) => (
+              <motion.div 
                 key={index}
-                initial={{ opacity: 0, rotateY: 45 }} // Reduced rotation 
-                whileInView={{ opacity: 1, rotateY: 0 }}
-                viewport={{ once: true, margin: "-10%" }}
-                transition={{ 
-                  delay: index * 0.1,
-                  duration: 0.6, // Reduced duration
-                  type: "spring",
-                  stiffness: 80,
-                  damping: 20
-                }}
-                style={{
-                  transformStyle: "preserve-3d",
-                  transformOrigin: index % 2 === 0 ? "left" : "right",
-                }}
-                // Remove hover animation causing stuttering
-                className="relative bg-white/90 backdrop-blur-xl rounded-xl p-8 border border-white/20 shadow-xl transform-gpu"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+                className="relative p-6 bg-white/80 backdrop-blur-lg rounded-xl border border-white/20 shadow-lg"
               >
-                {/* Static 3D effect with no hover animation */}
-                <h3 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-violet-700 to-teal-600 bg-clip-text text-transparent mb-2"
-                  style={{ transform: "translateZ(15px)" }}>
-                  {stat.value}
-                </h3>
-                
-                <p className="text-slate-600 font-medium text-lg"
-                  style={{ transform: "translateZ(5px)" }}>
-                  {stat.label}
-                </p>
-                
-                {/* Simple decorative element */}
-                <div className="absolute -right-2 -bottom-2 w-20 h-20 bg-gradient-to-tr from-violet-500/20 to-teal-500/20 rounded-full blur-xl" />
-              </motion.div>
+            <motion.div
+                  className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-violet-600 to-teal-500 flex items-center justify-center text-white font-bold text-lg shadow-lg"
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.2 + 0.2, type: "spring" }}
+                >
+                  {index + 1}
+                </motion.div>
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-violet-800 mb-3 text-center">
+                    {step.title}
+                  </h3>
+                  <p className="text-slate-600 text-center text-sm">
+                    {step.description}
+                  </p>
+              </div>
+            </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Enhanced CTA Section with 3D Depth and Parallax */}
-      <section className="relative py-32 overflow-hidden">
-        <motion.div 
-          className="absolute inset-0 -z-10"
-          style={{
-            backgroundImage: "radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.1) 0%, rgba(255, 255, 255, 0) 70%)",
-            y: useTransform(smoothMainScrollProgress, [0.7, 1], ["20%", "0%"]),
-            scale: useTransform(smoothMainScrollProgress, [0.7, 1], [1.2, 1]),
-            opacity: useTransform(smoothMainScrollProgress, [0.7, 0.8, 1], [0, 1, 1]),
-          }}
-        />
-        
-        <div className="max-w-6xl mx-auto px-4 perspective-1200">
+          
+          {/* AI Assistant Callout */}
           <motion.div
-            initial={{ opacity: 0, y: 100 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, type: "spring" }}
-            className="bg-white/80 backdrop-blur-xl rounded-3xl p-12 border border-white/30 shadow-2xl overflow-hidden relative"
+            viewport={{ once: true }}
+            transition={{ delay: 0.5 }}
+            className="mt-20 p-6 bg-gradient-to-r from-violet-100/50 to-teal-100/50 backdrop-blur-sm rounded-xl border border-white/30 relative overflow-hidden"
           >
-            {/* Background decorative elements */}
-            <div className="absolute -right-20 -top-20 w-80 h-80 bg-violet-500/5 rounded-full blur-3xl" />
-            <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl" />
-            
-            <div className="relative">
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-gradient-to-r from-violet-300/20 to-teal-300/20 rounded-full blur-3xl"></div>
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+              <div className="w-20 h-20 flex-shrink-0 rounded-xl bg-gradient-to-r from-violet-600 to-teal-500 flex items-center justify-center text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10">
+                  <path d="M16.5 7.5h-9v9h9v-9z" />
+                  <path fillRule="evenodd" d="M8.25 2.25A.75.75 0 019 3v.75h2.25V3a.75.75 0 011.5 0v.75H15V3a.75.75 0 011.5 0v.75h.75a3 3 0 013 3v.75H21A.75.75 0 0121 9h-.75v2.25H21a.75.75 0 010 1.5h-.75V15H21a.75.75 0 010 1.5h-.75v.75a3 3 0 01-3 3h-.75V21a.75.75 0 01-1.5 0v-.75h-2.25V21a.75.75 0 01-1.5 0v-.75H9V21a.75.75 0 01-1.5 0v-.75h-.75a3 3 0 01-3-3v-.75H3A.75.75 0 013 15h.75v-2.25H3a.75.75 0 010-1.5h.75V9H3a.75.75 0 010-1.5h.75v-.75a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM6 6.75A.75.75 0 016.75 6h10.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V6.75z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-grow">
+                <h3 className="text-xl font-semibold bg-gradient-to-r from-violet-700 to-teal-600 bg-clip-text text-transparent mb-2">
+                  Meet Nova AI - Your Intelligent Assistant
+                </h3>
+                <p className="text-slate-700">
+                  Our AI-powered assistant helps track progress, suggests optimal task distribution, and provides insights to keep your projects on time and within budget.
+                </p>
+          </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-6 py-3 bg-gradient-to-r from-violet-600 to-teal-500 rounded-full text-white font-medium shadow-lg flex-shrink-0"
+              >
+                Try Talintz AI
+              </motion.button>
+        </div>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Testimonials Section */}
+      <motion.section 
+        ref={testimonialsContainerRef}
+          style={{
+          y: testimonialsY, 
+          scale: testimonialsScale,
+          rotateX: testimonialsRotate
+        }}
+        className="relative py-20 will-change-transform overflow-x-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4">
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="text-3d text-3xl md:text-5xl font-bold text-center bg-gradient-to-r from-violet-800 to-teal-700 bg-clip-text text-transparent mb-8"
+            className="text-3xl md:text-4xl font-bold text-center bg-gradient-to-r from-violet-800 to-teal-700 bg-clip-text text-transparent mb-6"
               >
-                Take Your Collaboration to the Next Level
+            Success Stories
               </motion.h2>
-              
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="text-slate-700 text-xl text-center mb-12 max-w-2xl mx-auto"
+            transition={{ delay: 0.1 }}
+            className="text-slate-600 text-center mb-16 max-w-2xl mx-auto"
               >
-                Join the future of professional work with powerful tools designed for modern teams. Get early access today.
+            See how our collaborative platform is transforming the way professionals work together
               </motion.p>
               
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {updatedTestimonials.map((testimonial, index) => (
               <motion.div
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-                className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto"
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -5, transition: { duration: 0.3 } }}
+                className="p-6 bg-white/90 backdrop-blur-lg rounded-xl border border-white/20 shadow-lg group"
               >
-                <input 
-                  type="email" 
-                  placeholder="Enter your work email" 
-                  className="w-full px-6 py-4 rounded-full text-lg border border-violet-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(124, 58, 237, 0.2)" }}
-                  whileTap={{ scale: 0.98 }}
-                  className="btn-3d w-full sm:w-auto whitespace-nowrap px-8 py-4 bg-gradient-to-r from-violet-600 to-teal-500 rounded-full text-white font-medium text-lg shadow-lg"
-                >
-                  Get Priority Access
-                </motion.button>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex gap-1 text-yellow-400">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i}>★</span>
+                  ))}
+                  </div>
+                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-violet-100 text-violet-800">
+                    {testimonial.userType}
+                  </span>
+                </div>
+                <p className="text-slate-700 mb-6 italic">
+                  "{testimonial.quote}"
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-indigo-400 flex items-center justify-center text-white font-medium">
+                    {testimonial.author.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-slate-800 font-semibold">{testimonial.author}</p>
+                    <p className="text-slate-600 text-sm">{testimonial.role}</p>
+                  </div>
+                </div>
               </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* CTA Section */}
+      <section className="relative py-20 bg-gradient-to-b from-transparent to-violet-900/5 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+              className="text-left"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-800 to-teal-700 bg-clip-text text-transparent mb-6">
+                Ready to Transform Your Collaboration?
+            </h2>
+              <p className="text-slate-600 mb-8 max-w-2xl">
+                Join Talintz today and experience the future of professional freelancing with our tiered collaboration platform. Connect, create, and succeed together.
+              </p>
+              
+              <div className="space-y-4">
+                {ctaFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="mt-1 w-5 h-5 flex-shrink-0 rounded-full bg-gradient-to-r from-violet-600 to-teal-500 flex items-center justify-center text-white text-xs">
+                      ✓
+                    </div>
+                    <p className="text-slate-700">{feature}</p>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-10 flex flex-wrap gap-4">
+                <motion.button
+              onClick={handleGetStarted}
+              whileHover={{ 
+                    scale: 1.03,
+                boxShadow: "0 12px 24px rgba(124, 58, 237, 0.2)"
+              }}
+                  whileTap={{ scale: 0.98 }}
+              className="inline-flex px-8 py-4 bg-gradient-to-r from-violet-600 to-teal-500 
+                rounded-full text-white font-medium shadow-lg 
+                hover:shadow-violet-500/25 transition-all duration-300 group"
+                >
+              <span className="flex items-center gap-2">
+                Get Started Now
+                <FaArrowRight className="text-sm transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="inline-flex px-8 py-4 bg-white/80 backdrop-blur-sm
+                    rounded-full text-violet-700 font-medium border border-violet-200
+                    hover:shadow-lg transition-all duration-300"
+                >
+                  <span className="flex items-center gap-2">
+                    View Pricing
+                  </span>
+                </motion.button>
+              </div>
+              </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="relative"
+            >
+              <div className="aspect-[4/3] bg-gradient-to-br from-violet-50 to-teal-50 rounded-2xl p-6 border border-white/50 shadow-xl">
+                <div className="absolute -top-5 -right-5 transform rotate-6">
+                  <div className="bg-white px-4 py-2 rounded-lg shadow-lg border border-violet-100 text-violet-700 font-medium">
+                    Student Program Available!
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 h-full">
+                  <div className="rounded-xl bg-white/80 p-4 border border-violet-100/30 flex flex-col">
+                    <h3 className="text-violet-800 font-medium mb-2">Tiered Features</h3>
+                    <ul className="text-xs text-slate-600 space-y-2 flex-grow">
+                      <li className="flex items-center gap-1">
+                        <span className="text-teal-500">✓</span> Real-time messaging
+                      </li>
+                      <li className="flex items-center gap-1">
+                        <span className="text-teal-500">✓</span> File sharing
+                      </li>
+                      <li className="flex items-center gap-1">
+                        <span className="text-teal-500">✓</span> Task management
+                      </li>
+                    </ul>
+                    <div className="text-center mt-2">
+                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-violet-100 text-violet-800">
+                        Starter
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-xl bg-gradient-to-br from-violet-500/10 to-teal-500/10 p-4 border border-white/30 flex flex-col">
+                    <h3 className="text-violet-800 font-medium mb-2">Pro Collaboration</h3>
+                    <ul className="text-xs text-slate-600 space-y-2 flex-grow">
+                      <li className="flex items-center gap-1">
+                        <span className="text-teal-500">✓</span> Extended history
+                      </li>
+                      <li className="flex items-center gap-1">
+                        <span className="text-teal-500">✓</span> AI insights
+                      </li>
+                      <li className="flex items-center gap-1">
+                        <span className="text-teal-500">✓</span> Video meetings
+                      </li>
+                    </ul>
+                    <div className="text-center mt-2">
+                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-gradient-to-r from-violet-600 to-teal-500 text-white">
+                        Pro & Elite
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-2 rounded-xl bg-white/80 p-4 border border-violet-100/30 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-violet-800 font-medium mb-1">Nova AI Assistant</h3>
+                      <p className="text-xs text-slate-600">AI-powered progress tracking and insights</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-600 to-teal-500 flex items-center justify-center text-white">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                        <path d="M16.5 7.5h-9v9h9v-9z" />
+                        <path fillRule="evenodd" d="M8.25 2.25A.75.75 0 019 3v.75h2.25V3a.75.75 0 011.5 0v.75H15V3a.75.75 0 011.5 0v.75h.75a3 3 0 013 3v.75H21A.75.75 0 0121 9h-.75v2.25H21a.75.75 0 010 1.5h-.75V15H21a.75.75 0 010 1.5h-.75v.75a3 3 0 01-3 3h-.75V21a.75.75 0 01-1.5 0v-.75h-2.25V21a.75.75 0 01-1.5 0v-.75H9V21a.75.75 0 01-1.5 0v-.75h-.75a3 3 0 01-3-3v-.75H3A.75.75 0 013 15h.75v-2.25H3a.75.75 0 010-1.5h.75V9H3a.75.75 0 010-1.5h.75v-.75a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM6 6.75A.75.75 0 016.75 6h10.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V6.75z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
             </div>
           </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Footer with subtle 3D effect */}
-      <footer className="relative py-12 border-t border-white/20 bg-white/50 backdrop-blur-sm overflow-x-hidden">
+      {/* Footer */}
+      <footer className="relative py-12 border-t border-white/10 bg-white/50 backdrop-blur-sm overflow-x-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {footerLinks.map((column, index) => (
@@ -1102,18 +1134,11 @@ const HomePage = () => {
           </div>
           <div className="mt-12 pt-8 border-t border-white/10 text-center">
             <p className="text-gray-700">
-              © 2024 Veloro. All rights reserved.
+              © 2024 Talintz. All rights reserved.
             </p>
           </div>
         </div>
       </footer>
-      
-      {/* Smoother scroll progress indicator */}
-      <motion.div 
-        className="fixed bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 to-teal-500 origin-left z-50 transform-gpu"
-        style={{ scaleX: smoothMainScrollProgress }}
-        transition={{ ease: "linear" }}
-      />
     </div>
   );
 };
@@ -1147,7 +1172,7 @@ const updatedFeatures = [
     icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
       <path d="M18.75 12.75h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 000 1.5zM12 6a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 6zM12 18a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 18zM3.75 6.75h1.5a.75.75 0 100-1.5h-1.5a.75.75 0 000 1.5zM5.25 18.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 010 1.5zM3 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 013 12zM9 3.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12.75 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM9 15.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
     </svg>,
-    title: "Velo AI Insights",
+    title: "Nova AI Insights",
     description: "AI-powered analytics track project progress, optimize task distribution, and provide actionable recommendations.",
     tier: 'Elite'
   }
@@ -1173,6 +1198,27 @@ const updatedSteps = [
   {
     title: "Project Completion",
     description: "Once completed, projects are archived but remain accessible for future reference."
+  }
+];
+
+const updatedTestimonials = [
+  {
+    quote: "The tiered collaboration system made it easy to manage complex projects with multiple freelancers. The real-time updates saved us countless hours of back-and-forth.",
+    author: "Michael Rodriguez",
+    role: "Project Manager, TechCorp",
+    userType: "Client"
+  },
+  {
+    quote: "As a freelance developer, Talintz has revolutionized how I collaborate with clients and other freelancers. The integrated chat and task system keeps everything organized.",
+    author: "Sarah Chen",
+    role: "Full Stack Developer",
+    userType: "Freelancer"
+  },
+  {
+    quote: "The student program helped me gain real-world experience while still in college. I built my portfolio and connected with amazing clients before graduation.",
+    author: "David Kumar",
+    role: "UI/UX Designer",
+    userType: "Student"
   }
 ];
 
@@ -1202,34 +1248,5 @@ const footerLinks = [
     links: ["Twitter", "LinkedIn", "Instagram", "Contact"]
   }
 ];
-
-// Add CSS classes to reduce animations in global styles
-const globalStyles = `
-  /* Add this to your CSS or styled-jsx */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    * {
-      animation-duration: 0.01ms !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
-
-  .transform-gpu {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    perspective: 1000;
-    will-change: transform;
-  }
-
-  .text-3d {
-    text-shadow: 
-      0px 1px 0px rgba(255,255,255,.5),
-      0px 2px 0px rgba(170,170,170,.5);
-    transform: translateZ(0);
-  }
-`;
 
 export default HomePage;

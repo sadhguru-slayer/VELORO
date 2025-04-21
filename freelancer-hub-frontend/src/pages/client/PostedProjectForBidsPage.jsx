@@ -14,13 +14,14 @@ import {
   DislikeOutlined, DownloadOutlined, FileTextOutlined,
   BulbOutlined, TrophyOutlined, SafetyOutlined,
   EnvironmentOutlined, AimOutlined, InfoCircleOutlined,
-  UpOutlined, DownOutlined
+  UpOutlined, DownOutlined, EditOutlined
 } from '@ant-design/icons';
 import CSider from '../../components/client/CSider';
 import CHeader from '../../components/client/CHeader';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { useMediaQuery } from 'react-responsive';
+import moment from 'moment';
 
 const { Panel } = Collapse;
 const { Option } = Select;
@@ -210,134 +211,148 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
   };
 
   // Add new component for Milestone Display
-  const MilestoneCard = ({ milestone, type = 'project' }) => {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg shadow-md p-4 border-l-4 hover:shadow-lg transition-all duration-200"
-        style={{
-          borderLeftColor: milestone.milestone_type === 'progress' ? '#10b981' : 
-                          milestone.milestone_type === 'payment' ? '#6366f1' : '#8b5cf6'
-        }}
-      >
-        <div className="flex justify-between items-start">
-          <div>
-            <h4 className="font-medium text-gray-900">{milestone.title}</h4>
-            <div className="flex items-center gap-2 mt-1">
-              <Tag color={
-                milestone.milestone_type === 'progress' ? 'success' :
-                milestone.milestone_type === 'payment' ? 'blue' : 'purple'
-              }>
-                {milestone.milestone_type === 'hybrid' ? 'Progress & Payment' :
-                 `${milestone.milestone_type.charAt(0).toUpperCase()}${milestone.milestone_type.slice(1)} Only`}
-              </Tag>
-              <span className="text-sm text-gray-500">
-                Due: {new Date(milestone.due_date).toLocaleDateString()}
-              </span>
-            </div>
+  const MilestoneCard = ({ milestone }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 p-6 border-l-4"
+      style={{
+        borderLeftColor: milestone.milestone_type === 'progress' ? '#10b981' : 
+                        milestone.milestone_type === 'payment' ? '#6366f1' : '#8b5cf6'
+      }}
+    >
+      <div className="flex justify-between items-start">
+        <div>
+          <h4 className="text-lg font-semibold text-gray-800">{milestone.title}</h4>
+          <div className="flex items-center gap-2 mt-2">
+            <Tag color={
+              milestone.milestone_type === 'progress' ? 'success' :
+              milestone.milestone_type === 'payment' ? 'blue' : 'purple'
+            } className="rounded-full">
+              {milestone.milestone_type === 'hybrid' ? 'Progress & Payment' :
+               `${milestone.milestone_type.charAt(0).toUpperCase()}${milestone.milestone_type.slice(1)} Only`}
+            </Tag>
+            <span className="text-sm text-gray-500">
+              Due: {moment(milestone.due_date).format('MMM D, YYYY')}
+            </span>
           </div>
-          {(milestone.milestone_type === 'payment' || milestone.milestone_type === 'hybrid') && (
-            <div className="text-right">
-              <div className="text-lg font-semibold text-gray-900">₹{milestone.amount}</div>
-              {milestone.is_automated && (
-                <Tooltip title="Payment will be processed automatically">
-                  <Tag color="cyan" className="mt-1">Auto-payment</Tag>
-                </Tooltip>
-              )}
-            </div>
-          )}
         </div>
-        <div className="mt-3">
-          <Progress 
-            percent={milestone.status === 'paid' ? 100 : 
-                    milestone.status === 'approved' ? 75 : 
-                    milestone.status === 'pending' ? 25 : 0}
-            status={milestone.status === 'paid' ? 'success' : 'active'}
-            size="small"
-          />
-        </div>
-      </motion.div>
-    );
-  };
+        {milestone.amount > 0 && (
+          <div className="text-right">
+            <div className="text-xl font-semibold text-teal-600">₹{milestone.amount}</div>
+            {milestone.status === 'paid' && (
+              <Tag color="success" className="mt-1">Paid</Tag>
+            )}
+          </div>
+        )}
+      </div>
+      
+      <div className="mt-4">
+        <Progress 
+          percent={milestone.status === 'paid' ? 100 : 
+                  milestone.status === 'approved' ? 75 : 
+                  milestone.status === 'pending' ? 25 : 0}
+          status={milestone.status === 'paid' ? 'success' : 'active'}
+          strokeColor={{
+            '0%': '#14B8A6',
+            '100%': '#0F766E',
+          }}
+        />
+      </div>
+    </motion.div>
+  );
 
   // Add new component for Task Display with Milestones
-  const TaskCard = ({ task, showMilestones = true }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    return (
-      <motion.div
-        layout
-        className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-      >
-        <div 
-          className="p-4 cursor-pointer"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Tag color={task.status === 'completed' ? 'success' : 'processing'}>
-                  {task.status}
-                </Tag>
-                <span className="text-sm text-gray-500">
-                  Budget: ₹{task.budget}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {task.automated_payment && !task.milestones?.length && (
-                <Tooltip title="Payment will be automated on completion">
-                  <Tag color="cyan">Auto-payment</Tag>
-                </Tooltip>
-              )}
-              <motion.button
-                animate={{ rotate: isExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </motion.button>
-            </div>
+  const TaskCard = ({ task }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 p-6 border border-gray-100"
+    >
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">{task.title}</h3>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {task.tags.map((tag, index) => (
+              <Tag key={index} className="rounded-full bg-teal-50 text-teal-700 border-teal-200">
+                {tag}
+              </Tag>
+            ))}
           </div>
         </div>
+        <Tag color={
+          task.status === 'completed' ? 'success' :
+          task.status === 'ongoing' ? 'processing' :
+          task.status === 'review' ? 'warning' : 'default'
+        } className="rounded-full">
+          {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+        </Tag>
+      </div>
 
-        <AnimatePresence>
-          {isExpanded && showMilestones && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="px-4 pb-4"
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="flex items-center gap-2">
+          <Avatar src={task.assignedTo.avatar} size="small" />
+          <span className="text-sm text-gray-600">{task.assignedTo.name}</span>
+        </div>
+        <div className="flex items-center gap-2 justify-end">
+          <CalendarOutlined className="text-teal-500" />
+          <span className="text-sm text-gray-600">{moment(task.deadline).format('MMM D, YYYY')}</span>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <div className="flex justify-between mb-1">
+          <span className="text-sm text-gray-500">Progress</span>
+          <span className="text-sm font-medium text-teal-600">{task.progress}%</span>
+        </div>
+        <Progress 
+          percent={task.progress} 
+          size="small" 
+          strokeColor={{
+            '0%': '#14B8A6',
+            '100%': '#0F766E',
+          }}
+          showInfo={false}
+        />
+      </div>
+
+      <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+        <div className="flex items-center gap-3">
+          <Tooltip title="Estimated Hours">
+            <span className="text-sm text-gray-500">
+              <ClockCircleOutlined className="mr-1" />
+              {task.estimatedHours}h
+            </span>
+          </Tooltip>
+          <Tooltip title="Logged Hours">
+            <span className="text-sm text-gray-500">
+              <FieldTimeOutlined className="mr-1" />
+              {task.loggedHours}h
+            </span>
+          </Tooltip>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            type="text" 
+            size="small" 
+            icon={<EditOutlined />}
+            className="text-teal-500 hover:text-teal-600"
+          />
+          {task.status !== 'completed' && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<ClockCircleOutlined />}
+              className="bg-teal-500 hover:bg-teal-600"
+              onClick={() => startTimeTracking(task.id)}
             >
-              <div className="border-t border-gray-100 pt-4 mt-2">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Task Milestones</h4>
-                {task.milestones?.length > 0 ? (
-                  <div className="space-y-3">
-                    {task.milestones.map((milestone, index) => (
-                      <MilestoneCard 
-                        key={index} 
-                        milestone={milestone} 
-                        type="task"
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Empty 
-                    description="No milestones set for this task" 
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  />
-                )}
-              </div>
-            </motion.div>
+              Track
+            </Button>
           )}
-        </AnimatePresence>
-      </motion.div>
-    );
-  };
+        </div>
+      </div>
+    </motion.div>
+  );
 
   // Update ProjectOverview component
   const ProjectOverview = () => (
@@ -816,7 +831,7 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
         userId={userId}
         role={role}
         dropdown={true}
-        collapsed={isMobile || isTablet}
+        collapsed={true} 
         handleMenuClick={handleMenuClick}
         activeComponent={activeComponent}
         handleProfileMenu={handleProfileMenu}
@@ -851,29 +866,33 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
                     </Tag>
                     <span className="text-gray-500">•</span>
                     <span className="text-gray-500">
-                      Posted {project?.created_at}
-                        </span>
+                      Started {moment(project?.startDate).format('MMM D, YYYY')}
+                    </span>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="default" icon={<DownloadOutlined />}>
+                  <Button 
+                    icon={<DownloadOutlined />}
+                    className="border-teal-500 text-teal-500 hover:text-teal-600 hover:border-teal-600"
+                  >
                     Export
                   </Button>
                   <Button 
                     type="primary" 
                     className="bg-teal-500 hover:bg-teal-600"
+                    icon={<EditOutlined />}
                   >
                     Edit Project
                   </Button>
-                            </div>
-                          </div>
-                        </div>
-                        
+                </div>
+              </div>
+            </div>
+
             {/* Tab Navigation */}
             <div className="bg-white rounded-xl shadow-lg p-2">
               <div className="flex overflow-x-auto">
-                {getAvailableTabs().map((tab) => (
-                            <Button 
+                {['overview', 'tasks', 'milestones', 'files'].map((tab) => (
+                  <Button 
                     key={tab}
                     type={activeTab === tab ? 'primary' : 'text'}
                     onClick={() => setActiveTab(tab)}
@@ -884,10 +903,10 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
                     }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </Button>
+                  </Button>
                 ))}
               </div>
-              </div>
+            </div>
 
             {/* Tab Content */}
             <AnimatePresence mode="wait">
@@ -899,8 +918,9 @@ const PostedProjectForBidsPage = ({ userId, role }) => {
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === 'overview' && <ProjectOverview />}
-                {activeTab === 'bids' && project?.status === 'pending' && <BidsSection />}
-                {activeTab === 'analytics' && <ProjectAnalytics project={project} />}
+                {activeTab === 'tasks' && <TasksSection />}
+                {activeTab === 'milestones' && <MilestonesSection />}
+                {activeTab === 'files' && <FilesSection />}
               </motion.div>
             </AnimatePresence>
           </motion.div>

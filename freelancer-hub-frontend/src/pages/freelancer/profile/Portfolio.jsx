@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, Button, Tabs, Upload, Form, Input, Modal, Select, Tag, Empty, Image, Tooltip } from "antd";
 import { FaPlus, FaEdit, FaTrash, FaLink, FaGithub, FaEye, FaProjectDiagram } from "react-icons/fa";
+import { Modal as AntModal } from 'antd';
 
 const { TabPane } = Tabs;
 const { TextArea } = Input;
@@ -16,6 +17,8 @@ const Portfolio = () => {
   const [modalType, setModalType] = useState("add");
   const [selectedItem, setSelectedItem] = useState(null);
   const [form] = Form.useForm();
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewProject, setPreviewProject] = useState(null);
   
   // Dummy data for portfolio
   const [portfolioData, setPortfolioData] = useState({
@@ -267,6 +270,11 @@ const Portfolio = () => {
     }
   };
 
+  const handlePreview = (project) => {
+    setPreviewProject(project);
+    setPreviewVisible(true);
+  };
+
   const renderModalContent = () => {
     if (activeTab === "projects") {
       return (
@@ -429,6 +437,77 @@ const Portfolio = () => {
     }
   };
 
+  const ProjectPreviewModal = ({ project, visible, onClose }) => {
+    if (!project) return null;
+    
+    return (
+      <AntModal
+        visible={visible}
+        onCancel={onClose}
+        footer={null}
+        width={800}
+        className="[&_.ant-modal-content]:rounded-xl"
+      >
+        <div className="space-y-6">
+          <div className="relative h-[400px] rounded-lg overflow-hidden">
+            <img 
+              src={project.image} 
+              alt={project.title}
+              className="w-full h-full object-cover"
+            />
+            {project.featured && (
+              <div className="absolute top-4 right-4 bg-violet-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                Featured Project
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-800">{project.title}</h2>
+            
+            <p className="text-gray-600 leading-relaxed">
+              {project.description}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {project.tags.map(tag => (
+                <Tag 
+                  key={tag} 
+                  className="bg-violet-50 text-violet-600 border-violet-100 rounded-full px-4 py-1"
+                >
+                  {tag}
+                </Tag>
+              ))}
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              {project.links.live && (
+                <a
+                  href={project.links.live}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors"
+                >
+                  <FaLink className="mr-2" /> View Live Demo
+                </a>
+              )}
+              {project.links.github && (
+                <a
+                  href={project.links.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 border border-violet-200 text-violet-600 rounded-lg hover:bg-violet-50 transition-colors"
+                >
+                  <FaGithub className="mr-2" /> View Source Code
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </AntModal>
+    );
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
       <motion.div
@@ -436,243 +515,288 @@ const Portfolio = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center mb-6">
-          <FaProjectDiagram className="text-violet-600 text-2xl mr-3" />
-          <h1 className="text-2xl font-bold text-gray-800">My Portfolio</h1>
+        <div className="relative bg-gradient-to-r from-violet-50 to-indigo-50 rounded-2xl p-8 mb-8 border border-violet-100">
+          <div className="flex items-center">
+            <div className="bg-violet-100 p-4 rounded-xl mr-4">
+              <FaProjectDiagram className="text-violet-600 text-3xl" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-violet-800 mb-1">Professional Portfolio</h1>
+              <p className="text-violet-600">Showcase your best work and professional achievements</p>
+            </div>
+          </div>
         </div>
 
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab}
-          className="font-medium"
-          tabBarExtraContent={
-            isEditable && (
-              <Button 
-                type="primary" 
-                icon={<FaPlus />} 
-                onClick={() => showAddModal(activeTab)}
-                className="bg-violet-600 hover:bg-violet-700 border-none"
-              >
-                Add {activeTab === "projects" ? "Project" : activeTab === "skills" ? "Skill" : "Certification"}
-              </Button>
-            )
-          }
-        >
-          <TabPane tab="Projects" key="projects">
-            {portfolioData.projects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {portfolioData.projects.map(project => (
-                  <Card
-                    key={project.id}
-                    cover={
-                      <div className="relative overflow-hidden h-48">
-                        <img 
-                          alt={project.title} 
-                          src={project.image} 
-                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                        />
-                        {project.featured && (
-                          <div className="absolute top-2 right-2 bg-violet-600 text-white text-xs px-2 py-1 rounded-full">
-                            Featured
+        <Card className="shadow-sm border-0 rounded-xl overflow-hidden">
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={setActiveTab}
+            className="[&_.ant-tabs-tab]:text-violet-600 [&_.ant-tabs-ink-bar]:bg-violet-500"
+            tabBarExtraContent={
+              isEditable && (
+                <Button 
+                  type="primary" 
+                  icon={<FaPlus className="mr-2" />}
+                  onClick={() => showAddModal(activeTab)}
+                  className="bg-violet-500 hover:bg-violet-600 text-white border-0"
+                >
+                  Add {activeTab === "projects" ? "Project" : activeTab === "skills" ? "Skill" : "Certification"}
+                </Button>
+              )
+            }
+          >
+            <TabPane tab="Featured Projects" key="projects">
+              {portfolioData.projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {portfolioData.projects.map(project => (
+                    <motion.div
+                      key={project.id}
+                      whileHover={{ y: -5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Card
+                        className="group hover:shadow-lg transition-all duration-300 border-violet-100 rounded-xl overflow-hidden bg-white"
+                        cover={
+                          <div className="relative h-48 overflow-hidden">
+                            <img 
+                              alt={project.title} 
+                              src={project.image} 
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            {project.featured && (
+                              <div className="absolute top-3 right-3 bg-violet-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
+                                Featured
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    }
-                    actions={isEditable ? [
-                      <Tooltip title="View Project">
-                        <FaEye className="text-gray-500 hover:text-violet-600" />
-                      </Tooltip>,
-                      <Tooltip title="Edit Project">
-                        <FaEdit 
-                          className="text-gray-500 hover:text-violet-600" 
-                          onClick={() => showEditModal("projects", project)}
-                        />
-                      </Tooltip>,
-                      <Tooltip title="Delete Project">
-                        <FaTrash 
-                          className="text-gray-500 hover:text-red-600" 
-                          onClick={() => handleDelete("projects", project)}
-                        />
-                      </Tooltip>
-                    ] : [
-                      <Tooltip title="View Project">
-                        <FaEye className="text-gray-500 hover:text-violet-600" />
-                      </Tooltip>
-                    ]}
-                    className="shadow-sm hover:shadow-md transition-shadow duration-300"
-                  >
-                    <Card.Meta
-                      title={project.title}
-                      description={
-                        <div>
-                          <p className="text-gray-600 mb-3 line-clamp-2">{project.description}</p>
-                          <div className="flex flex-wrap gap-1 mb-3">
+                        }
+                        actions={isEditable ? [
+                          <Tooltip title="Preview Project">
+                            <Button 
+                              type="text" 
+                              icon={<FaEye className="text-violet-500 hover:text-violet-700" />}
+                              onClick={() => handlePreview(project)}
+                            />
+                          </Tooltip>,
+                          <Tooltip title="Edit Project">
+                            <Button 
+                              type="text" 
+                              icon={<FaEdit className="text-violet-500 hover:text-violet-700" />}
+                              onClick={() => showEditModal("projects", project)}
+                            />
+                          </Tooltip>,
+                          <Tooltip title="Delete Project">
+                            <Button 
+                              type="text" 
+                              icon={<FaTrash className="text-red-400 hover:text-red-600" />}
+                              onClick={() => handleDelete("projects", project)}
+                            />
+                          </Tooltip>
+                        ] : [
+                          <Tooltip title="Preview Project">
+                            <Button 
+                              type="text" 
+                              icon={<FaEye className="text-violet-500 hover:text-violet-700" />}
+                              onClick={() => handlePreview(project)}
+                            />
+                          </Tooltip>
+                        ]}
+                      >
+                        <div className="px-1 space-y-3">
+                          <h3 className="text-lg font-semibold text-gray-800">{project.title}</h3>
+                          <p className="text-gray-600 text-sm line-clamp-2">{project.description}</p>
+                          <div className="flex flex-wrap gap-2">
                             {project.tags.map(tag => (
-                              <Tag key={tag} color="purple" className="mb-1">{tag}</Tag>
+                              <Tag 
+                                key={tag} 
+                                className="bg-violet-50 text-violet-600 border-violet-100 rounded-full px-3"
+                              >
+                                {tag}
+                              </Tag>
                             ))}
                           </div>
-                          <div className="flex space-x-3">
+                          <div className="flex space-x-4 pt-2">
                             {project.links.live && (
                               <a 
-                                href={project.links.live} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-violet-600 hover:text-violet-800 flex items-center"
+                                href={project.links.live}
+                                target="_blank"
+                                rel="noopener noreferrer" 
+                                className="text-violet-600 hover:text-violet-800 flex items-center text-sm font-medium"
                               >
-                                <FaLink className="mr-1" /> Demo
+                                <FaLink className="mr-1.5" /> Live Demo
                               </a>
                             )}
                             {project.links.github && (
                               <a 
-                                href={project.links.github} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-violet-600 hover:text-violet-800 flex items-center"
+                                href={project.links.github}
+                                target="_blank"
+                                rel="noopener noreferrer" 
+                                className="text-violet-600 hover:text-violet-800 flex items-center text-sm font-medium"
                               >
-                                <FaGithub className="mr-1" /> Code
+                                <FaGithub className="mr-1.5" /> Source Code
                               </a>
                             )}
                           </div>
                         </div>
-                      }
-                    />
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Empty 
-                description={
-                  <span>
-                    No projects found. {isEditable && "Click the button above to add your first project."}
-                  </span>
-                }
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            )}
-          </TabPane>
-          
-          <TabPane tab="Skills" key="skills">
-            {portfolioData.skills.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {portfolioData.skills.map(skill => (
-                  <Card key={skill.name} className="shadow-sm">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-800">{skill.name}</h3>
-                        <div className="flex items-center mt-1">
-                          <Tag 
-                            color={
-                              skill.level === "Expert" ? "gold" :
-                              skill.level === "Advanced" ? "purple" :
-                              skill.level === "Intermediate" ? "blue" :
-                              "green"
-                            }
-                          >
-                            {skill.level}
-                          </Tag>
-                          <span className="ml-2 text-gray-600">{skill.years} {skill.years === 1 ? 'year' : 'years'}</span>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <Empty 
+                  description={
+                    <span className="text-violet-600">
+                      No projects yet. {isEditable && "Showcase your work by adding your first project!"}
+                    </span>
+                  }
+                  className="my-12"
+                />
+              )}
+            </TabPane>
+
+            <TabPane tab="Technical Skills" key="skills">
+              {portfolioData.skills.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {portfolioData.skills.map(skill => (
+                    <motion.div
+                      key={skill.name}
+                      whileHover={{ y: -3 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Card className="hover:shadow-md transition-all duration-300 border-violet-100 rounded-xl bg-white">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-semibold text-gray-800">{skill.name}</h3>
+                            <div className="flex items-center gap-3">
+                              <Tag className={`rounded-full px-3 ${
+                                skill.level === 'Expert' ? 'bg-green-50 text-green-600 border-green-100' :
+                                skill.level === 'Advanced' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                skill.level === 'Intermediate' ? 'bg-violet-50 text-violet-600 border-violet-100' :
+                                'bg-gray-50 text-gray-600 border-gray-100'
+                              }`}>
+                                {skill.level}
+                              </Tag>
+                              <span className="text-sm text-gray-600">
+                                {skill.years} {skill.years === 1 ? 'year' : 'years'}
+                              </span>
+                            </div>
+                          </div>
+                          {isEditable && (
+                            <div className="flex gap-2">
+                              <Button 
+                                type="text" 
+                                icon={<FaEdit className="text-violet-500 hover:text-violet-700" />}
+                                onClick={() => showEditModal("skills", skill)}
+                              />
+                              <Button 
+                                type="text" 
+                                icon={<FaTrash className="text-red-400 hover:text-red-600" />}
+                                onClick={() => handleDelete("skills", skill)}
+                              />
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      
-                      {isEditable && (
-                        <div className="flex space-x-2">
-                          <Button 
-                            type="text" 
-                            icon={<FaEdit />} 
-                            onClick={() => showEditModal("skills", skill)}
-                            className="text-gray-500 hover:text-violet-600"
-                          />
-                          <Button 
-                            type="text" 
-                            icon={<FaTrash />} 
-                            onClick={() => handleDelete("skills", skill)}
-                            className="text-gray-500 hover:text-red-600"
-                          />
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <Empty 
+                  description={
+                    <span className="text-violet-600">
+                      No skills added. {isEditable && "Highlight your technical expertise!"}
+                    </span>
+                  }
+                  className="my-12"
+                />
+              )}
+            </TabPane>
+
+            <TabPane tab="Certifications" key="certifications">
+              {portfolioData.certifications.length > 0 ? (
+                <div className="space-y-4">
+                  {portfolioData.certifications.map(cert => (
+                    <motion.div
+                      key={cert.id}
+                      whileHover={{ y: -3 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Card className="hover:shadow-md transition-all duration-300 border-violet-100 rounded-xl bg-white">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-3">
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-800">{cert.name}</h3>
+                              <p className="text-gray-600">Issued by {cert.issuer}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Tag className="bg-violet-50 text-violet-600 border-violet-100 rounded-full px-3">
+                                Issued: {new Date(cert.date).toLocaleDateString()}
+                              </Tag>
+                              {cert.expires && (
+                                <Tag className="bg-orange-50 text-orange-600 border-orange-100 rounded-full px-3">
+                                  Expires: {new Date(cert.expires).toLocaleDateString()}
+                                </Tag>
+                              )}
+                            </div>
+                            {cert.credentialId && (
+                              <p className="text-sm text-gray-600">
+                                Credential ID: {cert.credentialId}
+                              </p>
+                            )}
+                            {cert.url && (
+                              <a
+                                href={cert.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center text-violet-600 hover:text-violet-800 font-medium"
+                              >
+                                <FaLink className="mr-1.5" /> Verify Credential
+                              </a>
+                            )}
+                          </div>
+                          {isEditable && (
+                            <div className="flex gap-2">
+                              <Button 
+                                type="text" 
+                                icon={<FaEdit className="text-violet-500 hover:text-violet-700" />}
+                                onClick={() => showEditModal("certifications", cert)}
+                              />
+                              <Button 
+                                type="text" 
+                                icon={<FaTrash className="text-red-400 hover:text-red-600" />}
+                                onClick={() => handleDelete("certifications", cert)}
+                              />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Empty 
-                description={
-                  <span>
-                    No skills found. {isEditable && "Click the button above to add your skills."}
-                  </span>
-                }
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            )}
-          </TabPane>
-          
-          <TabPane tab="Certifications" key="certifications">
-            {portfolioData.certifications.length > 0 ? (
-              <div className="space-y-4">
-                {portfolioData.certifications.map(cert => (
-                  <Card key={cert.id} className="shadow-sm">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-800">{cert.name}</h3>
-                        <p className="text-gray-600">Issued by {cert.issuer}</p>
-                        <p className="text-gray-600">
-                          Issued: {new Date(cert.date).toLocaleDateString()}
-                          {cert.expires && ` • Expires: ${new Date(cert.expires).toLocaleDateString()}`}
-                        </p>
-                        {cert.credentialId && (
-                          <p className="text-gray-600">Credential ID: {cert.credentialId}</p>
-                        )}
-                        {cert.url && (
-                          <a 
-                            href={cert.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-violet-600 hover:text-violet-800 flex items-center mt-2"
-                          >
-                            <FaLink className="mr-1" /> Verify Credential
-                          </a>
-                        )}
-                      </div>
-                      
-                      {isEditable && (
-                        <div className="flex space-x-2">
-                          <Button 
-                            type="text" 
-                            icon={<FaEdit />} 
-                            onClick={() => showEditModal("certifications", cert)}
-                            className="text-gray-500 hover:text-violet-600"
-                          />
-                          <Button 
-                            type="text" 
-                            icon={<FaTrash />} 
-                            onClick={() => handleDelete("certifications", cert)}
-                            className="text-gray-500 hover:text-red-600"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Empty 
-                description={
-                  <span>
-                    No certifications found. {isEditable && "Click the button above to add your certifications."}
-                  </span>
-                }
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            )}
-          </TabPane>
-        </Tabs>
-        
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <Empty 
+                  description={
+                    <span className="text-violet-600">
+                      No certifications yet. {isEditable && "Add your professional certifications!"}
+                    </span>
+                  }
+                  className="my-12"
+                />
+              )}
+            </TabPane>
+          </Tabs>
+        </Card>
+
         <Modal
-          title={`${modalType === "add" ? "Add" : "Edit"} ${
-            activeTab === "projects" ? "Project" : 
-            activeTab === "skills" ? "Skill" : 
-            "Certification"
-          }`}
+          title={
+            <span className="text-lg font-semibold text-violet-800">
+              {modalType === "add" ? "Add New" : "Edit"} {
+                activeTab === "projects" ? "Project" : 
+                activeTab === "skills" ? "Skill" : 
+                "Certification"
+              }
+            </span>
+          }
           visible={isModalVisible}
           onCancel={handleCancel}
           footer={[
@@ -683,14 +807,21 @@ const Portfolio = () => {
               key="submit" 
               type="primary" 
               onClick={() => form.submit()}
-              className="bg-violet-600 hover:bg-violet-700 border-none"
+              className="bg-violet-500 hover:bg-violet-600 border-0"
             >
-              {modalType === "add" ? "Add" : "Save"}
+              {modalType === "add" ? "Add" : "Save Changes"}
             </Button>
           ]}
+          className="[&_.ant-modal-content]:rounded-xl [&_.ant-modal-header]:bg-violet-50"
         >
           {renderModalContent()}
         </Modal>
+
+        <ProjectPreviewModal
+          project={previewProject}
+          visible={previewVisible}
+          onClose={() => setPreviewVisible(false)}
+        />
       </motion.div>
     </div>
   );

@@ -1,0 +1,47 @@
+/* Gradient Pattern Background */
+.bg-gradient-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(124, 58, 237, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(124, 58, 237, 0.1) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  
+  /* Animations */
+  @keyframes float-slow {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-10px, 10px); }
+  }
+  
+  @keyframes float-slow-reverse {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(10px, -10px); }
+  }
+  
+  @keyframes gradient-x {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+  }
+  
+  .animate-float-slow-reverse {
+    animation: float-slow-reverse 8s ease-in-out infinite;
+  }
+  
+  .animate-gradient-x {
+    animation: gradient-x 3s ease infinite;
+    background-size: 200% 200%;
+  }
+  
+  /* Enhanced Card Hover Effects */
+  .hover-card-rise {
+    transition: all 0.3s ease;
+  }
+  
+  .hover-card-rise:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px -8px rgba(124, 58, 237, 0.25);
+  }

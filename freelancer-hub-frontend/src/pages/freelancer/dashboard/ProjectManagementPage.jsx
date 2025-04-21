@@ -5,6 +5,7 @@ import { SearchOutlined, CalendarOutlined, UserOutlined } from "@ant-design/icon
 import { FaEye, FaBriefcase, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'react-responsive';
+import '../../../assets/css/ProjectManagementPage.css';
 
 const { Option } = Select;
 
@@ -259,52 +260,78 @@ const ProjectManagementPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 bg-gray-50/50 min-h-screen">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        className="mb-8"
       >
-        <h2 className="text-2xl font-bold text-violet-900">Project Management</h2>
-        <div className="flex flex-col md:flex-row gap-4">
-          <Input
-            placeholder="Search projects..."
-            value={searchTerm}
-            onChange={handleSearch}
-            prefix={<SearchOutlined className="text-violet-400" />}
-            className="w-full md:w-72 border-violet-200 focus:border-violet-500"
-          />
-          <Select
-            value={statusFilter}
-            onChange={handleFilter}
-            placeholder="Filter by Status"
-            className="w-full md:w-48"
-          >
-            <Option value="">All Statuses</Option>
-            <Option value="Pending">Pending</Option>
-            <Option value="Ongoing">Ongoing</Option>
-            <Option value="Completed">Completed</Option>
-          </Select>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-500/90 to-indigo-500/90 p-8">
+          <div className="absolute inset-0">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full 
+              filter blur-3xl mix-blend-overlay -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full 
+              filter blur-3xl mix-blend-overlay translate-x-1/2 translate-y-1/2"></div>
+          </div>
+
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="text-3xl font-semibold text-white/90 mb-2">Project Management</h1>
+              <p className="text-white/70">Manage and track your ongoing projects</p>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+              <Input
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={handleSearch}
+                prefix={<SearchOutlined className="text-white/50" />}
+                className="project-search-input w-full md:w-72"
+              />
+              <Select
+                value={statusFilter}
+                onChange={handleFilter}
+                placeholder="Filter by Status"
+                className="project-status-select w-full md:w-48"
+              >
+                <Option value="">All Statuses</Option>
+                <Option value="Pending">Pending</Option>
+                <Option value="Ongoing">Ongoing</Option>
+                <Option value="Completed">Completed</Option>
+              </Select>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      <div className="hidden md:block">
-        <Table
-          dataSource={paginatedData}
-          columns={columns}
-          pagination={false}
-          rowKey="id"
-          className="border border-violet-100 rounded-lg"
-        />
-      </div>
-
-      <AnimatePresence>
-        <div className="block md:hidden space-y-4">
-          {paginatedData.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+      <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 shadow-sm">
+        <div className="hidden md:block">
+          <Table
+            dataSource={paginatedData}
+            columns={columns}
+            pagination={false}
+            rowKey="id"
+            className="project-table"
+            rowClassName="hover:bg-violet-50/50 transition-colors duration-200"
+          />
         </div>
-      </AnimatePresence>
+
+        <AnimatePresence>
+          <div className="block md:hidden space-y-4">
+            {paginatedData.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <ProjectCard project={project} />
+              </motion.div>
+            ))}
+          </div>
+        </AnimatePresence>
+      </div>
 
       <div className="mt-6 flex justify-center">
         <Pagination
@@ -313,60 +340,65 @@ const ProjectManagementPage = () => {
           total={filteredProjects.length}
           onChange={(page) => setCurrentPage(page)}
           showSizeChanger={false}
-          className="text-violet-600"
+          className="custom-pagination"
         />
       </div>
 
       <Modal
         title={
-          <div className="flex items-center space-x-2">
-            <span className="text-violet-900 text-lg">Project Details</span>
-            {selectedProject && (
-              <Tag
-                color={getStatusColor(selectedProject.status).color}
-                className={`${getStatusColor(selectedProject.status).bg} ${getStatusColor(selectedProject.status).text} border-0`}
-              >
-                {selectedProject.status}
-              </Tag>
-            )}
+          <div className="flex items-center gap-4 py-2">
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-gray-700">
+                {selectedProject?.name}
+              </h3>
+              {selectedProject && (
+                <Tag
+                  color={getStatusColor(selectedProject.status).color}
+                  className={`mt-2 ${getStatusColor(selectedProject.status).bg} 
+                    ${getStatusColor(selectedProject.status).text} border-0`}
+                >
+                  {selectedProject.status}
+                </Tag>
+              )}
+            </div>
           </div>
         }
         open={showDetails}
         onCancel={closeDetails}
-        footer={[
-          <Button
-            key="close"
-            onClick={closeDetails}
-            className="text-violet-600 border-violet-200 hover:border-violet-300"
-          >
-            Close
-          </Button>,
-        ]}
+        footer={null}
         width={800}
+        className="project-modal"
       >
         {selectedProject && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6 py-4"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-violet-50 rounded-lg">
-                <p className="text-sm text-violet-600 mb-1">Client</p>
-                <p className="text-lg font-semibold text-violet-900">{selectedProject.client}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-6 bg-gray-50/50 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <UserOutlined className="text-violet-400" />
+                  <h4 className="text-sm font-medium text-gray-600">Client</h4>
+                </div>
+                <p className="text-lg text-gray-700">{selectedProject.client}</p>
               </div>
-              <div className="p-4 bg-violet-50 rounded-lg">
-                <p className="text-sm text-violet-600 mb-1">Deadline</p>
-                <p className="text-lg font-semibold text-violet-900">{selectedProject.deadline}</p>
+
+              <div className="p-6 bg-gray-50/50 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <CalendarOutlined className="text-violet-400" />
+                  <h4 className="text-sm font-medium text-gray-600">Deadline</h4>
+                </div>
+                <p className="text-lg text-gray-700">{selectedProject.deadline}</p>
               </div>
             </div>
 
-            <div className="bg-violet-50 p-4 rounded-lg">
-              <p className="text-sm text-violet-600 mb-2">Project Description</p>
-              <p className="text-gray-700">{selectedProject.description}</p>
+            <div className="p-6 bg-gray-50/50 rounded-xl border border-gray-100">
+              <h4 className="text-sm font-medium text-gray-600 mb-3">Project Description</h4>
+              <p className="text-gray-600 leading-relaxed">{selectedProject.description}</p>
             </div>
 
-            <Tabs items={tabItems} className="text-violet-600" />
+            <Tabs items={tabItems} className="project-tabs" />
           </motion.div>
         )}
       </Modal>

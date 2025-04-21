@@ -1,0 +1,135 @@
+/* Color utilities for StatCard */
+.text-violet-500\/70 { color: rgba(139, 92, 246, 0.7); }
+.text-emerald-500\/70 { color: rgba(16, 185, 129, 0.7); }
+.text-blue-500\/70 { color: rgba(59, 130, 246, 0.7); }
+.text-amber-500\/70 { color: rgba(245, 158, 11, 0.7); }
+
+.text-violet-700\/90 { color: rgba(109, 40, 217, 0.9); }
+.text-emerald-700\/90 { color: rgba(4, 120, 87, 0.9); }
+.text-blue-700\/90 { color: rgba(29, 78, 216, 0.9); }
+.text-amber-700\/90 { color: rgba(180, 83, 9, 0.9); }
+
+/* Hover states */
+
+.hover\:bg-violet-50:hover { background-color: rgba(237, 233, 254, 0.5); }
+.hover\:border-violet-200\/50:hover { border-color: rgba(221, 214, 254, 0.5); }
+
+/* Enhanced tab styling */
+.profile-tabs .ant-tabs-nav {
+  background: linear-gradient(to right, #f8fafc, #ffffff);
+  padding: 0.5rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.profile-tabs .ant-tabs-tab {
+  margin: 0 0.5rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+  background: transparent;
+}
+
+.profile-tabs .ant-tabs-tab:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.profile-tabs .ant-tabs-tab-active {
+  background: linear-gradient(to right, #8b5cf6, #6d28d9) !important;
+  border-radius: 0.5rem;
+}
+
+.profile-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: white !important;
+}
+
+.profile-tabs .ant-tabs-content {
+  background: #ffffff;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Skill card styling */
+.skill-card {
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.skill-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.1);
+}
+
+/* Progress bar styling */
+.ant-progress-bg {
+  background: linear-gradient(to right, #8b5cf6, #6d28d9);
+}
+
+/* Card hover effects */
+.hover-card {
+  transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced card styling */
+.stat-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.1);
+}
+
+/* Role-specific styling */
+.student-badge {
+  background: linear-gradient(to right, #8b5cf6, #6d28d9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.freelancer-badge {
+  background: linear-gradient(to right, #0ea5e9, #0d9488);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Add error state styles */
+.error-state {
+  background: #fee2e2;
+  border: 1px solid #ef4444;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  color: #dc2626;
+}
+
+/* Add loading state styles */
+.loading-state {
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+/* Add image placeholder styles */
+.image-placeholder {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}

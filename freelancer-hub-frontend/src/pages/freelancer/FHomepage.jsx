@@ -6,6 +6,7 @@ import { Pie, Bar } from "react-chartjs-2";
 import { useMediaQuery } from "react-responsive";
 import CountUp from 'react-countup';
 import { motion, AnimatePresence } from 'framer-motion';
+import '../../assets/css/FHomepage.css';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -262,60 +263,182 @@ const FHomepage = ({ userId, role, isAuthenticated, isEditable }) => {
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto  space-y-8">
 {/* Welcome banner */}
-            <div className="relative overflow-hidden rounded-2xl shadow-2xl min-h-[60vh]">
-              {/* Gradient Background with Animation */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700
-                animate-gradient-slow">
-                {/* Decorative Elements */}
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl min-h-[60vh] bg-gradient-pattern">
+              {/* Refined Gradient Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-violet-500 to-indigo-600
+                opacity-95 animate-gradient-slow">
+                {/* Enhanced Decorative Elements */}
                 <div className="absolute inset-0">
-                  <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full 
-                    filter blur-3xl mix-blend-overlay -translate-x-1/2 -translate-y-1/2 opacity-20">
+                  <div className="absolute top-0 left-0 w-[40rem] h-[40rem] bg-white/20 rounded-full 
+                    filter blur-3xl mix-blend-overlay -translate-x-1/2 -translate-y-1/2 animate-float-slow">
                   </div>
-                  <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400 rounded-full 
-                    filter blur-3xl mix-blend-overlay translate-x-1/2 translate-y-1/2 opacity-20">
+                  <div className="absolute bottom-0 right-0 w-[30rem] h-[30rem] bg-indigo-300/30 rounded-full 
+                    filter blur-3xl mix-blend-overlay translate-x-1/2 translate-y-1/2 animate-float-slow-reverse">
                   </div>
                 </div>
               </div>
             
-              {/* Content Container */}
+              {/* Enhanced Content Container */}
               <div className="relative h-full flex flex-col items-center justify-center p-8">
-                {/* Welcome Message */}
-                <div className="space-y-8 max-w-4xl mx-auto">
-                  <div className="space-y-4">
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white
-                      tracking-tight leading-tight">
-                      Welcome back,
-                      <span className="block mt-2 bg-gradient-to-r from-purple-200 to-pink-100 
-                        bg-clip-text text-transparent">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="space-y-8 max-w-4xl mx-auto text-center"
+                >
+                  {/* Welcome Badge */}
+                  <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm
+                    border border-white/20 mb-6">
+                    <span className="text-white/90 text-sm font-medium">Welcome back</span>
+                  </div>
+            
+                  {/* Enhanced Welcome Message */}
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white
+                    tracking-tight leading-none">
+                    Hello, <span className="inline-block">
+                      <span className="inline-block bg-gradient-to-r from-white to-indigo-200 
+                        bg-clip-text text-transparent animate-gradient-x">
                         Sadguru!
                       </span>
-              </h1>
-                  </div>
+                    </span>
+                  </h1>
             
-                  {/* Quote */}
-                  <div className="max-w-2xl mx-auto">
-                    <p className="text-lg sm:text-xl md:text-2xl text-purple-100 font-light
-                      italic ">
-                      "Strive for progress, not perfection."
-                    </p>
-                  </div>
+                  {/* Enhanced Stats Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.1 }}
+                      className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20
+                        hover:bg-white/20 transition-all duration-300"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-indigo-100 text-sm font-medium">Active Projects</span>
+                          <span className="p-2 bg-white/10 rounded-lg">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <CountUp
+                            start={0}
+                            end={12}
+                            duration={2}
+                            className="text-3xl font-bold text-white"
+                          />
+                          <span className="text-green-400 text-sm font-medium">+2 this week</span>
+                        </div>
+                        <div className="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full" style={{ width: '75%' }}></div>
+                        </div>
+                      </div>
+                    </motion.div>
             
-                  {/* Stats */}
-                  <div className="flex flex-wrap justify-center gap-8 mt-8">
-                    <div className="text-center px-4">
-                      <p className="text-3xl font-bold text-white mb-1">12</p>
-                      <p className="text-sm text-purple-200">Active Projects</p>
-                    </div>
-                    <div className="text-center px-4">
-                      <p className="text-3xl font-bold text-white mb-1">95%</p>
-                      <p className="text-sm text-purple-200">Success Rate</p>
-                    </div>
-                    <div className="text-center px-4">
-                      <p className="text-3xl font-bold text-white mb-1">₹50k+</p>
-                      <p className="text-sm text-purple-200">Earnings</p>
-                    </div>
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.2 }}
+                      className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20
+                        hover:bg-white/20 transition-all duration-300"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-indigo-100 text-sm font-medium">Success Rate</span>
+                          <span className="p-2 bg-white/10 rounded-lg">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <CountUp
+                            start={0}
+                            end={95}
+                            duration={2}
+                            className="text-3xl font-bold text-white"
+                          />
+                          <span className="text-2xl font-bold text-white ml-1">%</span>
+                        </div>
+                        <div className="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full" style={{ width: '95%' }}></div>
+                        </div>
+                      </div>
+                    </motion.div>
+            
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.3 }}
+                      className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20
+                        hover:bg-white/20 transition-all duration-300"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-indigo-100 text-sm font-medium">Total Earnings</span>
+                          <span className="p-2 bg-white/10 rounded-lg">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold text-white mr-1">₹</span>
+                          <CountUp
+                            start={0}
+                            end={50000}
+                            duration={2}
+                            separator=","
+                            className="text-3xl font-bold text-white"
+                          />
+                        </div>
+                        <div className="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full" style={{ width: '80%' }}></div>
+                        </div>
+                      </div>
+                    </motion.div>
+            
+                    <motion.div
+                      variants={statsCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      transition={{ delay: 0.4 }}
+                      className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20
+                        hover:bg-white/20 transition-all duration-300"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-indigo-100 text-sm font-medium">In Progress Projects</span>
+                          <span className="p-2 bg-white/10 rounded-lg">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                            </svg>
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <CountUp
+                            start={0}
+                            end={30}
+                            duration={2}
+                            className="text-3xl font-bold text-white"
+                          />
+                          <span className="text-green-400 text-sm font-medium">+5 this week</span>
+                        </div>
+                        <div className="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full" style={{ width: '60%' }}></div>
+                        </div>
+                      </div>
+                    </motion.div>
                   </div>
-                </div>
+                </motion.div>
             
                 {/* Decorative Dots Grid */}
                 <div className="absolute inset-0 pointer-events-none">
@@ -333,13 +456,18 @@ const FHomepage = ({ userId, role, isAuthenticated, isEditable }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="relative rounded-2xl"
+              className="relative bg-white rounded-2xl shadow-lg p-8"
             >
-              <h2 className="text-3xl font-bold text-center mb-8">
-                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                  Performance Analytics
+              {/* Section Header with Icon */}
+              <div className="flex items-center justify-center gap-4 mb-12">
+                <span className="p-2 bg-violet-100 rounded-lg">
+                  <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                  </svg>
                 </span>
-              </h2>
+                <h2 className="text-3xl font-bold text-gray-900">Performance Analytics</h2>
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {isLoading ? (
@@ -522,125 +650,132 @@ const FHomepage = ({ userId, role, isAuthenticated, isEditable }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative bg-gradient-to-br from-gray-50 to-purple-100 rounded-2xl shadow-lg overflow-hidden"
+              className="relative overflow-hidden"
             >
-              <div className="p-8">
-                <h2 className="text-3xl font-bold text-center mb-8">
-                  <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                    Projects Based on Your Skills
-                  </span>
-                </h2>
-
-                {/* Left Scroll Button */}
-                <AnimatePresence>
-                  {showLeftButton && (
-                    <motion.button
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      onClick={scrollLeft}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 
-                        bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
-                        transition-all duration-300 hover:scale-110 backdrop-blur-sm
-                        border border-gray-100 group"
-                    >
-                      <svg 
-                        className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-
-                {/* Project Cards Container */}
-                <div 
-                  ref={containerRef} 
-                  className="flex space-x-6 overflow-x-auto scroll-smooth scrollbar-hide px-2"
-                  style={{ 
-                    scrollbarWidth: 'none',
-                    '-ms-overflow-style': 'none',
-                  }}
-                >
-                  {skillBasedProjects.map((record, index) => (
-                    <div
-                      key={index}
-                      className="flex-none w-[280px] p-6 bg-white rounded-xl
-                        shadow-md hover:shadow-xl transition-all duration-300
-                        border border-gray-100 hover:border-violet-200
-                        transform hover:-translate-y-1 group"
-                    >
-                      {/* Project Status Badge */}
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="px-3 py-1 bg-violet-100 text-violet-600 rounded-full text-xs font-medium">
-                          {record.time}
-                        </span>
-                      </div>
-
-                      {/* Project Title */}
-                      <h3 className="text-xl font-semibold text-gray-800 group-hover:text-violet-600 
-                        transition-colors duration-300 line-clamp-2 min-h-[56px]">
-                        {record.name}
-                      </h3>
-
-                      {/* Project Description */}
-                      <p className="text-gray-600 mt-2 text-sm line-clamp-3 min-h-[60px]">
-                        {record.description}
-                      </p>
-
-                      {/* Action Button */}
-                      <button
-                        onClick={() =>
-                          navigate(`/freelancer/browse-projects/project-view/${record.id}`, {
-                            state: { record },
-                          })
-                        }
-                        className="mt-4 w-full bg-gray-50 text-gray-700 py-2.5 px-4 rounded-lg
-                          hover:bg-violet-600 hover:text-white transition-all duration-300
-                          font-medium border border-gray-200 hover:border-violet-600
-                          flex items-center justify-center gap-2 group-hover:shadow-md"
-                      >
-                        View Details
-                        <svg 
-                          className="w-4 h-4" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+              {/* Background Gradient Effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-white to-indigo-50 opacity-70"></div>
+              <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.2]"></div>
+              
+              <div className="relative p-8 sm:p-10">
+                <div className="flex items-center justify-center gap-3 mb-8">
+                  <div className="h-1 w-10 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"></div>
+                  <h2 className="text-3xl font-bold text-center">
+                    <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                      Recommended Projects
+                    </span>
+                  </h2>
+                  <div className="h-1 w-10 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"></div>
                 </div>
 
-                {/* Right Scroll Button */}
-                <AnimatePresence>
-                  {showRightButton && (
-                    <motion.button
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      onClick={scrollRight}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 
-                        bg-white/80 hover:bg-white p-4 shadow-lg rounded-full z-10
-                        transition-all duration-300 hover:scale-110 backdrop-blur-sm
-                        border border-gray-100 group"
-                    >
-                      <svg 
-                        className="w-5 h-5 text-violet-600 group-hover:text-violet-700" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
+                {/* Project Cards Container */}
+                <div className="relative">
+                  {/* Scroll Buttons */}
+                  <AnimatePresence>
+                    {showLeftButton && (
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={scrollLeft}
+                        className="absolute -left-3 top-1/2 transform -translate-y-1/2 
+                          bg-white/90 p-3 rounded-full z-10 shadow-lg hover:shadow-xl
+                          border border-violet-100 group transition-all duration-300
+                          hover:bg-violet-50"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </motion.button>
-                  )}
-                </AnimatePresence>
+                        <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24">
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+
+                  <div 
+                    ref={containerRef} 
+                    className="flex space-x-6 overflow-x-auto scroll-smooth no-scrollbar px-2"
+                  >
+                    {skillBasedProjects.map((record, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="flex-none w-[320px] bg-white rounded-xl overflow-hidden
+                          shadow-sm hover:shadow-xl transition-all duration-300
+                          border border-violet-100/50 hover:border-violet-200"
+                      >
+                        <div className="p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+                                <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-800">{record.name}</h3>
+                                <span className="text-sm text-gray-500">{record.time}</span>
+                              </div>
+                            </div>
+                            <span className="px-3 py-1 bg-violet-50 text-violet-600 rounded-full text-sm font-medium">
+                              {record.budget}
+                            </span>
+                          </div>
+
+                          <p className="text-gray-600 text-sm mb-4">{record.description}</p>
+
+                          <div className="space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-500">Progress</span>
+                              <span className="text-violet-600 font-medium">65%</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-violet-500 rounded-full" style={{ width: '65%' }}></div>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 flex items-center justify-between">
+                            <div className="flex -space-x-2">
+                              {/* Team members avatars */}
+                              <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-200"></div>
+                              <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-200"></div>
+                              <div className="w-8 h-8 rounded-full border-2 border-white bg-violet-100 flex items-center justify-center">
+                                <span className="text-xs text-violet-600 font-medium">+3</span>
+                              </div>
+                            </div>
+                            
+                            <button className="flex items-center gap-2 text-violet-600 hover:text-violet-700 transition-colors">
+                              <span className="text-sm font-medium">View Details</span>
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Right Scroll Button */}
+                  <AnimatePresence>
+                    {showRightButton && (
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={scrollRight}
+                        className="absolute -right-3 top-1/2 transform -translate-y-1/2 
+                          bg-white/90 p-3 rounded-full z-10 shadow-lg hover:shadow-xl
+                          border border-violet-100 group transition-all duration-300
+                          hover:bg-violet-50"
+                      >
+                        <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24">
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </motion.section>
 

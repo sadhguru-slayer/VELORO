@@ -326,7 +326,7 @@ const RegistrationForm = () => {
               Create Account
             </h1>
             <p className="text-center text-gray-600 text-xs mb-4">
-              Join Veloro and unlock new opportunities
+              Join Talintz and unlock new opportunities
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -167,7 +167,7 @@ const LoginPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-teal-400/5" />
           <div className="relative h-full flex flex-col items-center justify-center p-8">
             <h2 className="text-2xl font-bold text-violet-700 mb-4">
-              Welcome Back to Veloro
+              Welcome Back to Talintz
             </h2>
             <p className="text-gray-600 mb-6 text-sm">
               Your gateway to professional excellence
@@ -206,7 +206,7 @@ const LoginPage = () => {
         <div className="w-full lg:w-1/2 p-6 flex items-center justify-center">
           <div className="w-full max-w-md">
             <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-violet-600 to-teal-500 bg-clip-text text-transparent mb-2">
-              Sign In to Veloro
+              Sign In to Talintz
             </h1>
             <p className="text-center text-gray-600 text-sm mb-6">
               Access your professional workspace
@@ -378,7 +378,7 @@ const LoginPage = () => {
               </motion.button>
   
               <p className="text-center text-gray-600">
-                New to Veloro?{" "}
+                New to Talintz?{" "}
                 <a href="/register" className="font-medium text-violet-600 hover:text-teal-500 transition-colors duration-200">
                   Create an account
                 </a>

@@ -4,7 +4,7 @@ import { SearchOutlined, CalendarOutlined, DollarOutlined, RiseOutlined, FallOut
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRegClock, FaChartLine, FaUserCheck, FaExclamationTriangle } from "react-icons/fa";
-
+import '../../../assets/css/BiddingOverview.css';
 const { Option } = Select;
 
 const BiddingOverview = () => {
@@ -186,19 +186,22 @@ const BiddingOverview = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all border border-violet-100"
+      className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-violet-100/30 
+        hover:border-violet-200/50 transition-all duration-300"
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-violet-600">{icon}</span>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-violet-500/70">{icon}</span>
         {trend && (
-          <div className={`flex items-center ${trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+          <div className={`flex items-center ${
+            trend === 'up' ? 'text-emerald-500/70' : 'text-rose-500/70'
+          }`}>
             {trend === 'up' ? <RiseOutlined /> : <FallOutlined />}
-            <span className="ml-1">{trendValue}%</span>
+            <span className="ml-1 text-sm">{trendValue}%</span>
           </div>
         )}
       </div>
-      <h3 className="text-gray-600 text-sm">{title}</h3>
-      <p className={`text-xl font-semibold ${color || 'text-violet-900'}`}>{value}</p>
+      <h3 className="text-gray-500 text-sm font-medium mb-1">{title}</h3>
+      <p className={`text-xl font-semibold ${color || 'text-violet-700/90'}`}>{value}</p>
     </motion.div>
   );
 
@@ -245,18 +248,17 @@ const BiddingOverview = () => {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 bg-gray-50/50 min-h-screen">
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-10"
       >
-        <h2 className="text-2xl font-bold text-violet-900 mb-2">Bidding Overview</h2>
-        <p className="text-gray-600">Track and analyze your bidding performance</p>
+        <h2 className="text-2xl font-semibold text-violet-800/90 mb-2">Bidding Overview</h2>
+        <p className="text-gray-500">Track and analyze your bidding performance</p>
       </motion.div>
 
-      {/* Statistics Overview */}
-      <Row gutter={[16, 16]} className="mb-8">
+      <Row gutter={[24, 24]} className="mb-10">
         <Col xs={24} sm={12} lg={6}>
           <StatCard
             title="Total Bids"
@@ -295,28 +297,36 @@ const BiddingOverview = () => {
         </Col>
       </Row>
 
-      {/* Competitive Analysis */}
-      <Card title="Competitive Analysis" className="mb-8">
-        <Row gutter={[16, 16]}>
+      <Card 
+        title={<span className="text-violet-700/90 text-lg font-medium">Competitive Analysis</span>}
+        className="mb-8 rounded-xl border-violet-100/30 shadow-sm hover:shadow-md transition-all duration-300"
+        headStyle={{ borderBottom: '1px solid rgba(139, 92, 246, 0.1)' }}
+        bodyStyle={{ padding: '24px' }}
+      >
+        <Row gutter={[24, 24]}>
           <Col xs={24} lg={8}>
-            <Card className="bg-violet-50 border-violet-100">
+            <Card 
+              className="bg-gradient-to-br from-violet-50/50 to-white border-violet-100/30 
+                rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
+            >
               <Statistic
-                title="Market Position"
+                title={<span className="text-violet-600/80">Market Position</span>}
                 value={bidInsights.competitivePosition.averagePosition}
                 suffix="/ 10"
                 precision={1}
-                valueStyle={{ color: '#8B5CF6' }}
+                valueStyle={{ color: 'rgba(139, 92, 246, 0.9)' }}
               />
-              <p className="text-sm text-violet-600 mt-2">
+              <p className="text-sm text-violet-500/70 mt-2">
                 Top {bidInsights.competitivePosition.topPositionRate}% of bids
-                <span className="text-green-500 ml-2">
+                <span className="text-emerald-500/70 ml-2">
                   ↑{bidInsights.competitivePosition.improvement}%
                 </span>
               </p>
             </Card>
           </Col>
           <Col xs={24} lg={8}>
-            <Card className="bg-violet-50 border-violet-100">
+            <Card className="bg-gradient-to-br from-violet-50/50 to-white border-violet-100/30 
+              rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
               <h4 className="text-violet-900 font-medium mb-2">Optimal Bid Range</h4>
               <p className="text-2xl font-semibold text-violet-900">
                 {bidInsights.bidOptimization.suggestedRange}
@@ -327,7 +337,8 @@ const BiddingOverview = () => {
             </Card>
           </Col>
           <Col xs={24} lg={8}>
-            <Card className="bg-violet-50 border-violet-100">
+            <Card className="bg-gradient-to-br from-violet-50/50 to-white border-violet-100/30 
+              rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
               <h4 className="text-violet-900 font-medium mb-2">High Demand Skills</h4>
               <div className="flex flex-wrap gap-2">
                 {bidInsights.marketAnalysis.highDemandSkills.map(skill => (
@@ -344,7 +355,6 @@ const BiddingOverview = () => {
         </Row>
       </Card>
 
-      {/* Bid Optimization Tips */}
       <Card title="Bid Optimization Tips" className="mb-8">
         <Row gutter={[16, 16]}>
           <Col xs={24} md={8}>
@@ -384,9 +394,12 @@ const BiddingOverview = () => {
         </Row>
       </Card>
 
-      {/* Bid Progress Section */}
-      <Card title="Bid Status Distribution" className="mb-8">
-        <Row gutter={[16, 16]}>
+      <Card 
+        title={<span className="text-violet-700/90 text-lg font-medium">Bid Status Distribution</span>}
+        className="mb-8 rounded-xl border-violet-100/30 shadow-sm"
+        headStyle={{ borderBottom: '1px solid rgba(139, 92, 246, 0.1)' }}
+      >
+        <Row gutter={[24, 24]}>
           <Col xs={24} md={8}>
             <BidProgressCard
               title="Pending Bids"
@@ -414,31 +427,32 @@ const BiddingOverview = () => {
         </Row>
       </Card>
 
-      {/* Recent Bids Section */}
       <Card 
-        title="Recent Bids"
-        className="mb-8"
+        title={<span className="text-violet-700/90 text-lg font-medium">Recent Bids</span>}
+        className="mb-8 rounded-xl border-violet-100/30 shadow-sm"
+        headStyle={{ borderBottom: '1px solid rgba(139, 92, 246, 0.1)' }}
       >
-         <div className="p-4 flex flex-col items-end sm:flex-row gap-4 sm:gap-6">
-            <Input
-              placeholder="Search bids..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              prefix={<SearchOutlined className="text-violet-400" />}
-              className="w-48 border-violet-200"
-            />
-            <Select
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value)}
-              placeholder="Status"
-              className="w-32"
-            >
-              <Option value="">All</Option>
-              <Option value="Pending">Pending</Option>
-              <Option value="Accepted">Accepted</Option>
-              <Option value="Rejected">Rejected</Option>
-            </Select>
-          </div>
+        <div className="p-4 flex flex-col items-end sm:flex-row gap-4 sm:gap-6">
+          <Input
+            placeholder="Search bids..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            prefix={<SearchOutlined className="text-violet-400/70" />}
+            className="w-48 border-violet-100/30 rounded-lg focus:border-violet-300/50 
+              focus:ring focus:ring-violet-100/30 transition-all"
+          />
+          <Select
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value)}
+            placeholder="Status"
+            className="w-32 rounded-lg"
+          >
+            <Option value="">All</Option>
+            <Option value="Pending">Pending</Option>
+            <Option value="Accepted">Accepted</Option>
+            <Option value="Rejected">Rejected</Option>
+          </Select>
+        </div>
         <div className="space-y-4">
           {paginatedData.map(bid => (
             <RecentBidCard key={bid.id} bid={bid} />
@@ -456,7 +470,6 @@ const BiddingOverview = () => {
         </div>
       </Card>
 
-      {/* Proposal Modal */}
       <Modal
         title={
           <div className="flex items-center space-x-2">

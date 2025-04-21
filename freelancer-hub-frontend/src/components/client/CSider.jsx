@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Tooltip } from 'antd';
+import { Tooltip, Badge } from 'antd';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { CSSTransition } from 'react-transition-group';
@@ -35,7 +35,7 @@ import {
   FaPalette
 } from 'react-icons/fa';
 
-const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId }) => {
+const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId, projectId }) => {
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
   const [isTextVisible, setIsTextVisible] = useState(!collapsed);
   const [isDashboardDropdownOpen, setIsDashboardDropdownOpen] = useState(true);
@@ -69,7 +69,13 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
       text: 'View Bids',
       tooltip: 'View Project Bids'
     },
-
+    { 
+      abcd: 'workspace', 
+      to: `/client/workspace/${projectId}/project-detail`, 
+      icon: <FaClipboardList className={iconClass} />,
+      text: 'Workspace',
+      tooltip: 'View Workspace'
+    },
   ];
 
   const dashboardLinks = [
@@ -125,7 +131,6 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
       icon: <FaUsers className={iconClass} />, 
       tooltip: 'Group Chats' 
     },
-
     { 
       abcd: 'settings', 
       to: '/client/messages/settings',
@@ -139,7 +144,6 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
     { abcd: 'view_profile', to: `/client/profile/${userId}/view_profile`, text: 'View Profile', icon: <FaUserCircle className={iconClass} />, tooltip: 'View Your Profile' },
     { abcd: 'edit_profile', to: `/client/profile/${userId}/edit_profile`, text: 'Edit Profile', icon: <FaCog className={iconClass} />, tooltip: 'Edit Profile Settings' },
     { abcd: 'reviews_ratings', to: `/client/profile/${userId}/reviews_ratings`, text: 'Reviews', icon: <FaStar className={iconClass} />, tooltip: 'View Reviews & Ratings' },
-    { abcd: 'collaborations', to: `/client/profile/${userId}/collaborations`, text: 'Collaborations', icon: <FaHandshake className={iconClass} />, tooltip: 'View Collaborations' }
   ];
 
   const mobileMainLinks = [
@@ -157,10 +161,6 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
       icon: <FaChartBar className={iconClass} />,
       text: 'Dashboard'
     },
-
-
-
- 
     { 
       abcd: 'post-project', 
       to: '/client/post-project', 
@@ -172,16 +172,15 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
       abcd: 'view-bids', 
       to: '/client/view-bids', 
       icon: <FaClipboardList className={iconClass} />,
-      text: 'View Bids',
+      text: 'Bids',
       tooltip: 'View Project Bids'
     },
-
-
   ];
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [isMessagesDropdownOpen, setIsMessagesDropdownOpen] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleSidebarToggle = () => {
     setIsCollapsed(!isCollapsed);
@@ -194,13 +193,13 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
 
   const handleLogout = async () => {
     try {
-    const refreshToken = Cookies.get('refreshToken');
-    const accessToken = Cookies.get('accessToken');
+      const refreshToken = Cookies.get('refreshToken');
+      const accessToken = Cookies.get('accessToken');
       
-    if (!refreshToken) {
-      navigate('/login');
-      return;
-    }
+      if (!refreshToken) {
+        navigate('/login');
+        return;
+      }
 
       await axios.post('http://127.0.0.1:8000/api/logout/', 
         { accessToken, refreshToken },
@@ -270,28 +269,30 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
       title={isCollapsed ? link.tooltip : ''}
       placement="right"
       key={link.abcd}
+      color="#003366"
     >
       <motion.div
         whileHover={{ x: 4 }}
         onClick={() => isMain ? handleMainLinkClick(link) : navigate(link.to)}
         className={`
-          group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
-          hover:bg-gray-50/80 cursor-pointer relative
+          group flex items-center gap-4 p-3 rounded-lg transition-all duration-300
+          cursor-pointer relative
           ${location.pathname === link.to ? 
-            'bg-gradient-to-r from-teal-50 to-blue-50' : ''}
+            'bg-gradient-to-r from-[#F0F4F8] to-[#F8FAFC] shadow-client-sm' : 
+            'hover:bg-client-bg-primary'}
         `}
       >
         <div className={`
-          absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full
+          absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full
           transition-all duration-300
-          ${(isMain ? location.pathname === link.to : abcds === link.abcd) ? 
-            'bg-teal-500' : 'bg-transparent'}
+          ${location.pathname === link.to ? 'bg-client-primary' : 'bg-transparent'}
         `} />
 
         <div className={`
           flex items-center justify-center min-w-[24px]
-          ${(isMain ? location.pathname === link.to : abcds === link.abcd) ? 
-            'text-teal-500' : 'text-gray-400 group-hover:text-teal-500'}
+          ${location.pathname === link.to ? 
+            'text-client-primary' : 
+            'text-client-text-secondary group-hover:text-client-primary'}
         `}>
           {React.cloneElement(link.icon, { className: iconClass })}
         </div>
@@ -300,11 +301,12 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
           <motion.span
             initial={false}
             animate={{ opacity: showText ? 1 : 0 }}
-            transition={{ duration: 0.2, delay: 0.2 }}
+            transition={{ duration: 0.2 }}
             className={`
               text-sm font-medium whitespace-nowrap flex-1
-              ${(isMain ? location.pathname === link.to : abcds === link.abcd) ? 
-                'text-teal-500' : 'text-gray-500 group-hover:text-teal-500'}
+              ${location.pathname === link.to ? 
+                'text-client-primary' : 
+                'text-client-text-primary group-hover:text-client-primary'}
             `}
           >
             {link.text}
@@ -314,7 +316,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
     </Tooltip>
   );
 
-  const chevronStyles = `${iconClass} text-gray-400 transition-transform duration-300`;
+  const chevronStyles = `${iconClass} text-[#666666] transition-transform duration-300`;
 
   useEffect(() => {
     const handleResize = () => {
@@ -329,13 +331,12 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
   }, []);
 
   const handleMenuClick = (component) => {
-    console.log(component)
     if (location.pathname !== "/client/dashboard") {
       navigate(`/client/dashboard/${component}`);
     }
   };
+  
   const handleProfileMenu = (component) => {
-    console.log(component)
     if (location.pathname !== "/client/profile") {
       navigate(`/client/profile/${userId}/${component}`);
     }
@@ -346,8 +347,6 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
 
     const menuItems = activeMenu === 'dashboard' ? dashboardLinks : profileLinks;
     const menuTitle = activeMenu === 'dashboard' ? 'Dashboard' : 'Profile';
-
-
     
     return (
       <motion.div
@@ -355,7 +354,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-sm"
         onClick={() => setMobileMenuOpen(false)}
       >
         <motion.div
@@ -375,7 +374,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
           </div>
 
           <div className="px-4 pb-4 flex items-center justify-between border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">{menuTitle}</h2>
+            <h2 className="text-lg font-semibold text-[#333333]">{menuTitle}</h2>
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="p-2 text-gray-400 hover:text-gray-600"
@@ -400,11 +399,10 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                   setMobileMenuOpen(false);
                 }}
                 className={`
-                  flex items-center gap-3 p-4 rounded-xl mb-2
+                  flex items-center gap-3 p-4 rounded-lg mb-2
                   ${(activeMenu === 'dashboard' ? abcds === item.abcd : activeProfileComponent === item.abcd)
-                    ? 'bg-teal-50 text-teal-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                  }
+                    ? 'bg-[#F0F4F8] text-[#003366]'
+                    : 'text-[#333333] hover:bg-gray-50'}
                 `}
               >
                 {item.icon}
@@ -426,7 +424,7 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
           initial={{ y: 0 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-lg"
+          className="fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-gray-100 shadow-lg"
         >
           <div className="flex items-center justify-around px-2 py-2 max-w-screen-xl mx-auto">
             {mobileMainLinks.map((link) => (
@@ -436,8 +434,8 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                 onClick={() => handleMobileNavClick(link)}
                 className={`flex flex-col items-center justify-center p-2 rounded-lg ${
                   location.pathname.includes(link.link)
-                    ? 'text-teal-500 bg-teal-50' 
-                    : 'text-gray-400'
+                    ? 'text-[#003366] bg-[#F0F4F8]' 
+                    : 'text-[#666666]'
                 }`}
               >
                 {link.icon}
@@ -457,88 +455,90 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
 
   return (
     <>
-    <div
-      ref={reference}
+      <div
+        ref={reference}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         className={`
           h-screen 
-          bg-white/90 backdrop-blur-xl
-      flex flex-col items-center 
+          bg-white
+          flex flex-col items-center 
           transition-all duration-300 ease-in-out
-          fixed z-50 
-          ${isCollapsed ? 'w-14' : 'w-56'}
-          shadow-lg border-r border-gray-100
+          fixed z-[100] 
+          ${isCollapsed ? 'w-16' : 'w-64'}
+          border-r border-[#E5E7EB]
+          shadow-client-sm
         `}
       >
-        <div className="w-full px-3 py-4 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-            <motion.div
+        <div className="w-full px-4 py-5  bg-gradient-to-r from-[#F8FAFD] to-white">
+          <div className="flex items-center justify-between">
+            {/* <motion.div
               initial={false}
               animate={{ opacity: showText ? 1 : 0 }}
               transition={{ duration: 0.2 }}
             >
-          {!isCollapsed && (
-                <h1 className="text-base font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
-                  Veloro
-            </h1>
-          )}
-            </motion.div>
-            <Tooltip title={isCollapsed ? "Expand" : "Collapse"} placement="right">
+              {!isCollapsed && (
+                //
+              )}
+            </motion.div> */}
+            <Tooltip title={isCollapsed ? "Expand" : "Collapse"} placement="right" color="#003366">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-            onClick={handleSidebarToggle}
-                className="p-1.5 rounded-lg hover:bg-gray-50"
-          >
-                <FaBars className={iconClass + " text-gray-400"} />
+                onClick={handleSidebarToggle}
+                className="p-1.5 rounded-lg hover:bg-client-bg-primary transition-all duration-200"
+              >
+                <FaBars className={`${iconClass} text-client-text-secondary hover:text-client-primary transition-colors`} />
               </motion.button>
             </Tooltip>
+          </div>
         </div>
-      </div>
 
-        <nav className="w-full px-2 py-4 space-y-4 flex-1 overflow-y-auto">
+        <nav className="w-full px-3 py-4 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
           <div className="space-y-0.5">
             {mainLinks.map(link => renderLink(link, true))}
           </div>
 
-          <div className="space-y-1">
-            <Tooltip title={isCollapsed ? "Dashboard" : ""} placement="right">
+          <div className="pt-2 space-y-1">
+            <Tooltip title={isCollapsed ? "Dashboard" : ""} placement="right" color="#003366">
               <motion.div
                 whileHover={{ x: 4 }}
                 onClick={handleDashboardClick}
                 className={`
-                  group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
-                  hover:bg-gray-50/80 cursor-pointer relative
+                  group flex items-center gap-4 p-3 rounded-lg transition-all duration-300
+                  cursor-pointer relative
                   ${location.pathname.includes('/dashboard') ? 
-                    'bg-gradient-to-r from-teal-50 to-blue-50' : ''}
+                    'bg-gradient-to-r from-[#F0F4F8] to-[#F8FAFC] shadow-client-sm' : 
+                    'hover:bg-client-bg-primary'}
                 `}
               >
                 <div className={`
-                  absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full
-                  ${location.pathname.includes('/dashboard') ? 'bg-teal-500' : 'bg-transparent'}
+                  absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full
+                  ${location.pathname.includes('/dashboard') ? 'bg-client-primary' : 'bg-transparent'}
                 `} />
 
                 <div className={`
                   flex items-center justify-center min-w-[24px]
                   ${location.pathname.includes('/dashboard') ? 
-                    'text-teal-500' : 'text-gray-400 group-hover:text-teal-500'}
+                    'text-client-primary' : 'text-client-text-secondary group-hover:text-client-primary'}
                 `}>
                   <FaChartBar className={iconClass} />
-            </div>
+                </div>
 
-            {!isCollapsed && (
+                {!isCollapsed && (
                   <motion.div
                     initial={false}
                     animate={{ opacity: showText ? 1 : 0 }}
-                    transition={{ duration: 0.2, delay: 0.2 }}
+                    transition={{ duration: 0.2 }}
                     className="flex items-center justify-between flex-1"
                   >
                     <span className={`
                       text-sm font-medium
                       ${location.pathname.includes('/dashboard') ? 
-                        'text-teal-500' : 'text-gray-500 group-hover:text-teal-500'}
+                        'text-client-primary' : 'text-client-text-primary group-hover:text-client-primary'}
                     `}>
-                  Dashboard
-                </span>
+                      Dashboard
+                    </span>
                     <FaChevronDown 
                       className={chevronStyles}
                       style={{ transform: isDashboardDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -555,95 +555,9 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="ml-4 pl-4 border-l border-gray-100 space-y-1 overflow-hidden"
+                  className="ml-4 pl-4 border-l border-client-border space-y-1 overflow-hidden"
                 >
                   {dashboardLinks.map(link => (
-                <div
-                  key={link.abcd}
-                  onClick={() => navigate(link.to)}
-                      className={`
-                        group flex items-center gap-2 px-3 py-2 rounded-lg 
-                        transition-all duration-300 cursor-pointer
-                        ${location.pathname.includes(link.abcd) ? 
-                          'bg-teal-500/10 text-teal-400' : 
-                          'text-gray-400 hover:bg-white/5 hover:text-teal-400'}
-                      `}
-                    >
-                      {link.icon}
-                      <span className="text-sm">{link.text}</span>
-                </div>
-              ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-        </div>
-
-  {/*        <div className="space-y-1">
-            <Tooltip title={isCollapsed ? "Messages" : ""} placement="right">
-              <motion.div
-                whileHover={{ x: 4 }}
-                onClick={() => {
-                  if (isCollapsed) {
-                    setIsCollapsed(false);
-                    setTimeout(() => setShowText(true), 300);
-                    setIsMessagesDropdownOpen(true);
-                  } else {
-                    setIsMessagesDropdownOpen(!isMessagesDropdownOpen);
-                  }
-                }}
-                className={`
-                  group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
-                  hover:bg-gray-50/80 cursor-pointer relative
-                  ${location.pathname.includes('/messages') ? 
-                    'bg-gradient-to-r from-teal-50 to-blue-50' : ''}
-                `}
-              >
-                <div className={`
-                  absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full
-                  ${location.pathname.includes('/messages') ? 'bg-teal-500' : 'bg-transparent'}
-                `} />
-
-                <div className={`
-                  flex items-center justify-center min-w-[24px]
-                  ${location.pathname.includes('/messages') ? 
-                    'text-teal-500' : 'text-gray-400 group-hover:text-teal-500'}
-                `}>
-                  <FaComments className={iconClass} />
-                </div>
-
-                {!isCollapsed && (
-                  <motion.div
-                    initial={false}
-                    animate={{ opacity: showText ? 1 : 0 }}
-                    transition={{ duration: 0.2, delay: 0.2 }}
-                    className="flex items-center justify-between flex-1"
-                  >
-                    <span className={`
-                      text-sm font-medium
-                      ${location.pathname.includes('/messages') ? 
-                        'text-teal-500' : 'text-gray-500 group-hover:text-teal-500'}
-                    `}>
-                      Messages
-                    </span>
-                    <FaChevronDown 
-                      className={chevronStyles}
-                      style={{ transform: isMessagesDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                    />
-                  </motion.div>
-                )}
-              </motion.div>
-            </Tooltip>
-
-            <AnimatePresence>
-              {isMessagesDropdownOpen && !isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="ml-4 pl-4 border-l border-gray-100 space-y-1 overflow-hidden"
-                >
-                  {messageLinks.map(link => (
                     <div
                       key={link.abcd}
                       onClick={() => navigate(link.to)}
@@ -651,8 +565,8 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                         group flex items-center gap-2 px-3 py-2 rounded-lg 
                         transition-all duration-300 cursor-pointer
                         ${location.pathname.includes(link.abcd) ? 
-                          'bg-teal-500/10 text-teal-400' : 
-                          'text-gray-400 hover:bg-white/5 hover:text-teal-400'}
+                          'bg-[#F0F4F8] text-[#003366]' : 
+                          'text-[#666666] hover:bg-[#F8FAFC] hover:text-[#003366]'}
                       `}
                     >
                       {link.icon}
@@ -662,47 +576,48 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                 </motion.div>
               )}
             </AnimatePresence>
-          </div> */}
+          </div>
 
-          <Tooltip title={isCollapsed ? "Profile" : ""} placement="right">
-            <div className="space-y-1">
+          <Tooltip title={isCollapsed ? "Profile" : ""} placement="right" color="#003366">
+            <div className="pt-2 space-y-1">
               <motion.div
                 whileHover={{ x: 4 }}
-            onClick={handleProfileNavigation}
+                onClick={handleProfileNavigation}
                 className={`
-                  group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
-                  hover:bg-gray-50/80 cursor-pointer relative
+                  group flex items-center gap-4 p-3 rounded-lg transition-all duration-300
+                  cursor-pointer relative
                   ${location.pathname.includes('/profile') ? 
-                    'bg-gradient-to-r from-teal-50 to-blue-50' : ''}
+                    'bg-gradient-to-r from-[#F0F4F8] to-[#F8FAFC] shadow-client-sm' : 
+                    'hover:bg-client-bg-primary'}
                 `}
               >
                 <div className={`
-                  absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full
-                  ${location.pathname.includes('/profile') ? 'bg-teal-500' : 'bg-transparent'}
+                  absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full
+                  ${location.pathname.includes('/profile') ? 'bg-client-primary' : 'bg-transparent'}
                 `} />
 
                 <div className={`
                   flex items-center justify-center min-w-[24px]
                   ${location.pathname.includes('/profile') ? 
-                    'text-teal-500' : 'text-gray-400 group-hover:text-teal-500'}
+                    'text-client-primary' : 'text-client-text-secondary group-hover:text-client-primary'}
                 `}>
                   <FaUserCircle className={iconClass} />
                 </div>
 
-            {!isCollapsed && (
+                {!isCollapsed && (
                   <motion.div
                     initial={false}
                     animate={{ opacity: showText ? 1 : 0 }}
-                    transition={{ duration: 0.2, delay: 0.2 }}
+                    transition={{ duration: 0.2 }}
                     className="flex items-center justify-between flex-1"
                   >
                     <span className={`
                       text-sm font-medium
                       ${location.pathname.includes('/profile') ? 
-                        'text-teal-500' : 'text-gray-500 group-hover:text-teal-500'}
+                        'text-client-primary' : 'text-client-text-primary group-hover:text-client-primary'}
                     `}>
-                  Profile
-                </span>
+                      Profile
+                    </span>
                     <FaChevronDown 
                       className={chevronStyles}
                       style={{ transform: isProfileDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -711,34 +626,37 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
                 )}
               </motion.div>
 
-              <CSSTransition
-                in={isProfileDropdownOpen && !isCollapsed}
-                timeout={300}
-                classNames="dropdown"
-                unmountOnExit
-              >
-            <div className="ml-4 pl-4 border-l border-gray-700/30 space-y-1">
-                  {profileLinks.map(link => (
-                <div
-                  key={link.abcd}
-                  onClick={() => navigate(link.to)}
-                      className={`
-                        group flex items-center gap-2 px-3 py-2 rounded-lg 
-                        transition-all duration-300 cursor-pointer
-                        ${location.pathname.includes(link.abcd) ? 
-                          'bg-teal-500/10 text-teal-400' : 
-                          'text-gray-400 hover:bg-white/5 hover:text-teal-400'}
-                      `}
-                    >
-                      {link.icon}
-                      <span className="text-sm">{link.text}</span>
-                </div>
-              ))}
+              <AnimatePresence>
+                {isProfileDropdownOpen && !isCollapsed && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="ml-4 pl-4 border-l border-client-border space-y-1 overflow-hidden"
+                  >
+                    {profileLinks.map(link => (
+                      <div
+                        key={link.abcd}
+                        onClick={() => navigate(link.to)}
+                        className={`
+                          group flex items-center gap-2 px-3 py-2 rounded-lg 
+                          transition-all duration-300 cursor-pointer
+                          ${location.pathname.includes(link.abcd) ? 
+                            'bg-[#F0F4F8] text-[#003366]' : 
+                            'text-[#666666] hover:bg-[#F8FAFC] hover:text-[#003366]'}
+                        `}
+                      >
+                        {link.icon}
+                        <span className="text-sm">{link.text}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </CSSTransition>
-        </div>
           </Tooltip>
-      </nav>
+        </nav>
 
         <AnimatePresence>
           {!isCollapsed ? (
@@ -746,55 +664,52 @@ const CSider = ({ collapsed, abcds, reference, activeProfileComponent, userId })
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full px-3 py-3 border-t border-gray-100"
+              className="w-full px-4 py-4 border-t border-client-border bg-gradient-to-b from-transparent to-[#F8FAFD]"
             >
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-            onClick={handleLogout}
-                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-red-50 text-sm"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-red-50/80 text-sm group transition-all duration-200"
               >
-                <FaSignOutAlt className={iconClass + " text-gray-400"} />
-                <span className="font-medium text-gray-400">Logout</span>
+                <FaSignOutAlt className={`${iconClass} text-client-text-secondary group-hover:text-red-600`} />
+                <span className="font-medium text-client-text-secondary group-hover:text-red-600">Logout</span>
               </motion.button>
-              <p className="mt-3 text-[10px] text-center text-gray-400">
-                © {new Date().getFullYear()} Veloro
+              <p className="mt-3 text-[10px] text-center text-client-text-tertiary">
+                © {new Date().getFullYear()} Talintz Hub
               </p>
             </motion.div>
           ) : (
-            <Tooltip title="Logout" placement="right">
+            <Tooltip title="Logout" placement="right" color="#003366">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleLogout}
-                className="p-2 mb-3 rounded-lg hover:bg-red-50"
+                className="p-2 mb-4 rounded-lg hover:bg-red-50/80 group transition-all duration-200"
               >
-                <FaSignOutAlt className={iconClass + " text-gray-400"} />
+                <FaSignOutAlt className={`${iconClass} text-client-text-secondary group-hover:text-red-600`} />
               </motion.button>
             </Tooltip>
           )}
         </AnimatePresence>
-    </div>
+      </div>
 
       <style jsx global>{`
-        .h-safe-area {
-          height: env(safe-area-inset-bottom);
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
         }
-
-        @supports not (height: env(safe-area-inset-bottom)) {
-          .h-safe-area {
-            height: 0px;
-          }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
         }
-
-        @media (min-width: 768px) {
-          .main-content {
-            margin-left: 3.5rem;
-          }
-          
-          .sidebar-expanded .main-content {
-            margin-left: 14rem;
-          }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #C0C0C0;
+          border-radius: 2px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #A0AEC0;
         }
 
         @media (max-width: 767px) {

@@ -1,0 +1,106 @@
+<div className="bg-white p-4 rounded shadow">
+              <h2 className="text-xl font-semibold mb-4">Active Projects</h2>
+              <ul>
+                <li className="border-b py-2 flex justify-between">
+                  <span>Redesign E-commerce Website</span>
+                  <span className="text-sm text-gray-500">In Progress</span>
+                </li>
+                <li className="border-b py-2 flex justify-between">
+                  <span>Logo Design for Startup</span>
+                  <span className="text-sm text-gray-500">Awaiting Payment</span>
+                </li>
+                <li className="py-2 flex justify-between">
+                  <span>Social Media Campaign</span>
+                  <span className="text-sm text-gray-500">In Progress</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Bidding Overview */}
+            <div className="bg-white p-4 rounded shadow">
+              <h2 className="text-xl font-semibold mb-4">Bidding Overview</h2>
+              <ul>
+                <li className="border-b py-2 flex justify-between">
+                  <span>Submitted Proposal for Mobile App</span>
+                  <span className="text-sm text-blue-500">Pending</span>
+                </li>
+                <li className="border-b py-2 flex justify-between">
+                  <span>Bid for Logo Design</span>
+                  <span className="text-sm text-green-500">Accepted</span>
+                </li>
+                <li className="py-2 flex justify-between">
+                  <span>Proposal for SEO Optimization</span>
+                  <span className="text-sm text-red-500">Declined</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Notifications */}
+            <div className="bg-white p-4 rounded shadow">
+              <h2 className="text-xl font-semibold mb-4">Notifications</h2>
+              <ul>
+                <li className="border-b py-2">Your bid was accepted for "Logo Design".</li>
+                <li className="border-b py-2">Payment released for "Web Development".</li>
+                <li className="py-2">Project deadline approaching: "E-commerce Redesign".</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Stats and Calendar */}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Nivo Bar Chart */}
+            <div className="bg-white p-4 rounded shadow">
+              <h2 className="text-xl font-semibold mb-4">Weekly Bidding Activity</h2>
+              <div style={{ height: '300px' }}>
+                <ResponsiveBar
+                  data={barData}
+                  keys={['bids']}
+                  indexBy="week"
+                  margin={{ top: 10, right: 30, bottom: 40, left: 40 }}
+                  padding={0.3}
+                  colors={['#4f46e5']}
+                  axisBottom={{ tickSize: 5, tickPadding: 5 }}
+                />
+              </div>
+            </div>
+
+            {/* Nivo Pie Chart */}
+            <div className="bg-white p-4 rounded shadow">
+              <h2 className="text-xl font-semibold mb-4">Project Status Overview</h2>
+              <div style={{ height: '300px' }}>
+                <ResponsivePie
+                  data={pieData}
+                  margin={{ top: 10, right: 30, bottom: 40, left: 30 }}
+                  colors={{ scheme: 'category10' }}
+                  innerRadius={0.5}
+                  padAngle={1}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Calendar Section */}
+          <div className="mt-6 bg-white p-4 rounded shadow">
+            <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              events={events}
+              height="500px"
+            />
+          </div>
+
+------------------------------------------------------------------------------
+
+
+           {/* Content Section */}
+            {/* Dynamically render active component 
+            {individualLoading ? '' :<>
+            {activeComponent === 'project-management' && <ProjectManagementPage />}
+            {activeComponent === 'bidding-overview' && <BiddingOverview />}
+            {activeComponent === 'notifications' && <Notifications />}
+            {activeComponent === 'project-status-overview' && <ProjectStatusOverview />}
+            {activeComponent === 'upcoming-events' && <UpcomingEvents />}
+            {activeComponent === 'weekly-bidding-activity' && <WeeklyBiddingActivity />}
+          </> 
+          }*/}

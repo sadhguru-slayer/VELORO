@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Tooltip } from 'antd';
 import axios from 'axios';
@@ -49,8 +49,53 @@ const FSider = ({
   const location = useLocation();
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const currentUserId = userId;
+  
+  // Refs for hover timers and sidebar
+  const dashboardHoverTimerRef = useRef(null);
+  const profileHoverTimerRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const arrowButtonsRef = useRef({
+    dashboard: null,
+    profile: null
+  });
 
   const iconClass = isMobile ? "w-4 h-4" : "w-5 h-5";
+
+  // Close sidebar when location changes
+  useEffect(() => {
+    if (!isMobile) {
+      setIsCollapsed(true);
+      setShowText(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Handle clicks outside sidebar
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsCollapsed(true);
+        setShowText(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Clear hover timers on unmount
+  useEffect(() => {
+    return () => {
+      if (dashboardHoverTimerRef.current) {
+        clearTimeout(dashboardHoverTimerRef.current);
+      }
+      if (profileHoverTimerRef.current) {
+        clearTimeout(profileHoverTimerRef.current);
+      }
+    };
+  }, []);
 
   const mainLinks = [
     { 
@@ -206,32 +251,36 @@ const FSider = ({
     navigate(link.to);
   };
 
-  const handleDashboardClick = () => {
-    if (location.pathname.includes('/freelancer/dashboard')) {
-      if (isCollapsed) {
-        setIsCollapsed(false);
-        setTimeout(() => setShowText(true), 300);
-        setIsDashboardDropdownOpen(true);
-      } else {
-        setIsDashboardDropdownOpen(!isDashboardDropdownOpen);
-      }
-    } else {
-      navigate('/freelancer/dashboard/freelancer-analytics');
-      setIsDashboardDropdownOpen(true);
-    }
+  const handleDashboardArrowClick = (e) => {
+    e.stopPropagation();
+    setIsDashboardDropdownOpen(!isDashboardDropdownOpen);
   };
 
-  const handleProfileNavigation = () => {
-    if (!location.pathname.includes('/freelancer/profile')) {
-      navigate(`/freelancer/profile/${userId}/view_profile`);
+  const handleProfileArrowClick = (e) => {
+    e.stopPropagation();
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
+  };
+
+  const handleDashboardNavigate = () => {
+    navigate('/freelancer/dashboard/freelancer-analytics');
+    
+    if (isCollapsed) {
+      setIsCollapsed(false);
+      setTimeout(() => setShowText(true), 300);
     }
+    
+    setIsDashboardDropdownOpen(true);
+  };
+
+  const handleProfileNavigate = () => {
+    navigate(`/freelancer/profile/${userId}/view_profile`);
     
     if (isCollapsed) {
       setIsCollapsed(false);
       setShowText(true);
     }
     
-    setIsProfileDropdownOpen(!isProfileDropdownOpen);
+    setIsProfileDropdownOpen(true);
   };
 
   const handleMobileNavClick = (link) => {
@@ -354,11 +403,7 @@ const FSider = ({
                 key={item.abcd}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
-                  if (activeMenu === 'dashboard') {
-                    navigate(item.to);
-                  } else {
-                    navigate(item.to);
-                  }
+                  navigate(item.to);
                   setMobileMenuOpen(false);
                 }}
                 className={`
@@ -419,17 +464,18 @@ const FSider = ({
 
   return (
     <div
+      ref={sidebarRef}
       className={`
         h-screen 
         bg-white/90 backdrop-blur-xl
         flex flex-col items-center 
         transition-all duration-300 ease-in-out
-        fixed z-20 
+        fixed z-30 
         ${isCollapsed ? 'w-16' : 'w-64'}
         shadow-lg border-r border-violet-100
       `}
     >
-      <div className="w-full px-4 py-6 border-b border-violet-100">
+      <div className="w-full px-4 py-5 border-b border-violet-100">
         <div className="flex items-center justify-between">
           <motion.div
             initial={false}
@@ -455,16 +501,15 @@ const FSider = ({
         </div>
       </div>
 
-      <nav className="w-full px-3 py-6 space-y-6 flex-1 overflow-y-auto">
-        <div className="space-y-1.5">
+      <nav className="w-full px-3 py-5 space-y-4 flex-1 overflow-y-auto">
+        <div className="space-y-2">
           {mainLinks.map(link => renderLink(link, true))}
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Tooltip title={isCollapsed ? "Dashboard" : ""} placement="right">
             <motion.div
               whileHover={{ x: 4 }}
-              onClick={handleDashboardClick}
               className={`
                 group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
                 hover:bg-violet-50/80 cursor-pointer relative
@@ -477,11 +522,14 @@ const FSider = ({
                 ${location.pathname.includes('/freelancer/dashboard') ? 'bg-violet-600' : 'bg-transparent'}
               `} />
 
-              <div className={`
-                flex items-center justify-center min-w-[24px]
-                ${location.pathname.includes('/freelancer/dashboard') ? 
-                  'text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}
-              `}>
+              <div 
+                className={`
+                  flex items-center justify-center min-w-[24px]
+                  ${location.pathname.includes('/freelancer/dashboard') ? 
+                    'text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}
+                `}
+                onClick={handleDashboardNavigate}
+              >
                 <FaChartBar className={iconClass} />
               </div>
 
@@ -492,17 +540,28 @@ const FSider = ({
                   transition={{ duration: 0.2, delay: 0.2 }}
                   className="flex items-center justify-between flex-1"
                 >
-                  <span className={`
-                    text-sm font-medium
-                    ${location.pathname.includes('/freelancer/dashboard') ? 
-                      'text-violet-600' : 'text-gray-500 group-hover:text-violet-600'}
-                  `}>
+                  <span 
+                    className={`
+                      text-sm font-medium cursor-pointer
+                      ${location.pathname.includes('/freelancer/dashboard') ? 
+                        'text-violet-600' : 'text-gray-500 group-hover:text-violet-600'}
+                    `}
+                    onClick={handleDashboardNavigate}
+                  >
                     Dashboard
                   </span>
-                  <FaChevronDown 
-                    className={`${iconClass} text-gray-400 transition-transform duration-300`}
-                    style={{ transform: isDashboardDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                  />
+                  
+                  <div 
+                    className="dashboard-arrow-button p-1.5 rounded-full hover:bg-violet-100 cursor-pointer"
+                    onClick={handleDashboardArrowClick}
+                  >
+                    <FaChevronDown 
+                      className={chevronStyles}
+                      style={{ 
+                        transform: isDashboardDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' 
+                      }}
+                    />
+                  </div>
                 </motion.div>
               )}
             </motion.div>
@@ -515,18 +574,18 @@ const FSider = ({
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
-                className="ml-4 pl-4 border-l border-violet-100 space-y-1 overflow-hidden"
+                className="ml-4 pl-4 border-l border-violet-100 space-y-2 overflow-hidden"
               >
                 {dashboardLinks.map(link => (
                   <div
                     key={link.abcd}
                     onClick={() => navigate(link.to)}
                     className={`
-                      group flex items-center gap-3 px-3 py-2 rounded-lg 
+                      group flex items-center gap-3 px-3 py-2.5 rounded-lg 
                       transition-all duration-300 cursor-pointer
                       ${location.pathname.includes(link.abcd) ? 
                         'bg-violet-500/10 text-violet-400' : 
-                        'text-gray-400 hover:bg-white/5 hover:text-violet-400'}
+                        'text-gray-400 hover:bg-violet-50 hover:text-violet-400'}
                     `}
                   >
                     <div className={`
@@ -544,11 +603,10 @@ const FSider = ({
           </AnimatePresence>
         </div>
     
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Tooltip title={isCollapsed ? "Profile" : ""} placement="right">
             <motion.div
               whileHover={{ x: 4 }}
-              onClick={handleProfileNavigation}
               className={`
                 group flex items-center gap-4 p-3 rounded-xl transition-all duration-300
                 hover:bg-violet-50/80 cursor-pointer relative
@@ -561,11 +619,14 @@ const FSider = ({
                 ${location.pathname.includes('/freelancer/profile') ? 'bg-violet-600' : 'bg-transparent'}
               `} />
 
-              <div className={`
-                flex items-center justify-center min-w-[24px]
-                ${location.pathname.includes('/freelancer/profile') ? 
-                  'text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}
-              `}>
+              <div 
+                className={`
+                  flex items-center justify-center min-w-[24px]
+                  ${location.pathname.includes('/freelancer/profile') ? 
+                    'text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}
+                `}
+                onClick={handleProfileNavigate}
+              >
                 <FaUserCircle className={iconClass} />
               </div>
 
@@ -576,53 +637,67 @@ const FSider = ({
                   transition={{ duration: 0.2, delay: 0.2 }}
                   className="flex items-center justify-between flex-1"
                 >
-                  <span className={`
-                    text-sm font-medium
-                    ${location.pathname.includes('/freelancer/profile') ? 
-                      'text-violet-600' : 'text-gray-500 group-hover:text-violet-600'}
-                  `}>
+                  <span 
+                    className={`
+                      text-sm font-medium cursor-pointer
+                      ${location.pathname.includes('/freelancer/profile') ? 
+                        'text-violet-600' : 'text-gray-500 group-hover:text-violet-600'}
+                    `}
+                    onClick={handleProfileNavigate}
+                  >
                     Profile
                   </span>
-                  <FaChevronDown 
-                    className={`${iconClass} text-gray-400 transition-transform duration-300`}
-                    style={{ transform: isProfileDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                  />
+                  
+                  <div 
+                    className="profile-arrow-button p-1.5 rounded-full hover:bg-violet-100 cursor-pointer"
+                    onClick={handleProfileArrowClick}
+                  >
+                    <FaChevronDown 
+                      className={chevronStyles}
+                      style={{ 
+                        transform: isProfileDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' 
+                      }}
+                    />
+                  </div>
                 </motion.div>
               )}
             </motion.div>
           </Tooltip>
 
-          <CSSTransition
-            in={isProfileDropdownOpen && !isCollapsed}
-            timeout={300}
-            classNames="dropdown"
-            unmountOnExit
-          >
-            <div className="ml-4 pl-4 border-l border-violet-100 space-y-1">
-              {profileLinks.map(link => (
-                <div
-                  key={link.abcd}
-                  onClick={() => navigate(link.to)}
-                  className={`
-                    group flex items-center gap-3 px-3 py-2 rounded-lg 
-                    transition-all duration-300 cursor-pointer
-                    ${location.pathname.includes(link.abcd) ? 
-                      'bg-violet-500/10 text-violet-400' : 
-                      'text-gray-400 hover:bg-white/5 hover:text-violet-400'}
-                  `}
-                >
-                  <div className={`
-                    flex items-center justify-center
-                    ${location.pathname.includes(link.abcd) ? 
-                      'text-violet-400' : 'text-gray-400 group-hover:text-violet-400'}
-                  `}>
-                    {link.icon}
+          <AnimatePresence>
+            {isProfileDropdownOpen && !isCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="ml-4 pl-4 border-l border-violet-100 space-y-2 overflow-hidden"
+              >
+                {profileLinks.map(link => (
+                  <div
+                    key={link.abcd}
+                    onClick={() => navigate(link.to)}
+                    className={`
+                      group flex items-center gap-3 px-3 py-2.5 rounded-lg 
+                      transition-all duration-300 cursor-pointer
+                      ${location.pathname.includes(link.abcd) ? 
+                        'bg-violet-500/10 text-violet-400' : 
+                        'text-gray-400 hover:bg-violet-50 hover:text-violet-400'}
+                    `}
+                  >
+                    <div className={`
+                      flex items-center justify-center
+                      ${location.pathname.includes(link.abcd) ? 
+                        'text-violet-400' : 'text-gray-400 group-hover:text-violet-400'}
+                    `}>
+                      {link.icon}
+                    </div>
+                    <span className="text-sm">{link.text}</span>
                   </div>
-                  <span className="text-sm">{link.text}</span>
-                </div>
-              ))}
-            </div>
-          </CSSTransition>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </nav>
 
@@ -632,13 +707,13 @@ const FSider = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full px-4 py-4 border-t border-violet-100"
+            className="w-full px-4 py-5 border-t border-violet-100"
           >
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleLogout}
-              className="w-full flex items-center gap-3.5 p-2.5 rounded-lg 
+              className="w-full flex items-center gap-3.5 p-3 rounded-lg 
                 hover:bg-red-50/80 transition-all duration-300 group"
             >
               <FaSignOutAlt className={`${iconClass} text-gray-500 group-hover:text-red-500`} />

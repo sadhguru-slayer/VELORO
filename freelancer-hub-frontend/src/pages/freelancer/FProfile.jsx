@@ -11,8 +11,32 @@ import { jwtDecode } from "jwt-decode";
 import { verifyToken, refreshToken as refreshTokenFunction } from '../../utils/auth';
 import NotAuthProfile from './profile/NotAuthProfile';
 import OtherProfile from './profile/OtherProfile';
-const FProfile = ({ userId, role, isAuthenticated, isEditable }) => {
+const FProfile = ({ userId, isAuthenticated, isEditable }) => {
+  const [role, setRole] = useState(null);
   
+  // Fetch role when component mounts
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const accessToken = Cookies.get('accessToken');
+        if (!accessToken) {
+          console.error('No access token found');
+          return;
+        }
+
+        const response = await axios.get('http://127.0.0.1:8000/api/profile/', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        
+        setRole(response.data.user.role);
+      } catch (error) {
+        console.error('Error fetching role:', error);
+      }
+    };
+
+    fetchRole();
+  }, []);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
@@ -147,7 +171,7 @@ const FProfile = ({ userId, role, isAuthenticated, isEditable }) => {
 
   // Authenticated and editable - Show full profile
   return (
-    <div className={`flex h-screen bg-white`}>
+    <div className="flex h-screen bg-gray-50">
       <FSider
         userId={userId}
         role={role}
@@ -160,21 +184,24 @@ const FProfile = ({ userId, role, isAuthenticated, isEditable }) => {
         handleProfileMenu={handleProfileMenu}
         activeProfileComponent={activeProfileComponent}
       />
-      <div className={`flex-1 flex flex-col overflow-x-hidden ${isMobile ? 'ml-0' : 'ml-16'}`}>
-        <FHeader 
-          userId={userId}
-          role={role}
-          isAuthenticated={isAuthenticated}
-          isEditable={isEditable}
-        />
-        <div className="flex-1 overflow-auto bg-gray-50 flex justify-center min-h-fit min-w-fit pb-16">
-          <Outlet context={{ 
-            userId, 
-            isEditable, 
-            isAuthenticated,
-            role,
-            currentUserId
-          }} />
+      <div className={`flex-1 flex flex-col ${isMobile ? 'ml-0' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}`}>
+        <div className="sticky top-0 z-10 w-full">
+          <FHeader 
+            userId={userId}
+            role={role}
+            isAuthenticated={isAuthenticated}
+            isEditable={isEditable}
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="min-h-full pb-16">
+            <Outlet context={{ 
+              userId, 
+              role,
+              isEditable,
+              currentUserId: userId
+            }} />
+          </div>
         </div>
       </div>
     </div>

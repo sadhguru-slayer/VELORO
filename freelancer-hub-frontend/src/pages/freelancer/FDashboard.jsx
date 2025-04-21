@@ -106,7 +106,7 @@ const FDashboard = ({ userId, role, isAuthenticated, isEditable }) => {
 
   return (
     <motion.div 
-      className="flex h-screen bg-gray-100"
+      className="flex h-screen bg-gray-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -122,30 +122,32 @@ const FDashboard = ({ userId, role, isAuthenticated, isEditable }) => {
         abcds={state.activeComponent}
       />
       
-      <div className={`flex-1 flex flex-col overflow-x-hidden ${
-        isMobile ? 'ml-0 pb-16' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'
-      }`}>
-        <FHeader 
-          userId={userId}
-          role={role}
-          isAuthenticated={isAuthenticated}
-          isEditable={isEditable}
-        />
+      <div className={`flex-1 flex flex-col ${isMobile ? 'ml-0' : 'ml-14 sm:ml-14 md:ml-14 lg:ml-14'}`}>
+        <div className="sticky top-0 z-10 w-full">
+          <FHeader 
+            userId={userId}
+            role={role}
+            isAuthenticated={isAuthenticated}
+            isEditable={isEditable}
+          />
+        </div>
         
-        <div className="flex-1 overflow-auto bg-gray-200 p-2">
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingComponent variant="dashboard" role="freelancer" className="bg-violet-200 animate-pulse" />}>
-              <Routes>
-                <Route index element={<FreelancerAnalyticsPage />} />
-                <Route path="freelancer-analytics" element={<FreelancerAnalyticsPage />} />
-                <Route path="projects" element={<ProjectManagementPage />} />
-                <Route path="earnings" element={<Earnings />} />
-                <Route path="bidding-overview" element={<BiddingOverview />} />
-                <Route path="project-status-overview" element={<ProjectStatusOverview />} />
-                <Route path="upcoming-events" element={<UpcomingEvents />} />
-              </Routes>
-            </Suspense>
-          </ErrorBoundary>
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="min-h-full p-4 pb-16">
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingComponent variant="dashboard" role="freelancer" className="bg-violet-200 animate-pulse" />}>
+                <Routes>
+                  <Route index element={<FreelancerAnalyticsPage />} />
+                  <Route path="freelancer-analytics" element={<FreelancerAnalyticsPage />} />
+                  <Route path="projects" element={<ProjectManagementPage />} />
+                  <Route path="earnings" element={<Earnings />} />
+                  <Route path="bidding-overview" element={<BiddingOverview />} />
+                  <Route path="project-status-overview" element={<ProjectStatusOverview />} />
+                  <Route path="upcoming-events" element={<UpcomingEvents />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
+          </div>
         </div>
       </div>
 
